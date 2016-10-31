@@ -63,22 +63,25 @@ function processFile(args: PostcssArgs, processor: any, file: string, done: Func
 }
 
 export default function modularize(root: string, cssOut: string, tsOut: string): Promise<any> {
+	const inputFiles: string[] = globby.sync(root);
+
 	const processor: any = postcss([
 		cssModules({
 			getJSON: function(cssFileName: string, json: string) {
 				if (!tsOut) {
 					return;
 				}
-				const filename = path.basename(cssFileName, '.css');
-				fs.writeFileSync(
-					`${ tsOut || '.' }/${ filename }.ts`,
-					`/* tslint:disable:object-literal-key-quotes quotemark whitespace */\nexport default ${ JSON.stringify(json) };\n`
-				);
+
+				mkdirp(tsOut, function () {
+					const filename = path.basename(cssFileName, '.css');
+					fs.writeFileSync(
+						`${ tsOut || '.' }/${ filename }.ts`,
+						`/* tslint:disable:object-literal-key-quotes quotemark whitespace */\nexport default ${ JSON.stringify(json) };\n`
+					);
+				});
 			}
 		})
 	]);
-
-	const inputFiles: string[] = globby.sync(root);
 
 	return new Promise((resolve, reject) => {
 		async.each(inputFiles, processFile.bind(null, { root: root, cssOut: cssOut, tsOut: tsOut }, processor), function(err: any) {

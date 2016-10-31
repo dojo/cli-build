@@ -61,8 +61,8 @@ module.exports = {
 		filename: '[name].js'
 	},
 	cssModules: {
-		root: 'src/styles/structural/*.css',
-		cssOut: 'src/styles/structural/_css/',
-		tsOut: 'src/styles/structural/_modules/'
+		root: path.join(basePath, 'src/styles/structural/*.css'),
+		cssOut: path.join(basePath, 'src/styles/structural/_css/'),
+		tsOut: path.join(basePath, 'src/styles/structural/_modules/)'
 	}
 };
