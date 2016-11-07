@@ -67,16 +67,20 @@ export default function modularize(root: string, cssOut: string, tsOut: string):
 
 	const processor: any = postcss([
 		cssModules({
-			getJSON: function(cssFileName: string, json: string) {
+			getJSON: function(cssFileName: string, json: any) {
 				if (!tsOut) {
 					return;
 				}
 
 				mkdirp(tsOut, function () {
 					const filename = path.basename(cssFileName, '.css');
+					const lines = Object.keys(json).map(function (className: string) {
+						return `export const ${ className } = '${ json[className] }'\n`;
+					});
+					lines.unshift(`/* tslint:disable:object-literal-key-quotes quotemark whitespace */\n`);
 					fs.writeFileSync(
 						`${ tsOut || '.' }/${ filename }.ts`,
-						`/* tslint:disable:object-literal-key-quotes quotemark whitespace */\nexport default ${ JSON.stringify(json) };\n`
+						lines.join('')
 					);
 				});
 			}
