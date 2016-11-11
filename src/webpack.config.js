@@ -35,8 +35,8 @@ module.exports = {
 			{ test: /\.js?$/, loader: 'umd-compat-loader' },
 			{ test: /\.html$/, loader: 'html' },
 			{ test: /\.(jpe|jpg|png|woff|woff2|eot|ttf|svg)(\?.*$|$)/, loader: 'file?name=[path][name].[hash:6].[ext]' },
-			{ test: /\.styl$/, loader: ExtractTextPlugin.extract(['css-loader?sourceMap', 'stylus-loader']) },
-			{ test: /\.css$/, loader: 'style-loader!css-loader?modules' },
+			{ test: /src[\\\/]main\.styl$/, loader: ExtractTextPlugin.extract(['css-loader?sourceMap', 'stylus-loader']) },
+			{ test: /structural[\\\/].*\.styl$/, loader: 'style-loader!css-loader?modules!stylus-loader' },
 		]
 	},
 	plugins: [
