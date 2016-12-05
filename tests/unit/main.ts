@@ -38,14 +38,14 @@ describe('main', () => {
 	});
 
 	it('should register supported arguments', () => {
-		const helper = { yargs: { option: sandbox.stub() } };
-		moduleUnderTest.register(helper);
+		const options = sandbox.stub();
+		moduleUnderTest.register(options);
 		assert.deepEqual(
-			helper.yargs.option.firstCall.args,
+			options.firstCall.args,
 			[ 'w', { alias: 'watch', describe: 'watch and serve' } ]
 		);
 		assert.deepEqual(
-			helper.yargs.option.secondCall.args,
+			options.secondCall.args,
 			[ 'p', { alias: 'port', describe: 'port to serve on when using --watch', type: 'number' }],
 		);
 		assert.deepEqual(
