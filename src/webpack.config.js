@@ -5,6 +5,11 @@ const ExtractTextPlugin = require('extract-text-webpack-plugin');
 const path = require('path');
 const basePath = process.cwd();
 const cssModuleIdent = '[name]__[local]__[hash:base64:5]';
+const stylusLoader = ExtractTextPlugin.extract([ 'css-loader?sourceMap', 'stylus-loader?sourceMap' ]);
+const cssLoader = ExtractTextPlugin.extract([
+	`css-loader?modules&sourceMap&localIdentName=${cssModuleIdent}`,
+	'stylus-loader?sourceMap'
+]);
 
 module.exports = {
 	entry: {
@@ -33,24 +38,11 @@ module.exports = {
 		],
 		loaders: [
 			{ test: /src[\\\/].*\.ts?$/, loader: 'umd-compat-loader!ts-loader' },
-			{ test: /\.js?$/, loader: 'umd-compat-loader'  },
+			{ test: /\.js?$/, loader: 'umd-compat-loader' },
 			{ test: /\.html$/, loader: 'html' },
 			{ test: /\.(jpe|jpg|png|woff|woff2|eot|ttf|svg)(\?.*$|$)/, loader: 'file?name=[path][name].[hash:6].[ext]' },
-			{
-				test: /\.styl$/,
-				exclude: /\.module\.styl$/,
-				loader: ExtractTextPlugin.extract([
-					'css-loader?sourceMap',
-					'stylus-loader'
-				])
-			},
-			{
-				test: /\.module\.styl$/,
-				loader: ExtractTextPlugin.extract([
-					`css-loader?modules&sourceMap&importLoaders=1&localIdentName=${cssModuleIdent}`,
-					'stylus-loader'
-				])
-			}
+			{ test: /\.styl$/, exclude: /\.module\.styl$/, loader: stylusLoader },
+			{ test: /\.module\.styl$/, loader: cssLoader }
 		]
 	},
 	plugins: [
