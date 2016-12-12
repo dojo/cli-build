@@ -18,7 +18,7 @@ interface WebpackOptions {
 }
 
 function watch(config: any, options: WebpackOptions, args: BuildArgs): Promise<any> {
-	config.devtool = 'eval-source-map';
+	config.devtool = 'inline-source-map';
 	Object.keys(config.entry).forEach((key) => {
 		config.entry[key].unshift('webpack-dev-server/client?');
 	});
