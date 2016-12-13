@@ -56,5 +56,10 @@ module.exports = {
 	output: {
 		path: path.resolve('./dist'),
 		filename: '[name].js'
+	},
+	cssModules: {
+		root: path.join(basePath, 'src/styles/structural/*.css'),
+		cssOut: path.join(basePath, 'src/styles/structural/_css/'),
+		tsOut: path.join(basePath, 'src/styles/structural/_modules/')
 	}
 };

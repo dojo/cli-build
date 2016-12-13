@@ -1,5 +1,6 @@
 import { Command, Helper } from 'dojo-cli/interfaces';
 import { Argv } from 'yargs';
+import cssModularize from './cssModules';
 const webpack: any = require('webpack');
 const WebpackDevServer: any = require('webpack-dev-server');
 const config: any = require('./webpack.config');
@@ -77,11 +78,16 @@ const command: Command = {
 			}
 		};
 
+		const css = cssModularize(config.cssModules.root, config.cssModules.cssOut, config.cssModules.tsOut);
 		if (args.watch) {
-			return watch(config, options, args);
+			return css.then(() => {
+				return watch(config, options, args);
+			});
 		}
 		else {
-			return compile(config, options);
+			return css.then(() => {
+				return compile(config, options);
+			});
 		}
 	}
 };
