@@ -4,6 +4,9 @@ const HtmlWebpackPlugin = require('html-webpack-plugin');
 const ExtractTextPlugin = require('extract-text-webpack-plugin');
 const BundleAnalyzerPlugin = require('webpack-bundle-analyzer-sunburst').BundleAnalyzerPlugin;
 const path = require('path');
+const CoreLoadPlugin = require('./plugins/CoreLoadPlugin').default;
+const I18nPlugin = require('./plugins/I18nPlugin').default;
+const InjectModulesPlugin = require('./plugins/InjectModulesPlugin').default;
 const basePath = process.cwd();
 
 module.exports = function (args) {
@@ -16,6 +19,11 @@ module.exports = function (args) {
 			{ context: 'src', from: '**/*', ignore: '*.ts' },
 		]),
 		new webpack.optimize.DedupePlugin(),
+		new InjectModulesPlugin({
+			resourcePattern: /dojo-core\/request(\.js)?$/,
+			moduleIds: [ './request/xhr' ]
+		}),
+		new CoreLoadPlugin(),
 		new webpack.optimize.UglifyJsPlugin({ compress: { warnings: false }, exclude: /tests[/]/ }),
 		new HtmlWebpackPlugin ({
 			inject: true,
@@ -82,6 +90,14 @@ module.exports = function (args) {
         }
     };
 
+	if (args.locale) {
+		plugins.push(new I18nPlugin({
+			defaultLocale: args.locale,
+			supportedLocales: args.supportedLocales,
+			messageBundles: args.messagesBundles
+		}));
+	}
+
     if (args.withTests) {
         plugins.push(
             new CopyWebpackPlugin([
@@ -103,4 +119,4 @@ module.exports = function (args) {
         webpackConfig.module.loaders.push({ test: /tests[\\\/].*\.ts?$/, loader: 'umd-compat-loader!ts-loader' });
     }
     return webpackConfig;
-}
+};

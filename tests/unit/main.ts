@@ -49,7 +49,19 @@ describe('main', () => {
 		);
 		assert.deepEqual(
 			helper.yargs.option.thirdCall.args,
-			[ 't', { alias: 'with-tests', describe: 'build tests as well as sources' }],
+			[ 't', { alias: 'with-tests', describe: 'build tests as well as sources' }]
+		);
+		assert.deepEqual(
+			helper.yargs.option.args[3],
+			[ 'locale', { describe: 'The default locale for the application', type: 'string' }],
+		);
+		assert.deepEqual(
+			helper.yargs.option.args[4],
+			[ 'supportedLocales', { describe: 'Any additional locales supported by the application', type: 'array' }]
+		);
+		assert.deepEqual(
+			helper.yargs.option.args[5],
+			[ 'messageBundles', { describe: 'Any message bundles to include in the build', type: 'array' }]
 		);
 	});
 

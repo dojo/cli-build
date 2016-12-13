@@ -37,7 +37,15 @@ export const loaderOptions = {
 		{ name: 'src', location: '_build/src' },
 		{ name: 'tests', location: '_build/tests' },
 		{ name: 'dojo', location: 'node_modules/intern/node_modules/dojo' }
-	]
+	],
+	map: {
+		'src/plugins/InjectModulesPlugin': {
+			'webpack/lib': 'tests/support/webpack'
+		},
+		'src/plugins/I18nPlugin': {
+			'src/plugins/InjectModulesPlugin': 'tests/support/MockPlugin'
+		}
+	}
 };
 
 // Non-functional test suite(s) to run in each browser

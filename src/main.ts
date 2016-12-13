@@ -5,6 +5,9 @@ const WebpackDevServer: any = require('webpack-dev-server');
 const config: any = require('./webpack.config');
 
 interface BuildArgs extends Argv {
+	locale: string;
+	messageBundles: string[];
+	supportedLocales: string[];
 	watch: boolean;
 	port: number;
 }
@@ -69,6 +72,21 @@ const command: Command = {
 		helper.yargs.option('t', {
 			alias: 'with-tests',
 			describe: 'build tests as well as sources'
+		});
+
+		helper.yargs.option('locale', {
+			describe: 'The default locale for the application',
+			type: 'string'
+		});
+
+		helper.yargs.option('supportedLocales', {
+			describe: 'Any additional locales supported by the application',
+			type: 'array'
+		});
+
+		helper.yargs.option('messageBundles', {
+			describe: 'Any message bundles to include in the build',
+			type: 'array'
 		});
 
 		return helper.yargs;
