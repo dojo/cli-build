@@ -1,1 +1,2 @@
+import './loadDojoConfig';
 import './main';

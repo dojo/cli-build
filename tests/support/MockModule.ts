@@ -1,6 +1,8 @@
+import { RootRequire } from 'dojo-interfaces/loader';
 import * as mockery from 'mockery';
 import * as sinon from 'sinon';
 
+declare const require: RootRequire;
 const dojoNodePlugin = 'intern/dojo/node';
 
 function load(modulePath: string): any {
