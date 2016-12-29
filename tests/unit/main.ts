@@ -39,7 +39,7 @@ describe('main', () => {
 
 	it('should register supported arguments', () => {
 		const options = sandbox.stub();
-		moduleUnderTest.register(options);
+		moduleUnderTest.register(null, options);
 		assert.deepEqual(
 			options.firstCall.args,
 			[ 'w', { alias: 'watch', describe: 'watch and serve' } ]
