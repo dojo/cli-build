@@ -1,5 +1,5 @@
 import { Command, Helper, OptionsHelper } from 'dojo-cli/interfaces';
-import { Argv, Options } from 'yargs';
+import { Argv } from 'yargs';
 const webpack: any = require('webpack');
 const WebpackDevServer: any = require('webpack-dev-server');
 const config: any = require('./webpack.config');
