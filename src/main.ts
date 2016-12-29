@@ -1,4 +1,4 @@
-import { Command, Helper } from 'dojo-cli/interfaces';
+import { Command, Helper, OptionsHelper } from 'dojo-cli/interfaces';
 import { Argv, Options } from 'yargs';
 const webpack: any = require('webpack');
 const WebpackDevServer: any = require('webpack-dev-server');
@@ -91,7 +91,7 @@ function compile(config: any, options: WebpackOptions): Promise<any> {
 
 const command: Command = {
 	description: 'create a build of your application',
-	register(options: (key: string, options: Options) => void): void {
+	register(helper: Helper, options: OptionsHelper): void {
 		options('w', {
 			alias: 'watch',
 			describe: 'watch and serve'
