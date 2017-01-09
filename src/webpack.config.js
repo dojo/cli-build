@@ -2,6 +2,7 @@ const webpack = require('webpack');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const ExtractTextPlugin = require('extract-text-webpack-plugin');
+const Config = require('webpack-config').default;
 const BundleAnalyzerPlugin = require('webpack-bundle-analyzer-sunburst').BundleAnalyzerPlugin;
 const path = require('path');
 const basePath = process.cwd();
@@ -9,7 +10,7 @@ const basePath = process.cwd();
 module.exports = function (args) {
 	args = args || {};
 
-	let plugins = [
+	const sourcePlugins = [
 		new webpack.ContextReplacementPlugin(/dojo-app[\\\/]lib/, { test: () => false }),
 		new ExtractTextPlugin('main.css'),
 		new CopyWebpackPlugin([
@@ -25,55 +26,59 @@ module.exports = function (args) {
 	];
 
 	if (!args.watch) {
-		plugins.push(new BundleAnalyzerPlugin({
+		sourcePlugins.push(new BundleAnalyzerPlugin({
 			analyzerMode: 'static',
 			openAnalyzer: false,
 			reportType: 'sunburst'
 		}));
 	}
 
-	const webpackConfigs = [{
+	const baseConfig = function() {
+        return new Config().merge({
+            devtool: 'source-map',
+            resolve: {
+                root: [ basePath ],
+                extensions: ['', '.ts', '.tsx', '.js'],
+                alias: {
+                    rxjs: '@reactivex/rxjs/dist/amd'
+                }
+            },
+            resolveLoader: {
+                root: [ path.join(__dirname, 'node_modules') ]
+            },
+            module: {
+                preLoaders: [
+                    {
+                        test: /dojo-.*\.js$/,
+                        loader: 'source-map-loader'
+                    }
+                ],
+                loaders: [
+                    { test: /src[\\\/].*\.ts?$/, loader: 'umd-compat-loader!ts-loader' },
+                    { test: /\.js?$/, loader: 'umd-compat-loader' },
+                    { test: /\.html$/, loader: 'html' },
+                    { test: /\.(jpe|jpg|png|woff|woff2|eot|ttf|svg)(\?.*$|$)/, loader: 'file?name=[path][name].[hash:6].[ext]' },
+                    { test: /\.styl$/, loader: ExtractTextPlugin.extract(['css-loader?sourceMap', 'stylus-loader']) },
+                    { test: /\.css$/, loader: 'style-loader!css-loader?modules' },
+                ]
+            }
+        });
+    };
+	const webpackConfigs = [ baseConfig().merge({
         entry: {
             'src/main': [
                 path.join(basePath, 'src/main.styl'),
                 path.join(basePath, 'src/main.ts')
             ]
         },
-        devtool: 'source-map',
-        resolve: {
-            root: [ basePath ],
-            extensions: ['', '.ts', '.tsx', '.js'],
-            alias: {
-                rxjs: '@reactivex/rxjs/dist/amd'
-            }
-        },
-        resolveLoader: {
-            root: [ path.join(__dirname, 'node_modules') ]
-        },
-        module: {
-            preLoaders: [
-                {
-                    test: /dojo-.*\.js$/,
-                    loader: 'source-map-loader'
-                }
-            ],
-            loaders: [
-                { test: /src[\\\/].*\.ts?$/, loader: 'umd-compat-loader!ts-loader' },
-                { test: /\.js?$/, loader: 'umd-compat-loader' },
-                { test: /\.html$/, loader: 'html' },
-                { test: /\.(jpe|jpg|png|woff|woff2|eot|ttf|svg)(\?.*$|$)/, loader: 'file?name=[path][name].[hash:6].[ext]' },
-                { test: /\.styl$/, loader: ExtractTextPlugin.extract(['css-loader?sourceMap', 'stylus-loader']) },
-                { test: /\.css$/, loader: 'style-loader!css-loader?modules' },
-            ]
-        },
-        plugins: plugins,
+        plugins: sourcePlugins,
         output: {
             path: path.resolve('./dist'),
             filename: '[name].js'
         }
-    }];
+    }) ];
 	if (args.withTests) {
-        webpackConfigs.push({
+        webpackConfigs.push(baseConfig().merge({
             externals: [
                 function (context, request, callback) {
                     if (/^intern[!\/]/.test(request)) {
@@ -86,36 +91,6 @@ module.exports = function (args) {
                 'unit/all': 'tests/unit/all.ts',
                 'functional/all': 'tests/functional/all.ts'
             },
-            devtool: 'source-map',
-            resolve: {
-                root: [basePath],
-                extensions: ['', '.ts', '.tsx', '.js'],
-                alias: {
-                    rxjs: '@reactivex/rxjs/dist/amd'
-                }
-            },
-            resolveLoader: {
-                root: [path.join(__dirname, 'node_modules')]
-            },
-            module: {
-                preLoaders: [
-                    {
-                        test: /dojo-.*\.js$/,
-                        loader: 'source-map-loader'
-                    }
-                ],
-                loaders: [
-                    {test: /tests[\\\/].*\.ts?$/, loader: 'umd-compat-loader!ts-loader'},
-                    {test: /\.js?$/, loader: 'umd-compat-loader'},
-                    {test: /\.html$/, loader: 'html'},
-                    {
-                        test: /\.(jpe|jpg|png|woff|woff2|eot|ttf|svg)(\?.*$|$)/,
-                        loader: 'file?name=[path][name].[hash:6].[ext]'
-                    },
-                    {test: /\.styl$/, loader: ExtractTextPlugin.extract(['css-loader?sourceMap', 'stylus-loader'])},
-                    {test: /\.css$/, loader: 'style-loader!css-loader?modules'},
-                ]
-            },
             plugins: [
                 new CopyWebpackPlugin([
                     {context: 'tests', from: '**/*', ignore: '*.ts'},
@@ -126,7 +101,7 @@ module.exports = function (args) {
                 path: path.resolve('./_build/tests'),
                 filename: '[name].js'
             }
-        });
+        }));
     }
     return webpackConfigs;
 }
