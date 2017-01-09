@@ -17,14 +17,16 @@
     "test": "grunt test"
   },
   "devDependencies": {
+    "@types/node": "0.0.3",
     "codecov.io": "0.1.6",
     "dojo-cli": "^2.0.0-alpha.3",
+    "dojo-interfaces": "^2.0.0-alpha.8",
     "dojo-loader": ">=2.0.0-beta.7",
     "dts-generator": "~1.7.0",
     "glob": "^7.0.3",
     "grunt": "~1.0.1",
-    "grunt-tslint": "^3.0.0",
     "grunt-dojo2": "^2.0.0-beta.18",
+    "grunt-tslint": "^3.0.0",
     "intern": "~3.3.2",
     "istanbul": "^0.4.3",
     "mockery": "^1.7.0",
