@@ -83,11 +83,23 @@ module.exports = function (args) {
     };
 
     if (args.withTests) {
-        plugins.push(new CopyWebpackPlugin([
-            {context: 'tests', from: '**/*', ignore: '*.ts', to: '../_build/tests' },
-        ]));
-        webpackConfig.entry['../_build/tests/unit/all'] = 'tests/unit/all.ts';
-        webpackConfig.entry['../_build/tests/functional/all'] = 'tests/functional/all.ts';
+        plugins.push(
+            new CopyWebpackPlugin([
+                {context: 'tests', from: '**/*', ignore: '*.ts', to: '../_build/tests' },
+            ]),
+            new HtmlWebpackPlugin ({
+                inject: true,
+                chunks: [ '../_build/src/main' ],
+                template: 'src/index.html',
+                filename: '../_build/src/index.html'
+            })
+        );
+        webpackConfig.entry['../_build/tests/unit/all'] = path.join(basePath, 'tests/unit/all.ts');
+        webpackConfig.entry['../_build/tests/functional/all'] = path.join(basePath, 'tests/functional/all.ts');
+        webpackConfig.entry['../_build/src/main'] = [
+            path.join(basePath, 'src/main.styl'),
+            path.join(basePath, 'src/main.ts')
+        ];
         webpackConfig.module.loaders.push({ test: /tests[\\\/].*\.ts?$/, loader: 'umd-compat-loader!ts-loader' });
     }
     return webpackConfig;
