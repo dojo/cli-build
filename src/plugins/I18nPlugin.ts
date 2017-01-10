@@ -122,7 +122,7 @@ export default class DojoI18nPlugin {
 	apply(this: DojoI18nPlugin, compiler: any) {
 		const { defaultLocale, messageBundles, supportedLocales } = this;
 
-		compiler.apply(new NormalModuleReplacementPlugin(/\/cldr\/load$/, 'dojo-i18n/cldr/load-webpack'));
+		compiler.apply(new NormalModuleReplacementPlugin(/\/cldr\/load$/, 'dojo-i18n/cldr/load/webpack'));
 
 		if (supportedLocales && messageBundles && messageBundles.length) {
 			messageBundles.forEach((bundle: string) => {
@@ -139,7 +139,7 @@ export default class DojoI18nPlugin {
 
 		compiler.plugin('compilation', (compilation: any) => {
 			compilation.moduleTemplate.plugin('module', (source: any, module: any) => {
-				if (/\/cldr\/load-webpack/.test(module.userRequest)) {
+				if (/\/cldr\/load\/webpack/.test(module.userRequest)) {
 					const cldrData = getCldrData([ defaultLocale ].concat(supportedLocales || []));
 					return new ConcatSource(`var __cldrData__ = ${JSON.stringify(cldrData)}`, '\n', source);
 				}

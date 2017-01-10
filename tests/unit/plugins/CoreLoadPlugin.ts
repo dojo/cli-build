@@ -45,7 +45,7 @@ describe('core-load', () => {
 		const replacementPlugin = compiler.applied[0];
 		assert.instanceOf(replacementPlugin, NormalModuleReplacementPlugin);
 		assert.strictEqual(replacementPlugin.resourceRegExp.toString(), '/dojo-core\\/load\\.js/');
-		assert.strictEqual(replacementPlugin.newResource, 'dojo-core/load-webpack');
+		assert.strictEqual(replacementPlugin.newResource, 'dojo-core/load/webpack');
 	});
 
 	it('should inject a custom require into the issuer source', () => {
