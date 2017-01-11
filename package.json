@@ -1,5 +1,5 @@
 {
-  "name": "dojo-cli-build-webpack",
+  "name": "@dojo/cli-build-webpack",
   "version": "2.0.0-pre",
   "description": "build a dojo 2 application",
   "private": true,
@@ -18,8 +18,8 @@
   },
   "devDependencies": {
     "codecov.io": "0.1.6",
-    "dojo-cli": "^2.0.0-alpha.3",
-    "dojo-loader": ">=2.0.0-beta.7",
+    "@dojo/cli": "2.0.0-alpha.8",
+    "@dojo/loader": "2.0.0-beta.8",
     "dts-generator": "~1.7.0",
     "glob": "^7.0.3",
     "grunt": "~1.0.1",
