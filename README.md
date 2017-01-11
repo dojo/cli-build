@@ -1,9 +1,9 @@
-# dojo-cli-build
+# @dojo/cli-build
 
 <!-- TODO: change and uncomment
 [![Build Status](https://travis-ci.org/dojo/cli-build.svg?branch=master)](https://travis-ci.org/dojo/cli-build)
 [![codecov](https://codecov.io/gh/dojo/cli-build/branch/master/graph/badge.svg)](https://codecov.io/gh/dojo/cli-build)
-[![npm version](https://badge.fury.io/js/dojo-cli-build.svg)](http://badge.fury.io/js/dojo-cli-build)
+[![npm version](https://badge.fury.io/js/@dojo/cli-build.svg)](http://badge.fury.io/js/@dojo/cli-build)
 -->
 
 The official dojo 2 build command.
