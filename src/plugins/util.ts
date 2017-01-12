@@ -26,3 +26,17 @@ const extensionPattern = /\.[a-z0-9]+$/i;
 export function hasExtension(path: string): boolean {
 	return extensionPattern.test(path);
 }
+
+/**
+ * Resolve a module ID to its absolute file path.
+ *
+ * @param mid
+ * The module ID to resolve.
+ *
+ * @return
+ * The resolved module file path.
+ */
+export function resolveMid(mid: string): string {
+	const rootRequire: any = require;
+	return typeof rootRequire.toUrl === 'function' ? rootRequire.toUrl(mid) : rootRequire.resolve(mid);
+}

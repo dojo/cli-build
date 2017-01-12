@@ -8,6 +8,7 @@ import Compilation = require('../../support/webpack/Compilation');
 import Compiler = require('../../support/webpack/Compiler');
 import NormalModule = require('../../support/webpack/NormalModule');
 import LoadPlugin from '../../../src/plugins/CoreLoadPlugin';
+import { resolveMid } from '../../../src/plugins/util';
 
 if (typeof __dirname === 'undefined') {
 	(<any> global).__dirname = path.join(process.cwd(), 'src', 'plugins', 'core-load');
@@ -45,7 +46,7 @@ describe('core-load', () => {
 		const replacementPlugin = compiler.applied[0];
 		assert.instanceOf(replacementPlugin, NormalModuleReplacementPlugin);
 		assert.strictEqual(replacementPlugin.resourceRegExp.toString(), '/dojo-core\\/load\\.js/');
-		assert.strictEqual(replacementPlugin.newResource, 'dojo-core/load/webpack');
+		assert.strictEqual(replacementPlugin.newResource, resolveMid('dojo-core/load/webpack'));
 	});
 
 	it('should inject a custom require into the issuer source', () => {

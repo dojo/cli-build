@@ -82,6 +82,7 @@ module.exports = function (args) {
             loaders: [
                 { test: /src[\\\/].*\.ts?$/, loader: 'umd-compat-loader!ts-loader' },
                 { test: /\.js?$/, loader: 'umd-compat-loader' },
+				{ test: /globalize(\/|$)/, loader: 'imports-loader?define=>false' },
                 { test: /\.html$/, loader: 'html' },
                 { test: /\.(jpe|jpg|png|woff|woff2|eot|ttf|svg)(\?.*$|$)/, loader: 'file?name=[path][name].[hash:6].[ext]' },
                 { test: /\.styl$/, loader: ExtractTextPlugin.extract(['css-loader?sourceMap', 'stylus-loader']) },

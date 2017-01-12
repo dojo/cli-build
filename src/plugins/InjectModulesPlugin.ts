@@ -14,7 +14,7 @@ export interface InjectModulesPluginOptions {
 
 	/**
 	 * The IDs for modules that should be injected into the build. If an array is provided, then the plugin's
-	 * `context` is used as the context. An object of contexts to module IDs can also be provided.IDs can be
+	 * `context` is used as the context. An object of contexts to module IDs can also be provided. IDs can be
 	 * either relative or absolute. If an ID is relative, then it will be resolved relative to the issuer; if
 	 * absolute, it will be resolved relative to the context.
 	 */

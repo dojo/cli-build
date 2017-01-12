@@ -1,7 +1,7 @@
 import * as path from 'path';
 import * as ConcatSource from 'webpack-core/lib/ConcatSource';
 import * as NormalModuleReplacementPlugin from 'webpack/lib/NormalModuleReplacementPlugin';
-import { getBasePath } from './util';
+import { getBasePath, resolveMid } from './util';
 
 interface ModuleIdMap {
 	[id: string]: any;
@@ -70,7 +70,7 @@ export default class DojoLoadPlugin {
 		const bundleLoader = /bundle.*\!/;
 		const issuers: string[] = [];
 
-		compiler.apply(new NormalModuleReplacementPlugin(/dojo-core\/load\.js/, 'dojo-core/load/webpack'));
+		compiler.apply(new NormalModuleReplacementPlugin(/dojo-core\/load\.js/, resolveMid('dojo-core/load/webpack')));
 
 		compiler.parser.plugin('expression require', function (this: any): boolean {
 			issuers.push(getBasePath(this.state.current.userRequest));
