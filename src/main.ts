@@ -6,8 +6,8 @@ const config: any = require('./webpack.config');
 
 interface BuildArgs extends Argv {
 	locale: string;
-	messageBundles: string[];
-	supportedLocales: string[];
+	messageBundles: string | string[];
+	supportedLocales: string | string[];
 	watch: boolean;
 	port: number;
 }
@@ -18,6 +18,26 @@ interface WebpackOptions {
 		colors: boolean
 		chunks: boolean
 	};
+}
+
+function getConfigArgs(args: BuildArgs): Partial<BuildArgs> {
+	const { locale, messageBundles, supportedLocales, watch } = args;
+	const options: Partial<BuildArgs> = Object.keys(args).reduce((options: Partial<BuildArgs>, key: string) => {
+		if (key !== 'messageBundles' && key !== 'supportedLocales') {
+			options[key] = args[key];
+		}
+		return options;
+	}, Object.create(null));
+
+	if (messageBundles) {
+		options.messageBundles = Array.isArray(messageBundles) ? messageBundles : [ messageBundles ];
+	}
+
+	if (supportedLocales) {
+		options.supportedLocales = Array.isArray(supportedLocales) ? supportedLocales : [ supportedLocales ];
+	}
+
+	return options;
 }
 
 function watch(config: any, options: WebpackOptions, args: BuildArgs): Promise<any> {
@@ -99,12 +119,13 @@ const command: Command = {
 				chunks: false
 			}
 		};
+		const configArgs = getConfigArgs(args);
 
 		if (args.watch) {
-			return watch(config(args), options, args);
+			return watch(config(configArgs), options, args);
 		}
 		else {
-			return compile(config(args), options);
+			return compile(config(configArgs), options);
 		}
 	}
 };
