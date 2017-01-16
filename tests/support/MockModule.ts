@@ -9,9 +9,9 @@ function load(modulePath: string): any {
 }
 
 function unload(modulePath: string): void {
-	const abs = require.toUrl(modulePath);
-	const plugin = require.toAbsMid(dojoNodePlugin);
-	require.undef(`${plugin}!${abs}`);
+	const abs = (<any> require).toUrl(modulePath);
+	const plugin = (<any> require).toAbsMid(dojoNodePlugin);
+	(<any> require).undef(`${plugin}!${abs}`);
 }
 
 function resolvePath(basePath: string, modulePath: string): string {
@@ -69,7 +69,7 @@ export default class MockModule {
 
 	getModuleUnderTest(): any {
 		mockery.enable({ warnOnUnregistered: false });
-		const allowable = require.toUrl(this.moduleUnderTestPath) + '.js';
+		const allowable = (<any> require).toUrl(this.moduleUnderTestPath) + '.js';
 		mockery.registerAllowable(allowable, true);
 		return load(this.moduleUnderTestPath);
 	}
