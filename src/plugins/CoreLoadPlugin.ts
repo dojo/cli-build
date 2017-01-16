@@ -70,7 +70,7 @@ export default class DojoLoadPlugin {
 		const bundleLoader = /bundle.*\!/;
 		const issuers: string[] = [];
 
-		compiler.apply(new NormalModuleReplacementPlugin(/@dojo/core\/load\.js/, resolveMid('@dojo/core/load/webpack')));
+		compiler.apply(new NormalModuleReplacementPlugin(/@dojo\/core\/load\.js/, resolveMid('@dojo/core/load/webpack')));
 
 		compiler.parser.plugin('expression require', function (this: any): boolean {
 			issuers.push(getBasePath(this.state.current.userRequest));
