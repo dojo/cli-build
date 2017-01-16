@@ -1,5 +1,5 @@
-import { CldrData, CldrDataResponse, localeCldrPaths, supplementalCldrPaths } from 'dojo-i18n/cldr/load';
-import { Require } from 'dojo-interfaces/loader';
+import { CldrData, CldrDataResponse, localeCldrPaths, supplementalCldrPaths } from '@dojo/i18n/cldr/load';
+import { Require } from '@dojo/interfaces/loader';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as ConcatSource from 'webpack-core/lib/ConcatSource';

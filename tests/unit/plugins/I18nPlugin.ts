@@ -1,4 +1,4 @@
-import loadCldrData, { CldrDataResponse } from 'dojo-i18n/cldr/load';
+import loadCldrData, { CldrDataResponse } from '@dojo/i18n/cldr/load';
 import { afterEach, describe, it } from 'intern!bdd';
 import * as assert from 'intern/chai!assert';
 import * as NormalModuleReplacementPlugin from 'webpack/lib/NormalModuleReplacementPlugin';
