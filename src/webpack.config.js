@@ -106,6 +106,11 @@ module.exports = function (args) {
 				{
 					test: /dojo-.*\.js$/,
 					loader: 'source-map-loader'
+				},
+				{
+					test: /\.css$/,
+					exclude: /node_modules/,
+					loader: 'typed-css-modules'
 				}
 			],
 			loaders: [
