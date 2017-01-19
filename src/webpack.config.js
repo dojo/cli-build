@@ -103,15 +103,7 @@ module.exports = function (args) {
 		},
 		module: {
 			preLoaders: [
-				{
-					test: /dojo-.*\.js$/,
-					loader: 'source-map-loader'
-				},
-				{
-					test: /\.css$/,
-					exclude: /node_modules/,
-					loader: 'typed-css-modules'
-				}
+				{ test: /dojo-.*\.js$/, loader: 'source-map-loader' }
 			],
 			loaders: [
 				{ test: /src[\\\/].*\.ts?$/, loader: 'umd-compat-loader!ts-loader' },
