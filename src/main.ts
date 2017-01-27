@@ -91,7 +91,7 @@ function compile(config: any, options: WebpackOptions): Promise<any> {
 
 const command: Command = {
 	description: 'create a build of your application',
-	register(helper: Helper, options: OptionsHelper): void {
+	register(options: OptionsHelper): void {
 		options('w', {
 			alias: 'watch',
 			describe: 'watch and serve'
