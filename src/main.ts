@@ -16,10 +16,7 @@ interface WebpackOptions {
 	compress: boolean;
 	stats: {
 		colors: boolean
-		chunks: boolean,
-		errorDetails: boolean,
-		reasons: boolean,
-		errors: boolean
+		chunks: boolean
 	};
 }
 
@@ -119,10 +116,7 @@ const command: Command = {
 			compress: true,
 			stats: {
 				colors: true,
-				chunks: false,
-				errorDetails: true,
-				reasons: true,
-				errors: true
+				chunks: false
 			}
 		};
 		const configArgs = getConfigArgs(args);
