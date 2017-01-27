@@ -1,7 +1,5 @@
 import { describe, it } from 'intern!bdd';
 import * as assert from 'intern/chai!assert';
-// import * as path from 'path';
-// import * as sinon from 'sinon';
 import loader from '../../../src/loaders/css-module-decorator-loader/loader';
 
 describe('css-module-decorator-loader', () => {
