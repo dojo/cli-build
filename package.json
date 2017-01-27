@@ -62,6 +62,7 @@
     "postcss-cssnext": "^2.9.0",
     "postcss-import": "^9.0.0",
     "postcss-loader": "^1.2.1",
+    "postcss-modules": "^0.6.4",
     "source-map-loader": "zerkalica/source-map-loader#6c8872f",
     "style-loader": "^0.13.1",
     "ts-loader": "^1.0.0",
