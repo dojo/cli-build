@@ -49,19 +49,19 @@ describe('main', () => {
 			[ 'p', { alias: 'port', describe: 'port to serve on when using --watch', type: 'number' }],
 		);
 		assert.deepEqual(
-			helper.yargs.option.thirdCall.args,
+			options.thirdCall.args,
 			[ 't', { alias: 'with-tests', describe: 'build tests as well as sources' }]
 		);
 		assert.deepEqual(
-			helper.yargs.option.args[3],
+			options.args[3],
 			[ 'locale', { describe: 'The default locale for the application', type: 'string' }],
 		);
 		assert.deepEqual(
-			helper.yargs.option.args[4],
+			options.args[4],
 			[ 'supportedLocales', { describe: 'Any additional locales supported by the application', type: 'array' }]
 		);
 		assert.deepEqual(
-			helper.yargs.option.args[5],
+			options.args[5],
 			[ 'messageBundles', { describe: 'Any message bundles to include in the build', type: 'array' }]
 		);
 	});
