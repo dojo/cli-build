@@ -7,12 +7,12 @@ export default function (this: any, content: string, map?: any): string {
 
 	if (matches && matches.length > 0) {
 		const localExports = JSON.parse(matches[1]);
-		const pathName = basename(this.resourcePath, '.css');
+		const key = basename(this.resourcePath, '.css');
 
 		const output = {
 			default: {
 				classes: localExports,
-				path: pathName
+				key
 			}
 		};
 
