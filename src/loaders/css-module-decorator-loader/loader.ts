@@ -7,13 +7,12 @@ export default function (this: any, content: string, map?: any): string {
 
 	if (matches && matches.length > 0) {
 		const localExports = JSON.parse(matches[1]);
+		const themeKey = ' _key';
 		const key = basename(this.resourcePath, '.css');
+		localExports[themeKey] = key;
 
 		const output = {
-			default: {
-				classes: localExports,
-				key
-			}
+			default: localExports
 		};
 
 		response = content.replace(localsRexExp, `exports.locals = ${JSON.stringify(output)};`);
