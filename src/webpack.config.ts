@@ -134,7 +134,7 @@ module.exports = function (args: any) {
 		devtool: 'source-map',
 		resolve: {
 			root: [ basePath ],
-			extensions: ['', '.ts', '.js', '.css.js']
+			extensions: ['', '.ts', '.js']
 		},
 		resolveLoader: {
 			root: [
