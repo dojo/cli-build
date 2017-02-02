@@ -1,4 +1,4 @@
-import { Command, Helper } from '@dojo/cli/interfaces';
+import { Command, Helper, OptionsHelper } from '@dojo/cli/interfaces';
 import { Argv } from 'yargs';
 const webpack: any = require('webpack');
 const WebpackDevServer: any = require('webpack-dev-server');
@@ -77,39 +77,37 @@ function compile(config: any, options: WebpackOptions): Promise<any> {
 
 const command: Command = {
 	description: 'create a build of your application',
-	register(helper: Helper) {
-		helper.yargs.option('w', {
+	register(options: OptionsHelper): void {
+		options('w', {
 			alias: 'watch',
 			describe: 'watch and serve'
 		});
 
-		helper.yargs.option('p', {
+		options('p', {
 			alias: 'port',
 			describe: 'port to serve on when using --watch',
 			type: 'number'
 		});
 
-		helper.yargs.option('t', {
+		options('t', {
 			alias: 'with-tests',
 			describe: 'build tests as well as sources'
 		});
 
-		helper.yargs.option('locale', {
+		options('locale', {
 			describe: 'The default locale for the application',
 			type: 'string'
 		});
 
-		helper.yargs.option('supportedLocales', {
+		options('supportedLocales', {
 			describe: 'Any additional locales supported by the application',
 			type: 'array'
 		});
 
-		helper.yargs.option('messageBundles', {
+		options('messageBundles', {
 			describe: 'Any message bundles to include in the build',
 			type: 'array'
 		});
-
-		return helper.yargs;
 	},
 	run(helper: Helper, args: BuildArgs) {
 		const options: WebpackOptions = {
