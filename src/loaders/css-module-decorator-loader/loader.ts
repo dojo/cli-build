@@ -11,11 +11,7 @@ export default function (this: any, content: string, map?: any): string {
 		const key = basename(this.resourcePath, '.css');
 		localExports[themeKey] = key;
 
-		const output = {
-			default: localExports
-		};
-
-		response = content.replace(localsRexExp, `exports.locals = ${JSON.stringify(output)};`);
+		response = content.replace(localsRexExp, `exports.locals = ${JSON.stringify(localExports)};`);
 	}
 
 	return response;

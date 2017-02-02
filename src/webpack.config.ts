@@ -119,7 +119,7 @@ module.exports = function (args: any) {
 		devtool: 'source-map',
 		resolve: {
 			root: [ basePath ],
-			extensions: ['', '.ts', '.js']
+			extensions: ['', '.ts', '.js', '.css.js']
 		},
 		resolveLoader: {
 			root: [
@@ -138,7 +138,7 @@ module.exports = function (args: any) {
 				{ test: /\.html$/, loader: 'html' },
 				{ test: /\.css$/, exclude: /src[\\\/].*/, loader: cssLoader },
 				{ test: /src[\\\/].*\.css?$/, loader: cssModuleLoader },
-				{ test: /styles\/.*\.js$/, exclude: /src[\\\/].*/, loader: 'json-css-module-loader' },
+				{ test: /@dojo[\\\/].*styles\/.*\.js$/, exclude: /src[\\\/].*/, loader: 'json-css-module-loader' },
 				...includeWhen(args.withTests, (args: any) => {
 					return [
 						{ test: /tests[\\\/].*\.ts?$/, loader: 'umd-compat-loader!ts-loader' }

@@ -15,7 +15,7 @@ describe('css-module-decorator-loader', () => {
 		const content = `exports.locals = { "hello": "world" };`;
 
 		const result = loader.bind({ resourcePath: 'testFile.css' })(content);
-		assert.equal(result, 'exports.locals = {"default":{"hello":"world"," _key":"testFile"}};');
+		assert.equal(result, 'exports.locals = {"hello":"world"," _key":"testFile"};');
 	});
 
 	it('should wrap multi line local exports with decorator', () => {
@@ -25,6 +25,6 @@ describe('css-module-decorator-loader', () => {
 		};`;
 
 		const result = loader.bind({ resourcePath: 'testFile.css' })(content);
-		assert.equal(result, 'exports.locals = {"default":{"hello":"world","foo":"bar"," _key":"testFile"}};');
+		assert.equal(result, 'exports.locals = {"hello":"world","foo":"bar"," _key":"testFile"};');
 	});
 });
