@@ -174,6 +174,14 @@ module.exports = function (args: any) {
 				path.join(__dirname, 'loaders')
 			]
 		},
+		imageWebpackLoader: {
+			mozjpeg: {
+				quality: 65
+			},
+			pngquant: {
+				quality: '65-90'
+			}
+		},
 		module: {
 			preLoaders: [
 				{ test: /@dojo\/.*\.js$/, loader: 'source-map-loader' }
@@ -185,6 +193,7 @@ module.exports = function (args: any) {
 				...includeWhen(!args.element, (args: any) => {
 					return [ { test: /\.html$/, loader: 'html' } ];
 				}),
+				{ test: /.*\.(gif|png|jpe?g|svg)$/i, loader: 'file?hash=sha512&digest=hex&name=[hash:base64:8].[ext]!image-webpack' },
 				{ test: /\.css$/, exclude: /src[\\\/].*/, loader: cssLoader },
 				{ test: /src[\\\/].*\.css?$/, loader: cssModuleLoader },
 				{ test: /\.css.js$/, exclude: /src[\\\/].*/, loaders: ['json-css-module-loader'] },
