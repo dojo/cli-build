@@ -66,6 +66,7 @@
     "source-map-loader": "bryanforbes/source-map-loader#463701b",
     "style-loader": "^0.13.1",
     "ts-loader": "^2.0.0",
+    "typescript": "^2.1.5",
     "umd-compat-loader": "^1.0.1",
     "webpack": "^2.2.1",
     "webpack-bundle-analyzer-sunburst": "^1.2.0",
