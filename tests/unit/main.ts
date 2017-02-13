@@ -64,6 +64,14 @@ describe('main', () => {
 			options.args[5],
 			[ 'messageBundles', { describe: 'Any message bundles to include in the build', type: 'array' }]
 		);
+		assert.deepEqual(
+			options.args[6],
+			[ 'element', { describe: 'Path to a custom element descriptor factory', type: 'string' }]
+		);
+		assert.deepEqual(
+			options.args[7],
+			[ 'elementPrefix', { describe: 'Output file for custom element', type: 'string' }]
+		);
 	});
 
 	it('should run compile and log results on success', () => {
