@@ -178,7 +178,7 @@ module.exports = function (args: any) {
 			extensions: ['.ts', '.js']
 		},
 		resolveLoader: {
-			root: path.join(__dirname, 'loaders')
+			modules: [ path.join(__dirname, 'loaders'), 'node_modules' ]
 		},
 		module: {
 			rules: [
