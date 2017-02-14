@@ -62,7 +62,31 @@ describe('core-load', () => {
 		})[0];
 
 		assert.instanceOf(source, ConcatSource, 'A new `ConcatSource` is created.');
-		assert.strictEqual(source.source(), `var require = function () { return '/root/path/src/module'; };\n`,
+		assert.strictEqual(source.source(), `var require = (function () {
+						var globalObject = (function () {
+							if (typeof window !== 'undefined') {
+								// Browsers
+								return window;
+							}
+							else if (typeof global !== 'undefined') {
+								// Node
+								return global;
+							}
+							else if (typeof self !== 'undefined') {
+								// Web workers
+								return self;
+							}
+							return {};
+						})();
+						var toUrl = globalObject.require && globalObject.require.toUrl
+						&& globalObject.require.toUrl.bind(globalObject.require);
+						var toAbsMid = globalObject.require && globalObject.require.toAbsMid
+						&& globalObject.require.toAbsMid.bind(globalObject.require);
+						var newRequire = function () { return '/root/path/src/module'; }; 
+						newRequire.toUrl = toUrl;
+						newRequire.toAbsMid = toAbsMid;
+						return newRequire;
+					})();\n`,
 			'A custom `require` function is injected into the source.');
 	});
 

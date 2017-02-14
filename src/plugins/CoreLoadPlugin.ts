@@ -83,7 +83,31 @@ export default class DojoLoadPlugin {
 			compilation.moduleTemplate.plugin('module', (source: any, module: any) => {
 				if (module.meta && module.meta.isPotentialLoad) {
 					const path = stripPath(basePath, module.userRequest);
-					const require = `var require = function () { return '${path}'; };`;
+					const require = `var require = (function () {
+						var globalObject = (function () {
+							if (typeof window !== 'undefined') {
+								// Browsers
+								return window;
+							}
+							else if (typeof global !== 'undefined') {
+								// Node
+								return global;
+							}
+							else if (typeof self !== 'undefined') {
+								// Web workers
+								return self;
+							}
+							return {};
+						})();
+						var toUrl = globalObject.require && globalObject.require.toUrl
+						&& globalObject.require.toUrl.bind(globalObject.require);
+						var toAbsMid = globalObject.require && globalObject.require.toAbsMid
+						&& globalObject.require.toAbsMid.bind(globalObject.require);
+						var newRequire = function () { return '${path}'; }; 
+						newRequire.toUrl = toUrl;
+						newRequire.toAbsMid = toAbsMid;
+						return newRequire;
+					})();`;
 					return new ConcatSource(require, '\n', source);
 				}
 				const load = idMap['@dojo/core/load'] || { id: null };
