@@ -1,5 +1,5 @@
 import * as path from 'path';
-import * as ConcatSource from 'webpack-core/lib/ConcatSource';
+import * as ConcatSource from 'webpack-sources/lib/ConcatSource';
 import * as NormalModuleReplacementPlugin from 'webpack/lib/NormalModuleReplacementPlugin';
 import { getBasePath, resolveMid } from './util';
 

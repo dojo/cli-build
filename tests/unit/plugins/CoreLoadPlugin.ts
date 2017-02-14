@@ -2,7 +2,7 @@ import { describe, it } from 'intern!bdd';
 import * as assert from 'intern/chai!assert';
 import * as path from 'path';
 // import * as sinon from 'sinon';
-import * as ConcatSource from 'webpack-core/lib/ConcatSource';
+import * as ConcatSource from 'webpack-sources/lib/ConcatSource';
 import * as NormalModuleReplacementPlugin from 'webpack/lib/NormalModuleReplacementPlugin';
 import Compilation = require('../../support/webpack/Compilation');
 import Compiler = require('../../support/webpack/Compiler');
