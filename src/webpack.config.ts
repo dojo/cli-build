@@ -182,7 +182,7 @@ module.exports = function (args: any) {
 		},
 		module: {
 			rules: [
-				{ test: /@dojo\/.*\.js$/, enforce: 'pre', loader: 'source-map-loader' },
+				{ test: /@dojo\/.*\.js$/, enforce: 'pre', loader: 'source-map-loader', options: { includeModulePaths: true } },
 				{
 					test: /src[\\\/].*\.ts?$/,
 					use: [
