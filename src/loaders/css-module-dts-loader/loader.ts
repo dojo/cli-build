@@ -11,8 +11,10 @@ const creator: any = new DtsCreator({
 async function generateDTSFile(filePath: string, filePaths: string[]) {
 	const content = await creator.create(filePath);
 	await content.writeFile();
-	console.log('PRELOADER -> written DTS' + filePath);
-	// filePaths.push(filePath + '.d.ts');
+	// console.log('PRELOADER -> written DTS' + filePath);
+
+	// emit file here
+	filePaths.push(filePath + '.d.ts');
 }
 
 async function checkNodeForCSSImport(node: ts.Node, filePaths: string[]): Promise<string | void> {
@@ -63,8 +65,8 @@ export default async function (this: any, content: string, sourceMap?: any): Pro
 	switch (type) {
 		case fileType.css:
 			console.log('PRELOADER -> CSS: ' + this.resourcePath);
-			generateDTSFile(this.resourcePath, filePaths);
-			// this.addDependency(this.resourcePath + '.d.ts');
+			// generateDTSFile(this.resourcePath, filePaths);
+			this.addDependency(this.resourcePath + '.d.ts');
 
 			break;
 		case fileType.ts:
@@ -73,6 +75,8 @@ export default async function (this: any, content: string, sourceMap?: any): Pro
 			filePaths = await findCSSImports(sourceFile);
 
 			filePaths.forEach((filePath) => {
+				// check modified date
+				// if css file not cached and not modified don't addDependency
 				this.addDependency(filePath);
 			});
 
