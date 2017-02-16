@@ -1,4 +1,5 @@
-import { CldrData, CldrDataResponse, localeCldrPaths, supplementalCldrPaths } from '@dojo/i18n/cldr/load';
+import { deepAssign } from '@dojo/core/lang';
+import { CldrData } from '@dojo/i18n/cldr/load';
 import { Require } from '@dojo/interfaces/loader';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -30,6 +31,25 @@ export interface DojoI18nPluginOptions {
 	supportedLocales?: string[];
 }
 
+const localeCldrPaths = [
+	'ca-gregorian',
+	'currencies',
+	'dateFields',
+	'numbers',
+	'timeZoneNames',
+	'units'
+].map((name: string) => `cldr-data/main/{locale}/${name}.json`);
+
+const supplementalCldrPaths = [
+	'currencyData',
+	'likelySubtags',
+	'numberingSystems',
+	'ordinals',
+	'plurals',
+	'timeData',
+	'weekData'
+].map((name: string) => `cldr-data/supplemental/${name}.json`);
+
 /**
  * @private
  * Loads the supplemental CLDR modules, as well as the CLDR modules for the specified locales.
@@ -40,15 +60,15 @@ export interface DojoI18nPluginOptions {
  * @return
  * The loaded CLDR data.
  */
-function getCldrData(locales: string[] = []): CldrDataResponse {
-	return locales
-		.reduce((result: CldrDataResponse, locale: string) => {
-			const localePaths = localeCldrPaths.map((path: string) => path.replace('{locale}', locale));
-			result[locale] = requirePaths(localePaths);
-			return result;
-		}, {
-			supplemental: requirePaths(supplementalCldrPaths)
-		});
+function getCldrData(locales: string[] = []): CldrData {
+	const data = mergeCldrData(requirePaths(supplementalCldrPaths));
+
+	locales.forEach((locale: string) => {
+		const localePaths = localeCldrPaths.map((path: string) => path.replace('{locale}', locale));
+		deepAssign(data, mergeCldrData(requirePaths(localePaths)));
+	});
+
+	return data;
 }
 
 /**
@@ -86,6 +106,22 @@ function getMessageLocalePaths(bundle: string, supportedLocales: string[]): stri
 
 /**
  * @private
+ * Recursively reduce an array of CLDR data objects to a single CLDR object.
+ *
+ * @param sources
+ * An array of CLDR data objects to merge.
+ *
+ * @return
+ * The single, merged data object.
+ */
+function mergeCldrData(sources: CldrData[]): CldrData {
+	return sources.reduce((merged: CldrData, source: CldrData) => {
+		return deepAssign(merged, source);
+	}, Object.create(null));
+}
+
+/**
+ * @private
  * Loads and returns the CLDR modules for the specified paths.
  *
  * @param paths
@@ -95,7 +131,7 @@ function getMessageLocalePaths(bundle: string, supportedLocales: string[]): stri
  * The loaded CLDR modules.
  */
 function requirePaths(paths: ReadonlyArray<string>): CldrData[] {
-	return paths.map((path: string) => require(`${path}.json`) as CldrData);
+	return paths.map((path: string) => require(path) as CldrData);
 }
 
 /**

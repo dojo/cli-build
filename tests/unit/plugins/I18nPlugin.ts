@@ -1,10 +1,10 @@
-import loadCldrData, { CldrDataResponse } from '@dojo/i18n/cldr/load';
 import { afterEach, describe, it } from 'intern!bdd';
 import * as assert from 'intern/chai!assert';
 import NormalModuleReplacementPlugin = require('webpack/lib/NormalModuleReplacementPlugin');
 import Compilation = require('../../support/webpack/Compilation');
 import Compiler = require('../../support/webpack/Compiler');
 import MockPlugin from '../../support/MockPlugin';
+import { fetchCldrData } from '../../support/util';
 import I18nPlugin from '../../../src/plugins/I18nPlugin';
 
 describe('i18n', () => {
@@ -38,14 +38,13 @@ describe('i18n', () => {
 			compiler.mockApply('compilation', compilation);
 			assert.strictEqual(compilation.moduleTemplate.plugins['module'].length, 1);
 
-			return loadCldrData('en').then((data: CldrDataResponse) => {
-				const source = compilation.moduleTemplate.mockApply('module', '', {
-					userRequest: '/path/to/@dojo/i18n/cldr/load/webpack.js'
-				})[0];
+			const cldrData = fetchCldrData('en');
+			const source = compilation.moduleTemplate.mockApply('module', '', {
+				userRequest: '/path/to/@dojo/i18n/cldr/load/webpack.js'
+			})[0];
 
-				const injected = `var __cldrData__ = ${JSON.stringify(data)}`;
-				assert.strictEqual(source.source().indexOf(injected), 0);
-			});
+			const injected = `var __cldrData__ = ${JSON.stringify(cldrData)}`;
+			assert.strictEqual(source.source().indexOf(injected), 0);
 		});
 
 		it('should inject data for supported locales', () => {
@@ -60,14 +59,13 @@ describe('i18n', () => {
 			compiler.mockApply('compilation', compilation);
 			assert.strictEqual(compilation.moduleTemplate.plugins['module'].length, 1);
 
-			return loadCldrData([ 'en', 'es' ]).then((data: CldrDataResponse) => {
-				const source = compilation.moduleTemplate.mockApply('module', '', {
-					userRequest: '/path/to/@dojo/i18n/cldr/load/webpack.js'
-				})[0];
+			const cldrData = fetchCldrData([ 'en', 'es' ]);
+			const source = compilation.moduleTemplate.mockApply('module', '', {
+				userRequest: '/path/to/@dojo/i18n/cldr/load/webpack.js'
+			})[0];
 
-				const injected = `var __cldrData__ = ${JSON.stringify(data)}`;
-				assert.strictEqual(source.source().indexOf(injected), 0);
-			});
+			const injected = `var __cldrData__ = ${JSON.stringify(cldrData)}`;
+			assert.strictEqual(source.source().indexOf(injected), 0);
 		});
 
 		it('should not inject data to other modules', () => {
