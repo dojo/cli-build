@@ -125,43 +125,31 @@ declare module 'webpack/lib/webpack' {
 }
 
 declare module 'tapable' {
-	interface Tapable {
+	class Tapable {
+		protected _plugins: { [key: string]: Function[] };
+
 		apply(...args: any[]): void;
 		plugin(name: string, fn: Function): void;
-	}
-	namespace Tapable {
-		interface Protected extends Tapable {
-			_plugins: { [key: string]: Function[] };
 
-			applyPlugins(name: string, ...args: any[]): void;
-			applyPluginsWaterfall(name: string, initial: any, ...args: any[]): any;
-			applyPluginsAsync(name: string, ...args: any[]): void;
-			applyPluginsBailResult(name: string, ...args: any[]): any;
-			applyPluginsAsyncWaterfall(name: string, initial: any, callback: (error: Error | null, value: any) => void): void;
-			applyPluginsAsyncSeries(name: string, ...args: any[]): void;
-			applyPluginsAsyncSeriesBailResult(name: string, ...args: any[]): void;
-			applyPluginsParallel(name: string, ...args: any[]): void;
-			applyPluginsParallelBailResult(name: string, ...args: any[]): void;
-		}
+		protected applyPlugins(name: string, ...args: any[]): void;
+		protected applyPluginsWaterfall(name: string, initial: any, ...args: any[]): any;
+		protected applyPluginsAsync(name: string, ...args: any[]): void;
+		protected applyPluginsBailResult(name: string, ...args: any[]): any;
+		protected applyPluginsAsyncWaterfall(name: string, initial: any, callback: (error: Error | null, value: any) => void): void;
+		protected applyPluginsAsyncSeries(name: string, ...args: any[]): void;
+		protected applyPluginsAsyncSeriesBailResult(name: string, ...args: any[]): void;
+		protected applyPluginsParallel(name: string, ...args: any[]): void;
+		protected applyPluginsParallelBailResult(name: string, ...args: any[]): void;
 	}
-	interface TapableCtor {
-		new (): Tapable;
-	}
-	const Tapable: TapableCtor;
 	export = Tapable;
 }
 
 declare module 'webpack-sources/lib/Source' {
-	interface Source {
+	class Source {
 		map(options: any): string;
 		size(): number;
 		source(): string;
 	}
-	interface SourceCtor {
-		new (): Source;
-	}
-
-	const Source: SourceCtor;
 
 	export = Source;
 }
@@ -170,7 +158,7 @@ declare module 'webpack/lib/Chunk' {
 	import Module = require('webpack/lib/Module');
 	import DependenciesBlock = require('webpack/lib/DependenciesBlock');
 
-	interface Chunk {
+	class Chunk {
 		id: number;
 		ids: number[];
 		debugId: number;
@@ -182,6 +170,8 @@ declare module 'webpack/lib/Chunk' {
 		origins: Chunk.Origin[];
 		files: any[];
 		rendered: boolean;
+
+		constructor(name: string, module: Module, loc: any);
 
 		addChunk(chunk: Chunk): boolean;
 		addParent(chunk: Chunk): boolean;
@@ -209,12 +199,6 @@ declare module 'webpack/lib/Chunk' {
 		}
 	}
 
-	interface ChunkCtor {
-		new (name: string, module: Module, loc: any): Chunk;
-	}
-
-	const Chunk: ChunkCtor;
-
 	export = Chunk;
 }
 
@@ -227,9 +211,11 @@ declare module 'webpack/lib/Compilation' {
 	import ModuleTemplate = require('webpack/lib/ModuleTemplate');
 	import Compiler = require('webpack/lib/Compiler');
 
-	interface Compilation extends Tapable {
+	class Compilation extends Tapable {
 		mainTemplate: MainTemplate;
 		moduleTemplate: ModuleTemplate;
+
+		constructor(compiler: Compiler);
 
 		addModule(module: Module, cacheGroup?: string): Module | boolean;
 		buildModule(module: Module, optional: boolean, origin: Module | null, dependencies: any[] | null, callback: (error?: Error) => void): void;
@@ -269,12 +255,6 @@ declare module 'webpack/lib/Compilation' {
 		plugin(name: 'chunk-asset', fn: (this: Compilation, chunk: Chunk, file: string) => void): void;
 		plugin(name: 'need-additional-pass', fn: (this: Compilation) => boolean): void;
 	}
-
-	interface CompilationCtor {
-		new (compiler: Compiler): Compilation;
-	}
-
-	const Compilation: CompilationCtor;
 
 	export = Compilation;
 }
@@ -319,6 +299,7 @@ declare module 'webpack/lib/Compiler' {
 			compilationDependencies: any[];
 		}
 	}
+
 	export = Compiler;
 }
 
