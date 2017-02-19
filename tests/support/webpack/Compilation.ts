@@ -1,5 +1,4 @@
 import Pluginable from './Pluginable';
-import { Callback } from '../../../src/plugins/interfaces';
 
 class Compilation extends Pluginable {
 	inputFileSystem: any;
@@ -25,12 +24,12 @@ class Compilation extends Pluginable {
 		this.modules.push(module);
 	}
 
-	buildModule(module: any, callback: Callback) {
+	buildModule(module: any, optional: boolean, origin: any, dependencies: any[], callback: Function) {
 		module.isBuilt = true;
 		callback();
 	}
 
-	processModuleDependencies(module: any, callback: Callback) {
+	processModuleDependencies(module: any, callback: Function) {
 		module.dependenciesProcessed = true;
 		callback();
 	}

@@ -2,19 +2,19 @@ import { beforeEach, describe, it } from 'intern!bdd';
 import * as assert from 'intern/chai!assert';
 import * as path from 'path';
 import * as sinon from 'sinon';
+import NormalModuleFactory = require('webpack/lib/NormalModuleFactory');
 import Chunk = require('../../support/webpack/Chunk');
 import Compilation = require('../../support/webpack/Compilation');
 import Compiler = require('../../support/webpack/Compiler');
 import NormalModule = require('../../support/webpack/NormalModule');
 import Pluginable from '../../support/webpack/Pluginable';
 import InjectModulesPlugin from '../../../src/plugins/InjectModulesPlugin';
-import { Callback, RequestData } from '../../../src/plugins/interfaces';
 
 function createModule(path: string): NormalModule {
 	return new NormalModule(path, path, path, [], path, {});
 }
 
-function getRequestData(data?: any): RequestData {
+function getRequestData(data?: any): NormalModuleFactory.AfterData {
 	return Object.assign({
 		request: '/path/to/module.js',
 		userRequest: '/path/to/module.js',
@@ -58,7 +58,7 @@ describe('inject-modules', () => {
 			});
 
 			let input: any;
-			const resolver = function (value: any, callback: Callback) {
+			const resolver = function (value: any, callback: NormalModuleFactory.ResolverCallback) {
 				input = value;
 				callback(null, data);
 			};
@@ -95,7 +95,7 @@ describe('inject-modules', () => {
 			});
 
 			let input: any;
-			const resolver = function (value: any, callback: Callback) {
+			const resolver = function (value: any, callback: NormalModuleFactory.ResolverCallback) {
 				input = value;
 				callback(null, data);
 			};
@@ -129,7 +129,7 @@ describe('inject-modules', () => {
 				moduleIds: [ 'module' ]
 			});
 
-			const resolver = function (value: any, callback: Callback) {
+			const resolver = function (value: any, callback: NormalModuleFactory.ResolverCallback) {
 				callback(new Error('mock error'));
 			};
 
@@ -151,7 +151,7 @@ describe('inject-modules', () => {
 			});
 			const data = getRequestData();
 
-			return plugin.createModules([ data ], compilation)
+			return plugin.createModules([ data ], compilation as any)
 				.then(() => {
 					assert.strictEqual(compilation.modules.length, 1);
 
@@ -173,12 +173,12 @@ describe('inject-modules', () => {
 				moduleIds: [ './module' ]
 			});
 
-			sinon.stub(compilation, 'buildModule', (module: NormalModule, callback: Callback) => {
+			sinon.stub(compilation, 'buildModule', (module: NormalModule, optional: any, origin: NormalModule | null, dependencies: any[] | null, callback: NormalModuleFactory.ResolverCallback) => {
 				callback(new Error('build error'));
 			});
 			sinon.spy(compilation, 'processModuleDependencies');
 
-			return plugin.createModules([ getRequestData() ], compilation)
+			return plugin.createModules([ getRequestData() ], compilation as any)
 				.then(() => {
 					throw new Error('Should not resolve.');
 				}, (error: Error) => {
@@ -194,11 +194,11 @@ describe('inject-modules', () => {
 				moduleIds: [ './module' ]
 			});
 
-			sinon.stub(compilation, 'processModuleDependencies', (module: NormalModule, callback: Callback) => {
+			sinon.stub(compilation, 'processModuleDependencies', (module: NormalModule, callback: NormalModuleFactory.ResolverCallback) => {
 				callback(new Error('processing error'));
 			});
 
-			return plugin.createModules([ getRequestData() ], compilation)
+			return plugin.createModules([ getRequestData() ], compilation as any)
 				.then(() => {
 					throw new Error('Should not resolve.');
 				}, (error: Error) => {
@@ -322,7 +322,7 @@ describe('inject-modules', () => {
 
 			plugin.apply(compiler);
 			compiler.mockApply('normal-module-factory', factory);
-			const resolver = factory.mockApply('resolver', (value: any, callback: Callback) => {
+			const resolver = factory.mockApply('resolver', (value: any, callback: NormalModuleFactory.ResolverCallback) => {
 				callback(new Error('mock error'), value);
 			})[0];
 
@@ -343,7 +343,7 @@ describe('inject-modules', () => {
 
 			plugin.apply(compiler);
 			compiler.mockApply('normal-module-factory', factory);
-			const resolver = factory.mockApply('resolver', (value: any, callback: Callback) => {
+			const resolver = factory.mockApply('resolver', (value: any, callback: NormalModuleFactory.ResolverCallback) => {
 				callback(null, value);
 			})[0];
 
@@ -363,7 +363,7 @@ describe('inject-modules', () => {
 
 			plugin.apply(compiler);
 			compiler.mockApply('normal-module-factory', factory);
-			const resolver = factory.mockApply('resolver', (value: any, callback: Callback) => {
+			const resolver = factory.mockApply('resolver', (value: any, callback: NormalModuleFactory.ResolverCallback) => {
 				callback(null, value);
 			})[0];
 
@@ -389,7 +389,7 @@ describe('inject-modules', () => {
 
 			plugin.apply(compiler);
 			compiler.mockApply('normal-module-factory', factory);
-			const resolver = factory.mockApply('resolver', (value: any, callback: Callback) => {
+			const resolver = factory.mockApply('resolver', (value: any, callback: NormalModuleFactory.ResolverCallback) => {
 				callback(null, value);
 			})[0];
 
@@ -418,7 +418,7 @@ describe('inject-modules', () => {
 
 			plugin.apply(compiler);
 			compiler.mockApply('normal-module-factory', factory);
-			const resolver = factory.mockApply('resolver', (value: any, callback: Callback) => {
+			const resolver = factory.mockApply('resolver', (value: any, callback: NormalModuleFactory.ResolverCallback) => {
 				callback(null, value);
 			})[0];
 
@@ -449,7 +449,7 @@ describe('inject-modules', () => {
 				compiler.mockApply('compilation', compilation);
 				compiler.mockApply('normal-module-factory', factory);
 
-				const resolver = factory.mockApply('resolver', (value: any, callback: Callback) => {
+				const resolver = factory.mockApply('resolver', (value: any, callback: NormalModuleFactory.ResolverCallback) => {
 					callback(null, value);
 				})[0];
 

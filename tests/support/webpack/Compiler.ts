@@ -1,5 +1,7 @@
 import Pluginable from './Pluginable';
 
+import WebpackCompiler = require('webpack/lib/Compiler');
+
 import CompilationParams = require('./CompilationParams');
 
 class Compiler extends Pluginable {
@@ -25,6 +27,12 @@ class Compiler extends Pluginable {
 			args[1] = new CompilationParams();
 		}
 		return super.mockApply(name, ...args);
+	}
+
+	run(callback: Function) {}
+	runAsChild(callback: Function) {}
+	watch(options: any, handler: (error: Error | null, stats: any) => void): WebpackCompiler.Watching {
+		return null as any;
 	}
 }
 
