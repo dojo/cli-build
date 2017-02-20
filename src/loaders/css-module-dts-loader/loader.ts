@@ -1,5 +1,6 @@
-import * as ts from 'typescript';
-// import { readFileSync } from 'fs';
+import { createSourceFile, forEachChild, Node, ScriptTarget, SyntaxKind } from 'typescript';
+const instances = require('ts-loader/dist/instances');
+import { statSync } from 'fs';
 
 import { resolve, dirname } from 'path';
 const DtsCreator = require('typed-css-modules');
@@ -13,36 +14,49 @@ type DTSFileData = {
 	content: string;
 }
 
-async function generateDTSFile(filePath: string, filePaths: DTSFileData[]) {
-	const content = await creator.create(filePath);
-	await content.writeFile();
-	console.log('PRELOADER -> written DTS' + filePath);
+const mTimeMap = new Map<string, Date>();
 
-	filePaths.push({ name: filePath + '.d.ts', content: content.formatted });
+async function generateDTSFile(filePath: string) {
+	const { mtime } = statSync(filePath);
+	const lastMTime = mTimeMap.get(filePath);
+
+	if (!lastMTime || mtime > lastMTime) {
+		mTimeMap.set(filePath, mtime);
+		const content = await creator.create(filePath, false, true);
+
+		return await content.writeFile();
+	}
+	else {
+		return true;
+	}
 }
 
-async function checkNodeForCSSImport(node: ts.Node, filePaths: DTSFileData[]): Promise<string | void> {
-	if (node.kind === ts.SyntaxKind.StringLiteral) {
+async function checkNodeForCSSImport(node: Node): Promise<string | void> {
+	if (node.kind === SyntaxKind.StringLiteral) {
 		const importPath = node.getText().replace(/\'|\"/g, '');
 		if (/.css$/.test(importPath)) {
+			const dojoTSLoader = instances.getTypeScriptInstance({ instance: '0_dojo' });
 			const parentFileName = node.getSourceFile().fileName;
+
+			dojoTSLoader.instance.files[parentFileName] = false;
+
 			const absoluteCssFileName = resolve(dirname(parentFileName), importPath);
-			return await generateDTSFile(absoluteCssFileName, filePaths);
+			return await generateDTSFile(absoluteCssFileName);
 		}
 	}
 }
 
-async function checkNode(node: ts.Node, filePaths: DTSFileData[]): Promise<any> {
+async function checkNode(node: Node): Promise<any> {
 	const promises: Promise<any | any[]>[] = [];
 	switch (node.kind) {
-		case ts.SyntaxKind.SourceFile:
-			ts.forEachChild(node, (childNode: ts.Node) => {
-				promises.push(checkNode(childNode, filePaths));
+		case SyntaxKind.SourceFile:
+			forEachChild(node, (childNode: Node) => {
+				promises.push(checkNode(childNode));
 			});
 			break;
-		case ts.SyntaxKind.ImportDeclaration:
-			ts.forEachChild(node, (childNode: ts.Node) => {
-				promises.push(checkNodeForCSSImport(childNode, filePaths));
+		case SyntaxKind.ImportDeclaration:
+			forEachChild(node, (childNode: Node) => {
+				promises.push(checkNodeForCSSImport(childNode));
 			});
 			break;
 	}
@@ -50,9 +64,9 @@ async function checkNode(node: ts.Node, filePaths: DTSFileData[]): Promise<any> 
 	await Promise.all(promises);
 }
 
-async function findCSSImports(sourceFile: ts.Node): Promise<any> {
+async function findCSSImports(sourceFile: Node): Promise<any> {
 	const filePaths: DTSFileData[] = [];
-	await checkNode(sourceFile, filePaths);
+	await checkNode(sourceFile);
 	return filePaths;
 }
 
@@ -64,30 +78,14 @@ const fileType = {
 export default async function (this: any, content: string, sourceMap?: any): Promise<void> {
 	const callback = this.async();
 	const { type = fileType.ts }: { type: string } = parseQuery(this.query);
-	let filePaths: DTSFileData[] = [];
 
 	switch (type) {
 		case fileType.css:
-			console.log('PRELOADER -> CSS: ' + this.resourcePath);
-			// generateDTSFile(this.resourcePath, filePaths);
-			// this.addDependency(this.resourcePath + '.d.ts');
-
+			await generateDTSFile(this.resourcePath);
 			break;
 		case fileType.ts:
-			const sourceFile = ts.createSourceFile(this.resourcePath, content, ts.ScriptTarget.Latest, true);
-			console.log('PRELOADER -> TS: ' + this.resourcePath);
-			filePaths = await findCSSImports(sourceFile);
-			filePaths.forEach(({ name, content }) => {
-				// check modified date
-				// if css file not cached and not modified don't addDependency
-
-				// emit file
-				this.emitFile(name, content);
-
-				this.addDependency(name);
-
-			});
-
+			const sourceFile = createSourceFile(this.resourcePath, content, ScriptTarget.Latest, true);
+			await findCSSImports(sourceFile);
 			break;
 	}
 

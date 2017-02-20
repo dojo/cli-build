@@ -201,7 +201,7 @@ module.exports = function (args: any) {
 				{ test: /\.css.js$/, exclude: /src[\\\/].*/, use: ['json-css-module-loader'] },
 				...includeWhen(args.withTests, (args: any) => {
 					return [
-						{ test: /tests[\\\/].*\.ts?$/, use: ['umd-compat-loader', 'ts-loader'] }
+						{ test: /tests[\\\/].*\.ts?$/, use: ['umd-compat-loader', 'ts-loader?instance=dojo'] }
 					];
 				}),
 				...includeWhen(args.element, (args: any) => {
