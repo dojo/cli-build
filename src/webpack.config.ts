@@ -1,17 +1,19 @@
-const webpack = require('webpack');
+import webpack = require('webpack');
+import NormalModuleReplacementPlugin = require('webpack/lib/NormalModuleReplacementPlugin');
+import * as path from 'path';
+import { existsSync } from 'fs';
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const ExtractTextPlugin = require('extract-text-webpack-plugin');
 const BundleAnalyzerPlugin = require('webpack-bundle-analyzer-sunburst').BundleAnalyzerPlugin;
-const path = require('path');
-const basePath = process.cwd();
 const postcssImport = require('postcss-import');
 const postcssCssNext = require('postcss-cssnext');
-import { existsSync } from 'fs';
-import * as NormalModuleReplacementPlugin from 'webpack/lib/NormalModuleReplacementPlugin';
+
 import CoreLoadPlugin from './plugins/CoreLoadPlugin';
 import I18nPlugin from './plugins/I18nPlugin';
 import InjectModulesPlugin from './plugins/InjectModulesPlugin';
+
+const basePath = process.cwd();
 
 module.exports = function (args: any) {
 	args = args || {};
@@ -46,9 +48,9 @@ module.exports = function (args: any) {
 		return predicate ? callback(args) : (elseCallback ? elseCallback(args) : []);
 	}
 
-	return {
+	const config: webpack.Config = {
 		externals: [
-			function (context: any, request: any, callback: any) {
+			function (context, request, callback) {
 				if (/^intern[!\/]/.test(request)) {
 					return callback(null, 'amd ' + request);
 				}
@@ -79,7 +81,7 @@ module.exports = function (args: any) {
 			};
 		}),
 		plugins: [
-			new NormalModuleReplacementPlugin(/\.css$/, (result: any) => {
+			new NormalModuleReplacementPlugin(/\.css$/, result => {
 				const requestFileName = path.resolve(result.context, result.request);
 				const jsFileName = requestFileName + '.js';
 
@@ -111,7 +113,7 @@ module.exports = function (args: any) {
 			}),
 			new CoreLoadPlugin(),
 			...includeWhen(args.element, (args: any) => {
-				return [ new webpack.optimize.CommonsChunkPlugin('widget-core', 'widget-core.js') ];
+				return [ new webpack.optimize.CommonsChunkPlugin({ name: 'widget-core', filename: 'widget-core.js' }) ];
 			}),
 			new webpack.optimize.UglifyJsPlugin({ sourceMap: true, compress: { warnings: false }, exclude: /tests[/]/ }),
 			includeWhen(args.element, (args: any) => {
@@ -225,4 +227,6 @@ module.exports = function (args: any) {
 			]
 		}
 	};
+
+	return config;
 };

@@ -1,6 +1,7 @@
 import * as path from 'path';
 import NormalModule = require('webpack/lib/NormalModule');
 import NormalModuleFactory = require('webpack/lib/NormalModuleFactory');
+import Chunk = require('webpack/lib/Chunk');
 import Compiler = require('webpack/lib/Compiler');
 import Compilation = require('webpack/lib/Compilation');
 import { getBasePath } from './util';
@@ -183,7 +184,7 @@ export default class InjectModulesPlugin {
 			// Listening to the "resolver" event gives access to the resolver function that allows the injected module
 			// IDs to be mapped to not only their resources, but also to any loaders.
 			factory.plugin('resolver', resolver => {
-				return (data: any, callback: NormalModuleFactory.ResolverCallback): void => {
+				return (data: NormalModuleFactory.BeforeData, callback: NormalModuleFactory.ResolverCallback): void => {
 					resolver(data, (error, result) => {
 						if (error) {
 							return callback(error);
@@ -247,19 +248,19 @@ export default class InjectModulesPlugin {
 		}));
 	}
 
-	injectModuleDependencies(module: any, chunk: any) {
+	injectModuleDependencies(module: NormalModule, chunk: Chunk) {
 		if (this._added.indexOf(module.userRequest) > -1) {
 			return;
 		}
 
 		this._added.push(module.userRequest);
-		module.dependencies.forEach((dependency: any) => {
+		module.dependencies.forEach(dependency => {
 			const modules = Array.isArray(dependency.module) ? dependency.module : [ dependency.module ];
-			modules.filter((module?: any) => Boolean(module))
-				.forEach((module: any) => {
+			modules.filter(module => Boolean(module))
+				.forEach(module => {
 					chunk.addModule(module);
 					module.addChunk(chunk);
-					this.injectModuleDependencies(module, chunk);
+					this.injectModuleDependencies(module as NormalModule, chunk);
 				});
 		});
 	}

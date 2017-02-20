@@ -1,6 +1,6 @@
 import Pluginable from './Pluginable';
 
-class Compilation extends Pluginable {
+class MockCompilation extends Pluginable {
 	inputFileSystem: any;
 	options: any;
 	modules: any[];
@@ -36,4 +36,4 @@ class Compilation extends Pluginable {
 }
 
 // Node-style export used to maintain consistency with other webpack mocks.
-export = Compilation;
+export = MockCompilation;

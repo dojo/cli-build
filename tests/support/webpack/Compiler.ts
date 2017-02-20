@@ -2,9 +2,9 @@ import Pluginable from './Pluginable';
 
 import WebpackCompiler = require('webpack/lib/Compiler');
 
-import CompilationParams = require('./CompilationParams');
+import MockCompilationParams = require('./CompilationParams');
 
-class Compiler extends Pluginable {
+class MockCompiler extends Pluginable {
 	applied: any[];
 	options: any;
 
@@ -24,7 +24,7 @@ class Compiler extends Pluginable {
 
 	mockApply(name: string, ...args: any[]) {
 		if (name === 'compilation' && args.length === 1) {
-			args[1] = new CompilationParams();
+			args[1] = new MockCompilationParams();
 		}
 		return super.mockApply(name, ...args);
 	}
@@ -37,4 +37,4 @@ class Compiler extends Pluginable {
 }
 
 // Node-style export used to maintain consistency with other webpack mocks.
-export = Compiler;
+export = MockCompiler;

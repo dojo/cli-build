@@ -1,6 +1,6 @@
 import * as path from 'path';
-import * as ConcatSource from 'webpack-sources/lib/ConcatSource';
-import * as NormalModuleReplacementPlugin from 'webpack/lib/NormalModuleReplacementPlugin';
+import ConcatSource = require('webpack-sources/lib/ConcatSource');
+import NormalModuleReplacementPlugin = require('webpack/lib/NormalModuleReplacementPlugin');
 import Compiler = require('webpack/lib/Compiler');
 import NormalModule = require('webpack/lib/NormalModule');
 import Parser = require('webpack/lib/Parser');

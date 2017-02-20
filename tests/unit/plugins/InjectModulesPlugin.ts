@@ -3,15 +3,15 @@ import * as assert from 'intern/chai!assert';
 import * as path from 'path';
 import * as sinon from 'sinon';
 import NormalModuleFactory = require('webpack/lib/NormalModuleFactory');
-import Chunk = require('../../support/webpack/Chunk');
-import Compilation = require('../../support/webpack/Compilation');
-import Compiler = require('../../support/webpack/Compiler');
-import NormalModule = require('../../support/webpack/NormalModule');
+import MockChunk = require('../../support/webpack/Chunk');
+import MockCompilation = require('../../support/webpack/Compilation');
+import MockCompiler = require('../../support/webpack/Compiler');
+import MockNormalModule = require('../../support/webpack/NormalModule');
 import Pluginable from '../../support/webpack/Pluginable';
 import InjectModulesPlugin from '../../../src/plugins/InjectModulesPlugin';
 
-function createModule(path: string): NormalModule {
-	return new NormalModule(path, path, path, [], path, {});
+function createModule(path: string): MockNormalModule {
+	return new MockNormalModule(path, path, path, [], path, {});
 }
 
 function getRequestData(data?: any): NormalModuleFactory.AfterData {
@@ -144,7 +144,7 @@ describe('inject-modules', () => {
 
 	describe('InjectModulesPlugin#createModules', () => {
 		it('should add modules to the compilation', () => {
-			const compilation = new Compilation();
+			const compilation = new MockCompilation();
 			const plugin = new InjectModulesPlugin({
 				resourcePattern: /test\/module/,
 				moduleIds: [ './module' ]
@@ -158,7 +158,7 @@ describe('inject-modules', () => {
 					const module = compilation.modules[0];
 					assert.isTrue(module.isBuilt);
 					assert.isTrue(module.dependenciesProcessed);
-					assert.instanceOf(module, NormalModule);
+					assert.instanceOf(module, MockNormalModule);
 
 					[ 'rawRequest', 'request', 'userRequest', 'loaders', 'resource', 'parser' ].forEach((key: string) => {
 						assert.strictEqual((<any> module)[key], (<any> data)[key]);
@@ -167,13 +167,13 @@ describe('inject-modules', () => {
 		});
 
 		it('should not add modules to the compilation on a build error', () => {
-			const compilation = new Compilation();
+			const compilation = new MockCompilation();
 			const plugin = new InjectModulesPlugin({
 				resourcePattern: /test\/module/,
 				moduleIds: [ './module' ]
 			});
 
-			sinon.stub(compilation, 'buildModule', (module: NormalModule, optional: any, origin: NormalModule | null, dependencies: any[] | null, callback: NormalModuleFactory.ResolverCallback) => {
+			sinon.stub(compilation, 'buildModule', (module: MockNormalModule, optional: any, origin: MockNormalModule | null, dependencies: any[] | null, callback: NormalModuleFactory.ResolverCallback) => {
 				callback(new Error('build error'));
 			});
 			sinon.spy(compilation, 'processModuleDependencies');
@@ -188,13 +188,13 @@ describe('inject-modules', () => {
 		});
 
 		it('should not add modules to the compilation on a processing modules error', () => {
-			const compilation = new Compilation();
+			const compilation = new MockCompilation();
 			const plugin = new InjectModulesPlugin({
 				resourcePattern: /test\/module/,
 				moduleIds: [ './module' ]
 			});
 
-			sinon.stub(compilation, 'processModuleDependencies', (module: NormalModule, callback: NormalModuleFactory.ResolverCallback) => {
+			sinon.stub(compilation, 'processModuleDependencies', (module: MockNormalModule, callback: NormalModuleFactory.ResolverCallback) => {
 				callback(new Error('processing error'));
 			});
 
@@ -209,7 +209,7 @@ describe('inject-modules', () => {
 
 	describe('InjectModulesPlugin#apply', () => {
 		it('should register compiler plugins', () => {
-			const compiler = new Compiler();
+			const compiler = new MockCompiler();
 			const plugin = new InjectModulesPlugin({
 				resourcePattern: /test\/module/,
 				moduleIds: [ './module' ]
@@ -223,8 +223,8 @@ describe('inject-modules', () => {
 		});
 
 		it('should register compilation plugins', () => {
-			const compiler = new Compiler();
-			const compilation = new Compilation();
+			const compiler = new MockCompiler();
+			const compilation = new MockCompilation();
 			const plugin = new InjectModulesPlugin({
 				resourcePattern: /test\/module/,
 				moduleIds: [ './module' ]
@@ -238,9 +238,9 @@ describe('inject-modules', () => {
 		});
 
 		it('should register compilations plugins only once', () => {
-			const compiler = new Compiler();
-			const compilation = new Compilation();
-			const otherCompilation = new Compilation();
+			const compiler = new MockCompiler();
+			const compilation = new MockCompilation();
+			const otherCompilation = new MockCompilation();
 			const plugin = new InjectModulesPlugin({
 				resourcePattern: /test\/module/,
 				moduleIds: [ './module' ]
@@ -256,7 +256,7 @@ describe('inject-modules', () => {
 		});
 
 		it('should register factory plugins', () => {
-			const compiler = new Compiler();
+			const compiler = new MockCompiler();
 			const factory = new Pluginable();
 			const plugin = new InjectModulesPlugin({
 				resourcePattern: /test\/module/,
@@ -271,7 +271,7 @@ describe('inject-modules', () => {
 		});
 
 		it('should set the default context', () => {
-			const compiler = new Compiler();
+			const compiler = new MockCompiler();
 			let plugin = new InjectModulesPlugin({
 				context: '/context',
 				resourcePattern: /test\/module/,
@@ -313,7 +313,7 @@ describe('inject-modules', () => {
 
 	describe('"resolver" factory plugin', () => {
 		it('should immediately return on error', () => {
-			const compiler = new Compiler();
+			const compiler = new MockCompiler();
 			const factory = new Pluginable();
 			const plugin = new InjectModulesPlugin({
 				resourcePattern: /test\/module/,
@@ -334,7 +334,7 @@ describe('inject-modules', () => {
 		});
 
 		it('should not generate data for non-matching issuers', () => {
-			const compiler = new Compiler();
+			const compiler = new MockCompiler();
 			const factory = new Pluginable();
 			const plugin = new InjectModulesPlugin({
 				resourcePattern: /test\/module/,
@@ -354,7 +354,7 @@ describe('inject-modules', () => {
 		});
 
 		it('should generate data for matching issuers', () => {
-			const compiler = new Compiler();
+			const compiler = new MockCompiler();
 			const factory = new Pluginable();
 			const plugin = new InjectModulesPlugin({
 				resourcePattern: /test\/module/,
@@ -380,7 +380,7 @@ describe('inject-modules', () => {
 		});
 
 		it('should not generate data for the same issuer more than once', () => {
-			const compiler = new Compiler();
+			const compiler = new MockCompiler();
 			const factory = new Pluginable();
 			const plugin = new InjectModulesPlugin({
 				resourcePattern: /test\/module/,
@@ -409,7 +409,7 @@ describe('inject-modules', () => {
 		});
 
 		it('should not create modules with a resolve error', () => {
-			const compiler = new Compiler();
+			const compiler = new MockCompiler();
 			const factory = new Pluginable();
 			const plugin = new InjectModulesPlugin({
 				resourcePattern: /test\/module/,
@@ -438,10 +438,10 @@ describe('inject-modules', () => {
 
 	describe('"optimize-chunks" compilation plugin', () => {
 		function generateBuild(plugin: InjectModulesPlugin, issuer: string) {
-			return new Promise((resolve) => {
-				const chunk = new Chunk();
-				const compilation = new Compilation();
-				const compiler = new Compiler();
+			return new Promise<MockChunk>(resolve => {
+				const chunk = new MockChunk();
+				const compilation = new MockCompilation();
+				const compiler = new MockCompiler();
 				const factory = new Pluginable();
 
 				chunk.modules.push(createModule(issuer));
@@ -467,7 +467,7 @@ describe('inject-modules', () => {
 			});
 
 			sinon.spy(plugin, 'injectModuleDependencies');
-			return generateBuild(plugin, '/test/module.js').then((chunk: Chunk) => {
+			return generateBuild(plugin, '/test/module.js').then(chunk => {
 				const module = chunk.modules[1];
 
 				assert.isTrue((<any> plugin.injectModuleDependencies).calledWith(module),
@@ -484,7 +484,7 @@ describe('inject-modules', () => {
 				moduleIds: [ './module' ]
 			});
 
-			return generateBuild(plugin, '/unmatched/module.js').then((chunk: Chunk) => {
+			return generateBuild(plugin, '/unmatched/module.js').then(chunk => {
 				assert.strictEqual(chunk.modules.length, 1, 'No module is added.');
 			});
 		});
@@ -500,14 +500,14 @@ describe('inject-modules', () => {
 		});
 
 		it('should add dependencies to the current chunk', () => {
-			const chunk = new Chunk();
+			const chunk = new MockChunk();
 			const parent = createModule('/parent.ts');
 			const child = createModule('/child.ts');
 			const grandChild = createModule('/grandChild.ts');
 
 			parent.dependencies.push({ module: [ child ] }); // `module` can be an array.
 			child.dependencies.push({ module: grandChild }); // `module` can be a module.
-			plugin.injectModuleDependencies(parent, chunk);
+			plugin.injectModuleDependencies(parent as any, chunk as any);
 
 			assert.strictEqual(chunk.modules.length, 2, 'All descendants added to chunk.');
 			assert.strictEqual(child.chunks.length, 1);
@@ -515,13 +515,13 @@ describe('inject-modules', () => {
 		});
 
 		it('should not register add the same dependencies twice', () => {
-			const chunk = new Chunk();
+			const chunk = new MockChunk();
 			const parent = createModule('/parent.ts');
 			const child = createModule('/child.ts');
 
 			parent.dependencies.push({ module: [ child ] });
-			plugin.injectModuleDependencies(parent, chunk);
-			plugin.injectModuleDependencies(parent, chunk);
+			plugin.injectModuleDependencies(parent as any, chunk as any);
+			plugin.injectModuleDependencies(parent as any, chunk as any);
 
 			assert.strictEqual(chunk.modules.length, 1);
 			assert.strictEqual(child.chunks.length, 1);
@@ -530,8 +530,8 @@ describe('inject-modules', () => {
 
 	describe('"done" plugin', () => {
 		it('should reset modules added to the compilation', () => {
-			const chunk = new Chunk();
-			const compiler = new Compiler();
+			const chunk = new MockChunk();
+			const compiler = new MockCompiler();
 			const parent = createModule('/parent.ts');
 			const child = createModule('/child.ts');
 			const plugin = new InjectModulesPlugin({
@@ -541,9 +541,9 @@ describe('inject-modules', () => {
 
 			parent.dependencies.push({ module: [ child ] });
 			plugin.apply(compiler);
-			plugin.injectModuleDependencies(parent, chunk);
+			plugin.injectModuleDependencies(parent as any, chunk as any);
 			compiler.mockApply('done');
-			plugin.injectModuleDependencies(parent, chunk);
+			plugin.injectModuleDependencies(parent as any, chunk as any);
 
 			assert.strictEqual(chunk.modules.length, 2);
 		});
