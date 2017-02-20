@@ -183,17 +183,15 @@ module.exports = function (args: any) {
 		module: {
 			rules: [
 				{ test: /@dojo\/.*\.js$/, enforce: 'pre', loader: 'source-map-loader', options: { includeModulePaths: true } },
-				{
-					test: /src[\\\/].*\.ts?$/,
-					use: [
-						'umd-compat-loader',
-						'ts-loader'
-					]
-				},
+				{ test: /src[\\\/].*\.ts?$/, enforce: 'pre', loader: 'css-module-dts-loader?type=ts' },
+				{ test: /src[\\\/].*\.css?$/, enforce: 'pre', loader: 'css-module-dts-loader?type=css' },
+				{ test: /src[\\\/].*\.ts?$/, use: [ 'umd-compat-loader', 'ts-loader?instance=dojo' ] },
 				{ test: /\.js?$/, loader: 'umd-compat-loader' },
 				{ test: /globalize(\/|$)/, loader: 'imports-loader?define=>false' },
 				...includeWhen(!args.element, (args: any) => {
-					return [ { test: /\.html$/, loader: 'html-loader' } ];
+					return [
+						{ test: /\.html$/, loader: 'html-loader' }
+					];
 				}),
 				{ test: /.*\.(gif|png|jpe?g|svg)$/i, loader: 'file-loader?hash=sha512&digest=hex&name=[hash:base64:8].[ext]' },
 				{ test: /\.css$/, exclude: /src[\\\/].*/, loader: cssLoader },
@@ -206,10 +204,7 @@ module.exports = function (args: any) {
 				}),
 				...includeWhen(args.element, (args: any) => {
 					return [
-						{
-							test: /custom-element\.js/,
-							loader: `imports-loader?widgetFactory=${args.element}`
-						}
+						{ test: /custom-element\.js/, loader: `imports-loader?widgetFactory=${args.element}` }
 					];
 				})
 			]
