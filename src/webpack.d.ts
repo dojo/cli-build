@@ -66,7 +66,7 @@ declare module 'webpack/lib/webpack' {
 	import WebpackCommonsChunkPlugin = require('webpack/lib/optimize/CommonsChunkPlugin');
 	import WebpackUglifyJsPlugin = require('webpack/lib/optimize/UglifyJsPlugin');
 
-	function webpack(options: webpack.Config, callback: Function): WebpackCompiler;
+	function webpack(options: webpack.Config, callback?: Function): WebpackCompiler;
 
 	namespace webpack {
 		export type Compiler = WebpackCompiler;
@@ -110,7 +110,7 @@ declare module 'webpack/lib/webpack' {
 			context?: string;
 			target?: 'async-node' | 'electron-main' | 'electron-renderer' | 'node' | 'node-webkit' | 'web' | 'webworker';
 			externals?: { [key: string]: string | string[] | Object } | ((context: string, request: string, callback: Function) => void)[];
-			stats?: 'errors-only' | 'minimal' | 'none' | 'normal' | 'verbose' | boolean | Stats;
+			stats?: Stats;
 			plugins?: Plugin[];
 		}
 		type DevtoolFilenameTemplateFunction = (info: DevtoolFilenameTemplateInfo) => string;
@@ -204,7 +204,8 @@ declare module 'webpack/lib/webpack' {
 			test?: Condition;
 			use?: (string | UseEntry)[];
 		}
-		interface Stats {
+		type Stats = boolean | 'errors-only' | 'minimal' | 'none' | 'normal' | 'verbose' | StatsOptions;
+		interface StatsOptions {
 			assets?: boolean;
 			assetsSort?: string;
 			cached?: boolean;
@@ -343,6 +344,7 @@ declare module 'webpack/lib/Compilation' {
 
 declare module 'webpack/lib/Compiler' {
 	import Tapable = require('tapable');
+	import webpack = require('webpack');
 	import Compilation = require('webpack/lib/Compilation');
 	import NormalModuleFactory = require('webpack/lib/NormalModuleFactory');
 	import ContextModuleFactory = require('webpack/lib/ContextModuleFactory');
@@ -351,9 +353,9 @@ declare module 'webpack/lib/Compiler' {
 	class Compiler extends Tapable {
 		options: any;
 
-		run(callback: Function): void;
-		runAsChild(callback: Function): void;
-		watch(options: any, handler: (error: Error | null, stats: any) => void): Compiler.Watching;
+		run(callback: Compiler.Callback): void;
+		runAsChild(callback: Compiler.Callback): void;
+		watch(options: any, callback: Compiler.Callback): Compiler.Watching;
 
 		plugin(name: 'watch-run', fn: (this: Compiler, compiler: Compiler) => void): void;
 		plugin(name: 'done', fn: (this: Compiler, stats: any) => void): void;
@@ -371,15 +373,22 @@ declare module 'webpack/lib/Compiler' {
 	}
 
 	namespace Compiler {
-		class Watching {
-			close(callback: () => void): void;
-			invalidate(): void;
-			watch(files: any, dirs: any, missing: any): void;
-		}
+		type Callback = (error?: Error | null, stats?: StatsObject) => void;
 		interface CompilationParams {
 			normalModuleFactory: NormalModuleFactory;
 			contextModuleFactory: ContextModuleFactory;
 			compilationDependencies: Dependency[];
+		}
+		interface StatsObject {
+			hasErrors(): boolean;
+			hasWarnings(): boolean;
+			toJson(options?: webpack.Stats): {};
+			toString(options?: webpack.Stats): string;
+		}
+		class Watching {
+			close(callback: () => void): void;
+			invalidate(): void;
+			watch(files: any, dirs: any, missing: any): void;
 		}
 	}
 
