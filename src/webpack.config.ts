@@ -9,7 +9,7 @@ const postcssImport = require('postcss-import');
 const postcssCssNext = require('postcss-cssnext');
 import { existsSync } from 'fs';
 import * as NormalModuleReplacementPlugin from 'webpack/lib/NormalModuleReplacementPlugin';
-
+const instances = require('ts-loader/dist/instances');
 import CoreLoadPlugin from './plugins/CoreLoadPlugin';
 import I18nPlugin from './plugins/I18nPlugin';
 import InjectModulesPlugin from './plugins/InjectModulesPlugin';
@@ -183,9 +183,26 @@ module.exports = function (args: any) {
 		module: {
 			rules: [
 				{ test: /@dojo\/.*\.js$/, enforce: 'pre', loader: 'source-map-loader', options: { includeModulePaths: true } },
-				{ test: /src[\\\/].*\.ts?$/, enforce: 'pre', loader: 'css-module-dts-loader?type=ts' },
+				{ test: /src[\\\/].*\.ts?$/, enforce: 'pre',
+					loader: {
+						loader: 'css-module-dts-loader',
+						options: {
+							type: 'ts',
+							instances,
+							instanceName: '0_dojo'
+						}
+					}
+				},
 				{ test: /src[\\\/].*\.css?$/, enforce: 'pre', loader: 'css-module-dts-loader?type=css' },
-				{ test: /src[\\\/].*\.ts?$/, use: [ 'umd-compat-loader', 'ts-loader?instance=dojo' ] },
+				{ test: /src[\\\/].*\.ts?$/, use: [
+					'umd-compat-loader',
+					{
+						loader: 'ts-loader',
+						options: {
+							instance: 'dojo'
+						}
+					}
+				]},
 				{ test: /\.js?$/, loader: 'umd-compat-loader' },
 				{ test: /globalize(\/|$)/, loader: 'imports-loader?define=>false' },
 				...includeWhen(!args.element, (args: any) => {
@@ -197,11 +214,19 @@ module.exports = function (args: any) {
 				{ test: /\.css$/, exclude: /src[\\\/].*/, loader: cssLoader },
 				{ test: /src[\\\/].*\.css?$/, loader: cssModuleLoader },
 				{ test: /\.css.js$/, exclude: /src[\\\/].*/, use: ['json-css-module-loader'] },
-				...includeWhen(args.withTests, (args: any) => {
-					return [
-						{ test: /tests[\\\/].*\.ts?$/, use: ['umd-compat-loader', 'ts-loader?instance=dojo'] }
-					];
-				}),
+				// ...includeWhen(args.withTests, (args: any) => {
+				// 	return [
+				// 		{ test: /tests[\\\/].*\.ts?$/, use: [
+				// 			'umd-compat-loader',
+				// 			{
+				// 				loader: 'ts-loader',
+				// 				options: {
+				// 					instance: 'dojo'
+				// 				}
+				// 			}
+				// 		] }
+				// 	];
+				// }),
 				...includeWhen(args.element, (args: any) => {
 					return [
 						{ test: /custom-element\.js/, loader: `imports-loader?widgetFactory=${args.element}` }

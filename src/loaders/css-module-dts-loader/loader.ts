@@ -1,18 +1,11 @@
 import { createSourceFile, forEachChild, Node, ScriptTarget, SyntaxKind } from 'typescript';
-const instances = require('ts-loader/dist/instances');
 import { statSync } from 'fs';
-
 import { resolve, dirname } from 'path';
 const DtsCreator = require('typed-css-modules');
-const { parseQuery } = require('loader-utils');
+const { getOptions } = require('loader-utils');
 const creator: any = new DtsCreator({
 	camelCase: true
 });
-
-type DTSFileData = {
-	name: string;
-	content: string;
-}
 
 const mTimeMap = new Map<string, Date>();
 
@@ -31,14 +24,15 @@ async function generateDTSFile(filePath: string) {
 	}
 }
 
-async function checkNodeForCSSImport(node: Node): Promise<string | void> {
+async function checkNodeForCSSImport(node: Node, instance: any): Promise<string | void> {
 	if (node.kind === SyntaxKind.StringLiteral) {
 		const importPath = node.getText().replace(/\'|\"/g, '');
 		if (/.css$/.test(importPath)) {
-			const dojoTSLoader = instances.getTypeScriptInstance({ instance: '0_dojo' });
 			const parentFileName = node.getSourceFile().fileName;
-
-			dojoTSLoader.instance.files[parentFileName] = false;
+			debugger;
+			if (instance) {
+				instance.files[parentFileName] = false;
+			}
 
 			const absoluteCssFileName = resolve(dirname(parentFileName), importPath);
 			return await generateDTSFile(absoluteCssFileName);
@@ -46,28 +40,22 @@ async function checkNodeForCSSImport(node: Node): Promise<string | void> {
 	}
 }
 
-async function checkNode(node: Node): Promise<any> {
+async function checkNode(node: Node, instance: any): Promise<any> {
 	const promises: Promise<any | any[]>[] = [];
 	switch (node.kind) {
 		case SyntaxKind.SourceFile:
 			forEachChild(node, (childNode: Node) => {
-				promises.push(checkNode(childNode));
+				promises.push(checkNode(childNode, instance));
 			});
 			break;
 		case SyntaxKind.ImportDeclaration:
 			forEachChild(node, (childNode: Node) => {
-				promises.push(checkNodeForCSSImport(childNode));
+				promises.push(checkNodeForCSSImport(childNode, instance));
 			});
 			break;
 	}
 
 	await Promise.all(promises);
-}
-
-async function findCSSImports(sourceFile: Node): Promise<any> {
-	const filePaths: DTSFileData[] = [];
-	await checkNode(sourceFile);
-	return filePaths;
 }
 
 const fileType = {
@@ -77,15 +65,34 @@ const fileType = {
 
 export default async function (this: any, content: string, sourceMap?: any): Promise<void> {
 	const callback = this.async();
-	const { type = fileType.ts }: { type: string } = parseQuery(this.query);
+	const {
+		type = fileType.ts,
+		instances,
+		instanceName
+	}: {
+		type: string,
+		instances: any | void,
+		instanceName: string | void
+	} = getOptions(this);
 
 	switch (type) {
 		case fileType.css:
 			await generateDTSFile(this.resourcePath);
 			break;
 		case fileType.ts:
+			let instance: any;
+			debugger;
+			if (instances && instanceName) {
+				const tsLoaderInstance = instances.getTypeScriptInstance({ instanceName });
+				if (tsLoaderInstance.error) {
+					console.warn(tsLoaderInstance.error.message);
+				}
+				else {
+					instance = tsLoaderInstance.instance;
+				}
+			}
 			const sourceFile = createSourceFile(this.resourcePath, content, ScriptTarget.Latest, true);
-			await findCSSImports(sourceFile);
+			await checkNode(sourceFile, instance || null);
 			break;
 	}
 
