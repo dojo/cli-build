@@ -24,26 +24,17 @@ export function throwImmediately() {
  * Load all supplemental CLDR data, and all CLDR data for the specified locale(s).
  */
 export function fetchCldrData(locales: string | string[]): CldrData {
-	const data = [
-		'currencyData',
-		'likelySubtags',
-		'numberingSystems',
-		'ordinals',
-		'plurals',
-		'timeData',
-		'weekData'
-	].reduce((data: any, name: string) => {
-		deepAssign(data, require(`cldr-data/supplemental/${name}.json`));
-		return data;
-	}, Object.create(null));
+	const data = Object.create(null);
 
 	locales = Array.isArray(locales) ? locales : [ locales ];
 	locales.forEach((locale: string) => {
-		[ 'ca-gregorian', 'currencies', 'dateFields', 'numbers', 'timeZoneNames', 'units' ]
+		[ 'numbers', 'ca-gregorian', 'units' ]
 			.forEach((name: string) => {
 				deepAssign(data, require(`cldr-data/main/${locale}/${name}.json`));
 			});
 	});
+
+	deepAssign(data, require('cldr-data/supplemental/likelySubtags.json'));
 
 	return data;
 }

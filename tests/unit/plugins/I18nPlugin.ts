@@ -1,3 +1,6 @@
+import coreLoad from '@dojo/core/load';
+import { Require } from '@dojo/interfaces/loader';
+import { Program } from 'estree';
 import { afterEach, describe, it } from 'intern!bdd';
 import * as assert from 'intern/chai!assert';
 import NormalModuleReplacementPlugin = require('webpack/lib/NormalModuleReplacementPlugin');
@@ -6,6 +9,68 @@ import Compiler = require('../../support/webpack/Compiler');
 import MockPlugin from '../../support/MockPlugin';
 import { fetchCldrData } from '../../support/util';
 import I18nPlugin from '../../../src/plugins/I18nPlugin';
+declare const require: Require;
+
+interface CldrTestOptions {
+	ast?: Program;
+	defaultLocale: string;
+	moduleInfo: ModuleInfo | null;
+	moduleTemplateId: string;
+	supportedLocales: string[];
+}
+
+interface ModuleInfo {
+	context?: string;
+	request: string;
+	contextInfo?: { issuer: string };
+}
+
+function applyCompilationPlugins(compilation: Compilation, ast: Program, moduleInfo?: ModuleInfo | null) {
+	const { normalModuleFactory, parser } = compilation.params;
+	if (typeof moduleInfo === 'undefined') {
+		moduleInfo = {
+			request: '@dojo/i18n/cldr/load/webpack',
+			contextInfo: { issuer: '/path/to/module/that/includes/cldr/load' }
+		};
+	}
+	normalModuleFactory.mockApply('before-resolve', moduleInfo, () => undefined);
+	normalModuleFactory.mockApply('parser', parser);
+	parser.mockApply('program', ast);
+}
+
+function loadAst() {
+	const url = require.toUrl('../../support/mocks/ast/cldr.json');
+	return coreLoad(url).then(([ json ]: [ Program ]) => json);
+}
+
+function testCldrInjection(options: Partial<CldrTestOptions>) {
+	const {
+		ast,
+		defaultLocale = 'en',
+		moduleInfo,
+		moduleTemplateId = '/path/to/@dojo/i18n/cldr/load/webpack.js',
+		supportedLocales
+	} = options;
+
+	const compiler = new Compiler();
+	const compilation = new Compilation();
+	const plugin = new I18nPlugin({
+		defaultLocale,
+		supportedLocales
+	});
+
+	plugin.apply(compiler);
+	compiler.mockApply('compilation', compilation);
+	// assert.strictEqual(compilation.moduleTemplate.plugins['module'].length, 1);
+
+	if (ast) {
+		applyCompilationPlugins(compilation, ast, moduleInfo);
+	}
+
+	return compilation.moduleTemplate.mockApply('module', '', {
+		userRequest: moduleTemplateId
+	})[0];
+}
 
 describe('i18n', () => {
 	afterEach(() => {
@@ -28,61 +93,84 @@ describe('i18n', () => {
 
 	describe('CLDR data', () => {
 		it('should inject data for the default locale', () => {
-			const compiler = new Compiler();
-			const compilation = new Compilation();
-			const plugin = new I18nPlugin({
-				defaultLocale: 'en'
+			return loadAst().then((ast: Program) => {
+				const source = testCldrInjection({
+					ast,
+					defaultLocale: 'en'
+				});
+
+				const cldrData = fetchCldrData('en');
+				const injected = `var __cldrData__ = ${JSON.stringify(cldrData)}`;
+				assert.strictEqual(source.source().indexOf(injected), 0);
 			});
-
-			plugin.apply(compiler);
-			compiler.mockApply('compilation', compilation);
-			assert.strictEqual(compilation.moduleTemplate.plugins['module'].length, 1);
-
-			const cldrData = fetchCldrData('en');
-			const source = compilation.moduleTemplate.mockApply('module', '', {
-				userRequest: '/path/to/@dojo/i18n/cldr/load/webpack.js'
-			})[0];
-
-			const injected = `var __cldrData__ = ${JSON.stringify(cldrData)}`;
-			assert.strictEqual(source.source().indexOf(injected), 0);
 		});
 
 		it('should inject data for supported locales', () => {
-			const compiler = new Compiler();
-			const compilation = new Compilation();
-			const plugin = new I18nPlugin({
-				defaultLocale: 'en',
-				supportedLocales: [ 'es' ]
+			return loadAst().then((ast: Program) => {
+				const source = testCldrInjection({
+					ast,
+					defaultLocale: 'en',
+					supportedLocales: [ 'es' ]
+				});
+
+				const cldrData = fetchCldrData([ 'en', 'es' ]);
+				const injected = `var __cldrData__ = ${JSON.stringify(cldrData)}`;
+				assert.strictEqual(source.source().indexOf(injected), 0);
 			});
-
-			plugin.apply(compiler);
-			compiler.mockApply('compilation', compilation);
-			assert.strictEqual(compilation.moduleTemplate.plugins['module'].length, 1);
-
-			const cldrData = fetchCldrData([ 'en', 'es' ]);
-			const source = compilation.moduleTemplate.mockApply('module', '', {
-				userRequest: '/path/to/@dojo/i18n/cldr/load/webpack.js'
-			})[0];
-
-			const injected = `var __cldrData__ = ${JSON.stringify(cldrData)}`;
-			assert.strictEqual(source.source().indexOf(injected), 0);
 		});
 
 		it('should not inject data to other modules', () => {
-			const compiler = new Compiler();
-			const compilation = new Compilation();
-			const plugin = new I18nPlugin({
-				defaultLocale: 'en'
+			const source = testCldrInjection({
+				defaultLocale: 'en',
+				moduleTemplateId: '/path/to/module.js'
 			});
-
-			plugin.apply(compiler);
-			compiler.mockApply('compilation', compilation);
-			assert.strictEqual(compilation.moduleTemplate.plugins['module'].length, 1);
-
-			const source = compilation.moduleTemplate.mockApply('module', '', {
-				userRequest: '/path/to/module.js'
-			})[0];
 			assert.strictEqual(source, '', 'No data injected.');
+		});
+
+		it('should ignore modules without an issuer', () => {
+			return loadAst().then((ast: Program) => {
+				const source = testCldrInjection({
+					ast,
+					defaultLocale: 'en',
+					moduleInfo: {
+						request: '@dojo/i18n/cldr/load/webpack'
+					}
+				});
+
+				const injected = `var __cldrData__ = {}`;
+				assert.strictEqual(source.source().indexOf(injected), 0);
+			});
+		});
+
+		it('should allow requests with relative paths', () => {
+			return loadAst().then((ast: Program) => {
+				const source = testCldrInjection({
+					ast,
+					defaultLocale: 'en',
+					moduleInfo: {
+						context: '/path/to/@dojo/i18n',
+						request: './cldr/load/webpack',
+						contextInfo: { issuer: '/path/to/module/that/includes/cldr/load' }
+					}
+				});
+
+				const cldrData = fetchCldrData('en');
+				const injected = `var __cldrData__ = ${JSON.stringify(cldrData)}`;
+				assert.strictEqual(source.source().indexOf(injected), 0);
+			});
+		});
+
+		it('should ignore falsy modules passed to "before-resolve"', () => {
+			return loadAst().then((ast: Program) => {
+				const source = testCldrInjection({
+					ast,
+					defaultLocale: 'en',
+					moduleInfo: null
+				});
+
+				const injected = `var __cldrData__ = {}`;
+				assert.strictEqual(source.source().indexOf(injected), 0);
+			});
 		});
 	});
 

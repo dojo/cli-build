@@ -4,7 +4,7 @@ import NormalModuleFactory = require('webpack/lib/NormalModuleFactory');
 import Chunk = require('webpack/lib/Chunk');
 import Compiler = require('webpack/lib/Compiler');
 import Compilation = require('webpack/lib/Compilation');
-import { getBasePath } from './util';
+import { getBasePath, isRelative } from './util/main';
 import Map from '@dojo/shim/Map';
 const basePath = path.join(process.cwd(), 'node_modules');
 
@@ -32,17 +32,6 @@ export interface InjectModulesPluginOptions {
 }
 
 export type ModuleIds = string[] | { [basePath: string]: string[] };
-
-/**
- * @private
- * Test whether a module ID is relative or absolute.
- *
- * @param id
- * The module ID.
- */
-function isRelative(id: string): boolean {
-	return /^\W/.test(id);
-}
 
 /**
  * @private

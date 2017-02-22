@@ -6,9 +6,9 @@ import * as path from 'path';
 import ConcatSource = require('webpack-sources/lib/ConcatSource');
 import NormalModuleReplacementPlugin = require('webpack/lib/NormalModuleReplacementPlugin');
 import Compiler = require('webpack/lib/Compiler');
-import NormalModule = require('webpack/lib/NormalModule');
 import InjectModulesPlugin from './InjectModulesPlugin';
-import { hasExtension } from './util';
+import getCldrUrls from './util/i18n';
+import { hasExtension, isRelative, mergeUnique } from './util/main';
 
 declare const require: Require;
 
@@ -29,46 +29,6 @@ export interface DojoI18nPluginOptions {
 	 * The locales whose CLDR data and messages will be included in the main build.
 	 */
 	supportedLocales?: string[];
-}
-
-const localeCldrPaths = [
-	'ca-gregorian',
-	'currencies',
-	'dateFields',
-	'numbers',
-	'timeZoneNames',
-	'units'
-].map((name: string) => `cldr-data/main/{locale}/${name}.json`);
-
-const supplementalCldrPaths = [
-	'currencyData',
-	'likelySubtags',
-	'numberingSystems',
-	'ordinals',
-	'plurals',
-	'timeData',
-	'weekData'
-].map((name: string) => `cldr-data/supplemental/${name}.json`);
-
-/**
- * @private
- * Loads the supplemental CLDR modules, as well as the CLDR modules for the specified locales.
- *
- * @param locales
- * The locales to load.
- *
- * @return
- * The loaded CLDR data.
- */
-function getCldrData(locales: string[] = []): CldrData {
-	const data = mergeCldrData(requirePaths(supplementalCldrPaths));
-
-	locales.forEach((locale: string) => {
-		const localePaths = localeCldrPaths.map((path: string) => path.replace('{locale}', locale));
-		deepAssign(data, mergeCldrData(requirePaths(localePaths)));
-	});
-
-	return data;
 }
 
 /**
@@ -104,34 +64,8 @@ function getMessageLocalePaths(bundle: string, supportedLocales: string[]): stri
 		});
 }
 
-/**
- * @private
- * Recursively reduce an array of CLDR data objects to a single CLDR object.
- *
- * @param sources
- * An array of CLDR data objects to merge.
- *
- * @return
- * The single, merged data object.
- */
-function mergeCldrData(sources: CldrData[]): CldrData {
-	return sources.reduce((merged: CldrData, source: CldrData) => {
-		return deepAssign(merged, source);
-	}, Object.create(null));
-}
-
-/**
- * @private
- * Loads and returns the CLDR modules for the specified paths.
- *
- * @param paths
- * The CLDR paths
- *
- * @return
- * The loaded CLDR modules.
- */
-function requirePaths(paths: ReadonlyArray<string>): CldrData[] {
-	return paths.map((path: string) => require(path) as CldrData);
+function isCldrLoadModule(path: string): boolean {
+	return /cldr\/load\/webpack/.test(path);
 }
 
 /**
@@ -175,14 +109,63 @@ export default class DojoI18nPlugin {
 			});
 		}
 
-		compiler.plugin('compilation', compilation => {
-			compilation.moduleTemplate.plugin('module', (source, module: NormalModule) => {
-				if (/\/cldr\/load\/webpack/.test(module.userRequest)) {
-					const cldrData = getCldrData([ defaultLocale ].concat(supportedLocales || []));
+		compiler.plugin('compilation', (compilation, data) => {
+			const astMap = new Map();
+			const parserQueue: string[] = [];
+			const containsLoad: string[] = [];
+
+			data.normalModuleFactory.plugin('before-resolve', (result: any, callback: any) => {
+				if (!result) {
+					return callback();
+				}
+
+				let request = isRelative(result.request) ? path.join(result.context, result.request) : result.request;
+
+				const { contextInfo } = result;
+				const issuer = contextInfo && contextInfo.issuer;
+				if (issuer && isCldrLoadModule(request)) {
+					containsLoad.push(issuer);
+					parserQueue.push(issuer);
+				}
+
+				return callback(null, result);
+			});
+
+			data.normalModuleFactory.plugin('parser', (parser: any) => {
+				parser.plugin('program', (ast: any) => {
+					const path = parserQueue.shift();
+					if (path && containsLoad.indexOf(path) > -1) {
+						astMap.set(path, ast);
+					}
+				});
+			});
+
+			compilation.moduleTemplate.plugin('module', (source: any, module: any) => {
+				if (isCldrLoadModule(module.userRequest)) {
+					const locales = this._getLocales();
+					const cldrData = containsLoad.map((path: string) => getCldrUrls(astMap.get(path)))
+						.reduce(mergeUnique, [])
+						.map((url: string) => {
+							return locales.map((locale: string) => url.replace('{locale}', locale));
+						})
+						.reduce(mergeUnique, [])
+						.map((mid: string) => require(mid) as CldrData)
+						.reduce((cldrData: CldrData, source: CldrData) => {
+							return deepAssign(cldrData, source);
+						}, Object.create(null));
+
+					astMap.clear();
 					return new ConcatSource(`var __cldrData__ = ${JSON.stringify(cldrData)}`, '\n', source);
 				}
+
 				return source;
 			});
 		});
+	}
+
+	protected _getLocales(this: DojoI18nPlugin) {
+		const { defaultLocale, supportedLocales } = this;
+		const locales = [ defaultLocale ];
+		return Array.isArray(supportedLocales) ? locales.concat(supportedLocales) : locales;
 	}
 }
