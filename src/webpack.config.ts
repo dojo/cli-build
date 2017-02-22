@@ -119,7 +119,7 @@ export default function webpackConfig(args: Partial<BuildArgs>) {
 			...includeWhen(args.element, () => {
 				return [ new webpack.optimize.CommonsChunkPlugin({ name: 'widget-core', filename: 'widget-core.js' }) ];
 			}),
-			/*new webpack.optimize.UglifyJsPlugin({ sourceMap: true, compress: { warnings: false }, exclude: /tests[/]/ }),*/
+			new webpack.optimize.UglifyJsPlugin({ sourceMap: true, compress: { warnings: false }, exclude: /tests[/]/ }),
 			includeWhen(args.element, args => {
 				return new HtmlWebpackPlugin({
 					inject: false,
