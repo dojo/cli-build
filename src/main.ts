@@ -183,21 +183,23 @@ const command: Command = {
 		});
 	},
 	run(helper: Helper, args: BuildArgs) {
-		const options: WebpackOptions = {
-			compress: true,
-			stats: {
-				colors: true,
-				chunks: false
-			}
-		};
-		const configArgs = getConfigArgs(args);
+		return helper.configuration.get().then((dojoRc: Partial<BuildArgs>) => {
+			const options: WebpackOptions = {
+				compress: true,
+				stats: {
+					colors: true,
+					chunks: false
+				}
+			};
+			const configArgs = getConfigArgs(Object.assign({}, dojoRc, args));
 
-		if (args.watch) {
-			return watch(config(configArgs), options, args);
-		}
-		else {
-			return compile(config(configArgs), options);
-		}
+			if (args.watch) {
+				return watch(config(configArgs), options, args);
+			}
+			else {
+				return compile(config(configArgs), options);
+			}
+		});
 	},
 	eject(helper: Helper) {
 		const ejectOutput: EjectOutput = {
