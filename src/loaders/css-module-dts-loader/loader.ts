@@ -4,9 +4,27 @@ import { resolve, dirname } from 'path';
 const DtsCreator = require('typed-css-modules');
 const { getOptions } = require('loader-utils');
 const instances = require('ts-loader/dist/instances');
-const creator: any = new DtsCreator({
-	camelCase: true
-});
+
+type TSLoaderInstances = {
+	files: {
+		[key: string]: boolean;
+	}
+}
+
+type DtsResult = {
+	writeFile(): Promise<void>;
+}
+
+type DtsCreatorInstance = {
+	create(filePath: string, initialContents: boolean, clearCache: boolean): Promise<DtsResult>;
+}
+
+type Webpack = {
+	resourcePath: string;
+	async(): (error: Error | null, result: string, sourceMap?: string) => void;
+}
+
+const creator: DtsCreatorInstance = new DtsCreator();
 
 const mTimeMap = new Map<string, Date>();
 
@@ -16,7 +34,7 @@ function generateDTSFile(filePath: string): Promise<void> {
 
 	if (!lastMTime || mtime > lastMTime) {
 		mTimeMap.set(filePath, mtime);
-		return creator.create(filePath, false, true).then((content: any) => {
+		return creator.create(filePath, false, true).then((content) => {
 			return content.writeFile();
 		});
 	}
@@ -25,7 +43,7 @@ function generateDTSFile(filePath: string): Promise<void> {
 	}
 }
 
-function checkNodeForCSSImport(node: Node, instance?: any): Promise<void> {
+function checkNodeForCSSImport(node: Node, instance?: TSLoaderInstances): Promise<void> {
 	if (node.kind === SyntaxKind.StringLiteral) {
 		const importPath = node.getText().replace(/\'|\"/g, '');
 		if (/.css$/.test(importPath)) {
@@ -47,8 +65,8 @@ function checkNodeForCSSImport(node: Node, instance?: any): Promise<void> {
 	}
 }
 
-function checkNode(node: Node, instance: any): Promise<any> {
-	const promises: Promise<any | any[]>[] = [];
+function checkNode(node: Node, instance?: TSLoaderInstances): Promise<any> {
+	const promises: Promise<void>[] = [];
 	switch (node.kind) {
 		case SyntaxKind.SourceFile:
 			forEachChild(node, (childNode: Node) => {
@@ -70,7 +88,7 @@ const fileType = {
 	ts: 'ts'
 };
 
-export default function (this: any, content: string, sourceMap?: any): Promise<any> {
+export default function (this: Webpack, content: string, sourceMap?: string): Promise<string> {
 	const callback = this.async();
 	const {
 		type = fileType.ts,
@@ -91,7 +109,7 @@ export default function (this: any, content: string, sourceMap?: any): Promise<a
 					break;
 				case fileType.ts:
 					const sourceFile = createSourceFile(this.resourcePath, content, ScriptTarget.Latest, true);
-					let instance: any = null;
+					let instance: TSLoaderInstances | undefined = undefined;
 
 					if (instanceName) {
 						const tsInstances = instances.getTypeScriptInstance({ instance: instanceName });
