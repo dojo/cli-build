@@ -70,7 +70,7 @@ const fileType = {
 	ts: 'ts'
 };
 
-export default function (this: any, content: string, sourceMap?: any) {
+export default function (this: any, content: string, sourceMap?: any): Promise<any> {
 	const callback = this.async();
 	const {
 		type = fileType.ts,
@@ -80,24 +80,33 @@ export default function (this: any, content: string, sourceMap?: any) {
 		instanceName: string | void
 	} = getOptions(this);
 
-	switch (type) {
-		case fileType.css:
-			generateDTSFile(this.resourcePath).then(() => {
-				callback(null, content, sourceMap);
-			});
-			break;
-		case fileType.ts:
-			const sourceFile = createSourceFile(this.resourcePath, content, ScriptTarget.Latest, true);
-			let instance: any = null;
+	return new Promise((resolve, reject) => {
+		try {
+			switch (type) {
+				case fileType.css:
+					generateDTSFile(this.resourcePath).then(() => {
+						callback(null, content, sourceMap);
+						resolve(content);
+					});
+					break;
+				case fileType.ts:
+					const sourceFile = createSourceFile(this.resourcePath, content, ScriptTarget.Latest, true);
+					let instance: any = null;
 
-			if (instanceName) {
-				const tsInstances = instances.getTypeScriptInstance({ instance: instanceName });
-				instance = tsInstances.instance;
+					if (instanceName) {
+						const tsInstances = instances.getTypeScriptInstance({ instance: instanceName });
+						instance = tsInstances.instance;
+					}
+
+					checkNode(sourceFile, instance).then(() => {
+						callback(null, content, sourceMap);
+						resolve(content);
+					});
+					break;
 			}
-
-			checkNode(sourceFile, instance).then(() => {
-				callback(null, content, sourceMap);
-			});
-			break;
-	}
+		}
+		catch (e) {
+			reject(e);
+		}
+	});
 }
