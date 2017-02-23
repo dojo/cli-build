@@ -25,13 +25,24 @@ export function throwImmediately() {
  */
 export function fetchCldrData(locales: string | string[]): CldrData {
 	const data = Object.create(null);
+	// Since we are using string comparisons to test which data are injected into the build,
+	// the URLs need to be in the order in which they were picked up by `I18nPlugin`.
+	const urls = [
+		'cldr-data/supplemental/numberingSystems.json',
+		'cldr-data/supplemental/currencyData.json',
+		'cldr-data/main/{locale}/ca-gregorian.json',
+		'cldr-data/main/{locale}/dateFields.json',
+		'cldr-data/supplemental/plurals.json',
+		'cldr-data/main/{locale}/numbers.json',
+		'cldr-data/main/{locale}/units.json',
+		'cldr-data/supplemental/likelySubtags.json'
+	];
 
 	locales = Array.isArray(locales) ? locales : [ locales ];
 	locales.forEach((locale: string) => {
-		[ 'numbers', 'ca-gregorian', 'units' ]
-			.forEach((name: string) => {
-				deepAssign(data, require(`cldr-data/main/${locale}/${name}.json`));
-			});
+		urls.forEach((url: string) => {
+			deepAssign(data, require(url.replace('{locale}', locale)));
+		});
 	});
 
 	deepAssign(data, require('cldr-data/supplemental/likelySubtags.json'));

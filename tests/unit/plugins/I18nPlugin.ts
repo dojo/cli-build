@@ -34,12 +34,15 @@ function applyCompilationPlugins(compilation: Compilation, ast: Program, moduleI
 		};
 	}
 	normalModuleFactory.mockApply('before-resolve', moduleInfo, () => undefined);
+	parser.state.current = <any> {
+		userRequest: moduleInfo && moduleInfo.contextInfo && moduleInfo.contextInfo.issuer
+	};
 	normalModuleFactory.mockApply('parser', parser);
 	parser.mockApply('program', ast);
 }
 
 function loadAst() {
-	const url = require.toUrl('../../support/mocks/ast/cldr.json');
+	const url = require.toUrl('../../support/mocks/ast/cldr-complete.json');
 	return coreLoad(url).then(([ json ]: [ Program ]) => json);
 }
 
@@ -61,7 +64,6 @@ function testCldrInjection(options: Partial<CldrTestOptions>) {
 
 	plugin.apply(compiler);
 	compiler.mockApply('compilation', compilation);
-	// assert.strictEqual(compilation.moduleTemplate.plugins['module'].length, 1);
 
 	if (ast) {
 		applyCompilationPlugins(compilation, ast, moduleInfo);

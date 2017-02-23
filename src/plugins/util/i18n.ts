@@ -1,13 +1,19 @@
 import {
 	ArrayExpression,
+	AssignmentExpression,
 	BaseFunction,
 	CallExpression,
+	Expression,
 	Identifier,
 	Program,
+	Property,
+	Statement,
+	SwitchCase,
 	VariableDeclaration,
 	VariableDeclarator
 } from 'estree';
-import { mergeUnique } from './main';
+import * as path from 'path';
+import { getBasePath, isRelative, mergeUnique } from './main';
 
 /**
  * @private
@@ -36,9 +42,64 @@ function extractArrayValues(item: any) {
  * @return
  * The child node, if it exists.
  */
-function getNextItem(item: any): any {
-	return item.body || item.expression || item.arguments;
-}
+const getNextItem = (function () {
+	const getters = {
+		argument: (item: { argument: Expression | null }) => item.argument,
+		arguments: (item: { arguments: Expression[] }) => item.arguments,
+		assignment: (item: AssignmentExpression) => item.right,
+		body: (item: { body: any }) => item.body,
+		'case': (item: SwitchCase) => item.consequent,
+		cases: (item: { cases: SwitchCase[] }) => item.cases,
+		conditional: (item: { alternate: Expression; consequent: Expression; }) => [ item.alternate, item.consequent ],
+		elements: (item: { elements: Expression[] }) => item.elements,
+		expression: (item: { expression: Expression }) => item.expression,
+		expressions: (item: { expressions: Expression[] }) => item.expressions,
+		loop: (item: { test: Expression; body: Statement; }) => [ item.test, item.body ],
+		properties: (item: { properties: Property[] }) => item.properties,
+		value: (item: { value: Expression }) => item.value
+	};
+
+	const nextItemMap: { [key: string]: (item: any) => any; } = {
+		ArrayExpression: getters.elements,
+		AssignmentExpression: getters.assignment,
+		CallExpression: getters.arguments,
+		ConditionalExpression: getters.conditional,
+		DoWhileStatement: getters.loop,
+		ExpressionStatement: getters.expression,
+		IfStatement: getters.conditional,
+		NewExpression: getters.arguments,
+		ObjectExpression: getters.properties,
+		Property: getters.value,
+		ReturnStatement: getters.argument,
+		SequenceExpression: getters.expressions,
+		SwitchCase: getters['case'],
+		SwitchStatement: getters.cases,
+		VariableDeclaration: (item: VariableDeclaration) => item.declarations,
+		WhileStatement: getters.loop
+	};
+
+	[
+		'ArrowExpression',
+		'ArrowFunctionExpression',
+		'BlockStatement',
+		'ForInStatement',
+		'ForOfStatement',
+		'ForStatement',
+		'FunctionDeclaration',
+		'FunctionExpression',
+		'LetStatement',
+		'Program',
+		'TryStatement'
+
+	].forEach((type: string) => {
+		nextItemMap[type] = getters.body;
+	});
+
+	return function (item: any): any {
+		const getter = nextItemMap[item.type];
+		return typeof getter === 'function' ? getter(item) : null;
+	};
+})();
 
 /**
  * @private
@@ -200,9 +261,12 @@ export const getLoadCallUrls = (function () {
 	 */
 	function getMatchingVariableDeclaration(item: any, name: string): any {
 		if (Array.isArray(item)) {
-			return item.reduce((result: any, child: any) => {
-				return result || getMatchingVariableDeclaration(child, name);
-			}, null);
+			for (let i = 0; i < item.length; i++) {
+				const result = getMatchingVariableDeclaration(item[i], name);
+				if (result) {
+					return result;
+				}
+			}
 		}
 		else if (item.type === 'VariableDeclaration') {
 			const matching = item.declarations.filter((declaration: any) => declaration.id.name === name);
@@ -254,10 +318,10 @@ export function getLoadImports(ast: Program): string[] {
 		}, [])
 		.filter(((item: VariableDeclarator) => {
 			const expression = item.init as CallExpression;
-			const callee = expression.callee as Identifier;
-			const args = expression.arguments;
+			const callee = expression && expression.callee as Identifier;
+			const args = expression && expression.arguments;
 
-			return callee && callee.name === 'require' && args.length === 1 && /cldr\/load/.test((<any> args[0]).value);
+			return callee && callee.name === 'require' && args && args.length === 1 && /cldr\/load/.test((<any> args[0]).value);
 		}))
 		.map(item => (<Identifier> item.id).name);
 }
@@ -277,7 +341,10 @@ export function getLoadImports(ast: Program): string[] {
  * @return
  * An array of any URLs parsed from calls to `@dojo/i18n/cldr/load.default`.
  */
-export default function getCldrUrls(ast: Program): string[] {
+export default function getCldrUrls(context: string, ast: Program): string[] {
 	const importNames = getLoadImports(ast);
-	return getLoadCallUrls(ast, importNames);
+	const urls = getLoadCallUrls(ast, importNames);
+	return urls.map((url: string) => {
+		return isRelative(url) ? path.resolve(getBasePath(context), url) : url;
+	});
 }

@@ -7,8 +7,9 @@ import getCldrUrls, { getLoadCallUrls, getLoadImports } from '../../../../src/pl
 
 declare const require: Require;
 
-function loadAst() {
-	const url = require.toUrl('../../../support/mocks/ast/cldr.json');
+function loadAst(complete = true) {
+	const file = complete ? 'complete' : 'relative';
+	const url = require.toUrl(`../../../support/mocks/ast/cldr-${file}.json`);
 	return coreLoad(url).then(([ json ]: [ Program ]) => json);
 }
 
@@ -26,10 +27,14 @@ describe('plugins/util/i18n', () => {
 			return loadAst().then((ast) => {
 				const importNames = [ 'load' ];
 				assert.sameMembers(getLoadCallUrls(ast, importNames), [
-					'cldr-data/supplemental/likelySubtags.json',
-					'cldr-data/main/{locale}/numbers.json',
 					'cldr-data/main/{locale}/ca-gregorian.json',
-					'cldr-data/main/{locale}/units.json'
+					'cldr-data/main/{locale}/dateFields.json',
+					'cldr-data/main/{locale}/numbers.json',
+					'cldr-data/main/{locale}/units.json',
+					'cldr-data/supplemental/currencyData.json',
+					'cldr-data/supplemental/likelySubtags.json',
+					'cldr-data/supplemental/numberingSystems.json',
+					'cldr-data/supplemental/plurals.json'
 				]);
 			});
 		});
@@ -38,11 +43,23 @@ describe('plugins/util/i18n', () => {
 	describe('getCldrUrls', () => {
 		it('should return an object with urls and variable names passed to `cldr/load`', () => {
 			return loadAst().then((ast) => {
-				assert.sameMembers(getCldrUrls(ast), [
-					'cldr-data/supplemental/likelySubtags.json',
-					'cldr-data/main/{locale}/numbers.json',
+				assert.sameMembers(getCldrUrls('/context', ast), [
 					'cldr-data/main/{locale}/ca-gregorian.json',
-					'cldr-data/main/{locale}/units.json'
+					'cldr-data/main/{locale}/dateFields.json',
+					'cldr-data/main/{locale}/numbers.json',
+					'cldr-data/main/{locale}/units.json',
+					'cldr-data/supplemental/currencyData.json',
+					'cldr-data/supplemental/likelySubtags.json',
+					'cldr-data/supplemental/numberingSystems.json',
+					'cldr-data/supplemental/plurals.json'
+				]);
+			});
+		});
+
+		it('should resolve relative urls', () => {
+			return loadAst(false).then((ast) => {
+				assert.sameMembers(getCldrUrls('/parent/context/mid.ts', ast), [
+					'/parent/path/to/cldr/data.json'
 				]);
 			});
 		});

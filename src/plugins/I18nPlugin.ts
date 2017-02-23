@@ -64,6 +64,10 @@ function getMessageLocalePaths(bundle: string, supportedLocales: string[]): stri
 		});
 }
 
+/**
+ * @private
+ * Determine whether the specified path is for the `@dojo/i18n/cldr/load` module.
+ */
 function isCldrLoadModule(path: string): boolean {
 	return /cldr\/load\/webpack/.test(path);
 }
@@ -111,7 +115,6 @@ export default class DojoI18nPlugin {
 
 		compiler.plugin('compilation', (compilation, data) => {
 			const astMap = new Map();
-			const parserQueue: string[] = [];
 			const containsLoad: string[] = [];
 
 			data.normalModuleFactory.plugin('before-resolve', (result: any, callback: any) => {
@@ -123,9 +126,8 @@ export default class DojoI18nPlugin {
 
 				const { contextInfo } = result;
 				const issuer = contextInfo && contextInfo.issuer;
-				if (issuer && isCldrLoadModule(request)) {
+				if (issuer && issuer.indexOf('node_modules') < 0 && isCldrLoadModule(request)) {
 					containsLoad.push(issuer);
-					parserQueue.push(issuer);
 				}
 
 				return callback(null, result);
@@ -133,8 +135,8 @@ export default class DojoI18nPlugin {
 
 			data.normalModuleFactory.plugin('parser', (parser: any) => {
 				parser.plugin('program', (ast: any) => {
-					const path = parserQueue.shift();
-					if (path && containsLoad.indexOf(path) > -1) {
+					const path = parser.state.current.userRequest;
+					if (path) {
 						astMap.set(path, ast);
 					}
 				});
@@ -143,7 +145,7 @@ export default class DojoI18nPlugin {
 			compilation.moduleTemplate.plugin('module', (source: any, module: any) => {
 				if (isCldrLoadModule(module.userRequest)) {
 					const locales = this._getLocales();
-					const cldrData = containsLoad.map((path: string) => getCldrUrls(astMap.get(path)))
+					const cldrData = containsLoad.map((path: string) => getCldrUrls(path, astMap.get(path)))
 						.reduce(mergeUnique, [])
 						.map((url: string) => {
 							return locales.map((locale: string) => url.replace('{locale}', locale));
@@ -163,6 +165,10 @@ export default class DojoI18nPlugin {
 		});
 	}
 
+	/**
+	 * @protected
+	 * Returns a merged array of supported locales.
+	 */
 	protected _getLocales(this: DojoI18nPlugin) {
 		const { defaultLocale, supportedLocales } = this;
 		const locales = [ defaultLocale ];
