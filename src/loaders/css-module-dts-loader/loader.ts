@@ -41,7 +41,7 @@ function generateDTSFile(filePath: string): Promise<void> {
 	});
 }
 
-function checkNodeForCSSImport(node: Node, filePaths: string[]): string | void {
+function checkNodeForCSSImport(node: Node): string | void {
 	if (node.kind === SyntaxKind.StringLiteral) {
 		const importPath = node.getText().replace(/\'|\"/g, '');
 		if (/.css$/.test(importPath)) {
@@ -60,7 +60,7 @@ function checkNode(node: Node, filePaths: string[] = []): string[] {
 			break;
 		case SyntaxKind.ImportDeclaration:
 			forEachChild(node, (childNode: Node) => {
-				const path = checkNodeForCSSImport(childNode, filePaths);
+				const path = checkNodeForCSSImport(childNode);
 				path && filePaths.push(path);
 			});
 			break;
