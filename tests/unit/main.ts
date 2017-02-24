@@ -217,6 +217,25 @@ describe('main', () => {
 				}), JSON.stringify(mockWebpack.args));
 			});
 		});
+
+		it('should not override .dojorc with undefined values', () => {
+			const config = getMockConfiguration({
+				locale: 'en',
+				supportedLocales: [ 'fr', 'es' ],
+				messageBundles: 'nls/main'
+			});
+			return moduleUnderTest.run(config, {
+				locale: undefined,
+				supportedLocales: undefined,
+				messageBundles: undefined
+			}).then(() => {
+				assert.isTrue(mockWebpackConfigModule.calledWith({
+					locale: 'en',
+					supportedLocales: [ 'fr', 'es' ],
+					messageBundles: [ 'nls/main' ]
+				}), JSON.stringify(mockWebpack.args));
+			});
+		});
 	});
 
 	describe('debug options', () => {

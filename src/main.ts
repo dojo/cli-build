@@ -63,6 +63,18 @@ function getConfigArgs(args: BuildArgs): Partial<BuildArgs> {
 	return options;
 }
 
+function mergeConfigArgs(...sources: BuildArgs[]): BuildArgs {
+	return sources.reduce((args: BuildArgs, source: BuildArgs) => {
+		Object.keys(source).forEach((key: string) => {
+			const value = source[key];
+			if (typeof value !== 'undefined') {
+				args[key] = source[key];
+			}
+		});
+		return args;
+	}, Object.create(null));
+}
+
 function watch(config: webpack.Config, options: WebpackOptions, args: BuildArgs): Promise<any> {
 	config.devtool = 'inline-source-map';
 
@@ -183,7 +195,7 @@ const command: Command = {
 		});
 	},
 	run(helper: Helper, args: BuildArgs) {
-		return helper.configuration.get().then((dojoRc: Partial<BuildArgs>) => {
+		return helper.configuration.get().then((dojoRc: BuildArgs = Object.create(null)) => {
 			const options: WebpackOptions = {
 				compress: true,
 				stats: {
@@ -191,7 +203,7 @@ const command: Command = {
 					chunks: false
 				}
 			};
-			const configArgs = getConfigArgs(Object.assign({}, dojoRc, args));
+			const configArgs = getConfigArgs(mergeConfigArgs(dojoRc, args));
 
 			if (args.watch) {
 				return watch(config(configArgs), options, args);
