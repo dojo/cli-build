@@ -16,6 +16,11 @@ const tsContentWithCss = `
 	import * as css from '${cssFilePath}';
 `;
 
+const tsContentWithoutCss = `
+	import thing from 'place';
+	import this from 'that';
+`;
+
 describe('css-module-dts-loader', () => {
 	let loaderUnderTest: any;
 	let mockModule: MockModule;
@@ -24,11 +29,12 @@ describe('css-module-dts-loader', () => {
 	let mockFs: any;
 	let mockInstances: any;
 	let sandbox: sinon.SinonSandbox;
-	let callback: sinon.SinonStub;
+	const async = () => () => null;
 	let writeFile: sinon.SinonStub;
 	const resourcePath = 'test/path';
 	const dateNow = new Date();
 	let instance: any;
+	const defaultScope = { async, resourcePath};
 
 	function getInstance() {
 		return {
@@ -40,7 +46,6 @@ describe('css-module-dts-loader', () => {
 
 	beforeEach(() => {
 		sandbox = sinon.sandbox.create();
-		callback = sandbox.stub();
 		writeFile = sandbox.stub();
 		mockModule = new MockModule('../../src/loaders/css-module-dts-loader/loader');
 		mockModule.dependencies([
@@ -58,12 +63,7 @@ describe('css-module-dts-loader', () => {
 		mockInstances = mockModule.getMock('ts-loader/dist/instances');
 		instance = getInstance();
 		mockInstances.getTypeScriptInstance = sandbox.stub().returns({ instance });
-		loaderUnderTest = mockModule.getModuleUnderTest().default.bind({
-			async() {
-				return callback;
-			},
-			resourcePath
-		});
+		loaderUnderTest = mockModule.getModuleUnderTest().default;
 	});
 
 	afterEach(() => {
@@ -75,9 +75,23 @@ describe('css-module-dts-loader', () => {
 		mockUtils.getOptions.returns({
 			type: 'css'
 		});
-		return loaderUnderTest(cssContent).then(() => {
-			assert.isTrue(mockDTSGenerator.create.calledOnce);
-			assert.isTrue(writeFile.calledOnce);
+
+		return new Promise((resolve, reject) => {
+			loaderUnderTest.call({
+				async() {
+					return () => {
+						try {
+							assert.isTrue(mockDTSGenerator.create.calledOnce);
+							assert.isTrue(writeFile.calledOnce);
+							resolve();
+						}
+						catch (e) {
+							reject(e);
+						}
+					};
+				},
+				resourcePath
+			}, cssContent);
 		});
 	});
 
@@ -86,13 +100,25 @@ describe('css-module-dts-loader', () => {
 			type: 'css'
 		});
 		mockFs.statSync.reset();
-		return Promise.all([
-			loaderUnderTest(cssContent),
-			loaderUnderTest(cssContent)
-		]).then(() => {
-			assert.isTrue(mockFs.statSync.calledTwice);
-			assert.isTrue(mockDTSGenerator.create.calledOnce);
-			assert.isTrue(writeFile.calledOnce);
+
+		return new Promise((resolve, reject) => {
+			loaderUnderTest.call(defaultScope, cssContent);
+			loaderUnderTest.call({
+				async() {
+					return () => {
+						try {
+							assert.isTrue(mockFs.statSync.calledTwice);
+							assert.isTrue(mockDTSGenerator.create.calledOnce);
+							assert.isTrue(writeFile.calledOnce);
+							resolve();
+						}
+						catch (e) {
+							reject(e);
+						}
+					};
+				},
+				resourcePath
+			}, cssContent);
 		});
 	});
 
@@ -102,13 +128,25 @@ describe('css-module-dts-loader', () => {
 		});
 		mockFs.statSync.reset();
 		mockFs.statSync.onSecondCall().returns({ mtime: new Date() });
-		return Promise.all([
-			loaderUnderTest(cssContent),
-			loaderUnderTest(cssContent)
-		]).then(() => {
-			assert.isTrue(mockFs.statSync.calledTwice);
-			assert.isTrue(mockDTSGenerator.create.calledTwice);
-			assert.isTrue(writeFile.calledTwice);
+
+		return new Promise((resolve, reject) => {
+			loaderUnderTest.call(defaultScope, cssContent);
+			loaderUnderTest.call({
+				async() {
+					return () => {
+						try {
+							assert.isTrue(mockFs.statSync.calledTwice);
+							assert.isTrue(mockDTSGenerator.create.calledTwice);
+							assert.isTrue(writeFile.calledTwice);
+							resolve();
+						}
+						catch (e) {
+							reject(e);
+						}
+					};
+				},
+				resourcePath
+			}, cssContent);
 		});
 	});
 
@@ -116,10 +154,24 @@ describe('css-module-dts-loader', () => {
 		mockUtils.getOptions.returns({
 			type: 'ts'
 		});
-		return loaderUnderTest(tsContentWithCss).then(() => {
-			assert.isTrue(mockDTSGenerator.create.calledOnce);
-			assert.isTrue(mockDTSGenerator.create.firstCall.calledWith(cssFilePath));
-			assert.isTrue(writeFile.calledOnce);
+
+		return new Promise((resolve, reject) => {
+			loaderUnderTest.call({
+				async() {
+					return () => {
+						try {
+							assert.isTrue(mockDTSGenerator.create.calledOnce);
+							assert.isTrue(mockDTSGenerator.create.firstCall.calledWith(cssFilePath));
+							assert.isTrue(writeFile.calledOnce);
+							resolve();
+						}
+						catch (e) {
+							reject(e);
+						}
+					};
+				},
+				resourcePath
+			}, tsContentWithCss);
 		});
 	});
 
@@ -128,8 +180,49 @@ describe('css-module-dts-loader', () => {
 			type: 'ts',
 			instanceName: 'test'
 		});
-		return loaderUnderTest(tsContentWithCss).then(() => {
-			assert.isFalse(instance.files[resourcePath]);
+
+		return new Promise((resolve, reject) => {
+			loaderUnderTest.call({
+				async() {
+					return () => {
+						try {
+							assert.isFalse(instance.files[resourcePath]);
+							resolve();
+						}
+						catch (e) {
+							reject(e);
+						}
+					};
+				},
+				resourcePath
+			}, tsContentWithCss);
+		});
+	});
+
+	it('should not generate dts files if no css imports are found', () => {
+		mockUtils.getOptions.returns({
+			type: 'ts',
+			instanceName: 'test'
+		});
+
+		return new Promise((resolve, reject) => {
+			mockFs.statSync.reset();
+			loaderUnderTest.call({
+				async() {
+					return () => {
+						try {
+							assert.isFalse(mockInstances.getTypeScriptInstance.called);
+							assert.isFalse(mockFs.statSync.called);
+							assert.isFalse(mockDTSGenerator.create.called);
+							resolve();
+						}
+						catch (e) {
+							reject(e);
+						}
+					};
+				},
+				resourcePath
+			}, tsContentWithoutCss);
 		});
 	});
 });

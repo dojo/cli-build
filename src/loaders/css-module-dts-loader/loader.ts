@@ -19,7 +19,7 @@ type DtsCreatorInstance = {
 	create(filePath: string, initialContents: boolean, clearCache: boolean): Promise<DtsResult>;
 }
 
-type Webpack = {
+export type Webpack = {
 	resourcePath: string;
 	async(): (error: Error | null, result: string, sourceMap?: string) => void;
 }
@@ -29,97 +29,83 @@ const creator: DtsCreatorInstance = new DtsCreator();
 const mTimeMap = new Map<string, Date>();
 
 function generateDTSFile(filePath: string): Promise<void> {
-	const { mtime } = statSync(filePath);
-	const lastMTime = mTimeMap.get(filePath);
+	return Promise.resolve().then(() => {
+		const { mtime } = statSync(filePath);
+		const lastMTime = mTimeMap.get(filePath);
 
-	if (!lastMTime || mtime > lastMTime) {
+		if (!lastMTime || mtime > lastMTime) {
 		mTimeMap.set(filePath, mtime);
-		return creator.create(filePath, false, true).then((content) => {
-			return content.writeFile();
-		});
-	}
-	else {
-		return Promise.resolve();
-	}
+		return creator.create(filePath, false, true)
+			.then((content) => content.writeFile());
+		}
+	});
 }
 
-function checkNodeForCSSImport(node: Node, instance?: TSLoaderInstances): Promise<void> {
+function checkNodeForCSSImport(node: Node, filePaths: string[]) {
 	if (node.kind === SyntaxKind.StringLiteral) {
 		const importPath = node.getText().replace(/\'|\"/g, '');
 		if (/.css$/.test(importPath)) {
 			const parentFileName = node.getSourceFile().fileName;
-
-			if (instance) {
-				instance.files[parentFileName] = false;
-			}
-
 			const absoluteCssFileName = resolve(dirname(parentFileName), importPath);
-			return generateDTSFile(absoluteCssFileName);
+			filePaths.push(absoluteCssFileName);
 		}
-		else {
-			return Promise.resolve();
-		}
-	}
-	else {
-		return Promise.resolve();
 	}
 }
 
-function checkNode(node: Node, instance?: TSLoaderInstances): Promise<any> {
-	const promises: Promise<void>[] = [];
+function checkNode(node: Node, filePaths: string[]) {
 	switch (node.kind) {
 		case SyntaxKind.SourceFile:
 			forEachChild(node, (childNode: Node) => {
-				promises.push(checkNode(childNode, instance));
+				checkNode(childNode, filePaths);
 			});
 			break;
 		case SyntaxKind.ImportDeclaration:
 			forEachChild(node, (childNode: Node) => {
-				promises.push(checkNodeForCSSImport(childNode, instance));
+				checkNodeForCSSImport(childNode, filePaths);
 			});
 			break;
 	}
-
-	return Promise.all(promises);
 }
 
-const fileType = {
-	css: 'css',
-	ts: 'ts'
-};
-
-export default function (this: Webpack, content: string, sourceMap?: string): Promise<string> {
+export default function (this: Webpack, content: string, sourceMap?: string) {
 	const callback = this.async();
 	const {
-		type = fileType.ts,
+		type = 'ts',
 		instanceName
 	}: {
 		type: string,
-		instanceName: string | void
+		instanceName?: string
 	} = getOptions(this);
 
-	return new Promise((resolve, reject) => {
-		switch (type) {
-			case fileType.css:
-				generateDTSFile(this.resourcePath).then(() => {
-					callback(null, content, sourceMap);
-					resolve(content);
-				});
-				break;
-			case fileType.ts:
-				const sourceFile = createSourceFile(this.resourcePath, content, ScriptTarget.Latest, true);
-				let instance: TSLoaderInstances | undefined = undefined;
+	switch (type) {
+		case 'css':
+			generateDTSFile(this.resourcePath).then(() => {
+				callback(null, content, sourceMap);
+			});
+			break;
+		case 'ts':
+			const sourceFile = createSourceFile(this.resourcePath, content, ScriptTarget.Latest, true);
+			const cssFilePaths: string[] = [];
 
+			checkNode(sourceFile, cssFilePaths);
+
+			if (cssFilePaths.length) {
 				if (instanceName) {
 					const tsInstances = instances.getTypeScriptInstance({ instance: instanceName });
-					instance = tsInstances.instance;
+					tsInstances.instance.files[this.resourcePath] = false;
 				}
 
-				checkNode(sourceFile, instance).then(() => {
-					callback(null, content, sourceMap);
-					resolve(content);
+				const generationPromises = cssFilePaths.map((cssFilePath) => {
+					return generateDTSFile(cssFilePath);
 				});
-				break;
-		}
-	});
+
+				Promise.all(generationPromises).then(() => {
+					callback(null, content, sourceMap);
+				});
+			}
+			else {
+				callback(null, content, sourceMap);
+			}
+			break;
+	}
 }
