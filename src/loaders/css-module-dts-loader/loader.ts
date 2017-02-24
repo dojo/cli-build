@@ -19,6 +19,11 @@ type DtsCreatorInstance = {
 	create(filePath: string, initialContents: boolean, clearCache: boolean): Promise<DtsResult>;
 }
 
+type LoaderArgs = {
+	type: string;
+	instanceName?: string;
+}
+
 export type Webpack = {
 	resourcePath: string;
 	async(): (error: Error | null, result: string, sourceMap?: string) => void;
@@ -70,41 +75,27 @@ function traverseNode(node: Node, filePaths: string[] = []): string[] {
 
 export default function (this: Webpack, content: string, sourceMap?: string) {
 	const callback = this.async();
-	const {
-		type = 'ts',
-		instanceName
-	}: {
-		type: string,
-		instanceName?: string
-	} = getOptions(this);
+	const { type = 'ts', instanceName }: LoaderArgs = getOptions(this);
 
-	switch (type) {
-		case 'css':
-			generateDTSFile(this.resourcePath).then(() => {
-				callback(null, content, sourceMap);
-			});
-			break;
-		case 'ts':
-			const sourceFile = createSourceFile(this.resourcePath, content, ScriptTarget.Latest, true);
-			const cssFilePaths = traverseNode(sourceFile);
+	(<Promise<void | void[]>> Promise.resolve()).then(() => {
+		switch (type) {
+			case 'css':
+				return generateDTSFile(this.resourcePath);
+			case 'ts':
+				const sourceFile = createSourceFile(this.resourcePath, content, ScriptTarget.Latest, true);
+				const cssFilePaths = traverseNode(sourceFile);
 
-			if (cssFilePaths.length) {
-				if (instanceName) {
-					const tsInstances = instances.getTypeScriptInstance({ instance: instanceName });
-					tsInstances.instance.files[this.resourcePath] = false;
+				if (cssFilePaths.length) {
+
+					if (instanceName) {
+						const instanceWrapper = instances.getTypeScriptInstance({ instance: instanceName });
+						instanceWrapper.instance.files[this.resourcePath] = false;
+					}
+
+					const generationPromises = cssFilePaths.map((cssFilePath) => generateDTSFile(cssFilePath));
+					return Promise.all(generationPromises);
 				}
-
-				const generationPromises = cssFilePaths.map((cssFilePath) => {
-					return generateDTSFile(cssFilePath);
-				});
-
-				Promise.all(generationPromises).then(() => {
-					callback(null, content, sourceMap);
-				});
-			}
-			else {
-				callback(null, content, sourceMap);
-			}
-			break;
-	}
+		}
+	})
+	.then(() => callback(null, content, sourceMap));
 }
