@@ -34,9 +34,9 @@ function generateDTSFile(filePath: string): Promise<void> {
 		const lastMTime = mTimeMap.get(filePath);
 
 		if (!lastMTime || mtime > lastMTime) {
-		mTimeMap.set(filePath, mtime);
-		return creator.create(filePath, false, true)
-			.then((content) => content.writeFile());
+			mTimeMap.set(filePath, mtime);
+			return creator.create(filePath, false, true)
+				.then((content) => content.writeFile());
 		}
 	});
 }
