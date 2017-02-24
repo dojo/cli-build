@@ -99,32 +99,27 @@ export default function (this: Webpack, content: string, sourceMap?: string): Pr
 	} = getOptions(this);
 
 	return new Promise((resolve, reject) => {
-		try {
-			switch (type) {
-				case fileType.css:
-					generateDTSFile(this.resourcePath).then(() => {
-						callback(null, content, sourceMap);
-						resolve(content);
-					});
-					break;
-				case fileType.ts:
-					const sourceFile = createSourceFile(this.resourcePath, content, ScriptTarget.Latest, true);
-					let instance: TSLoaderInstances | undefined = undefined;
+		switch (type) {
+			case fileType.css:
+				generateDTSFile(this.resourcePath).then(() => {
+					callback(null, content, sourceMap);
+					resolve(content);
+				});
+				break;
+			case fileType.ts:
+				const sourceFile = createSourceFile(this.resourcePath, content, ScriptTarget.Latest, true);
+				let instance: TSLoaderInstances | undefined = undefined;
 
-					if (instanceName) {
-						const tsInstances = instances.getTypeScriptInstance({ instance: instanceName });
-						instance = tsInstances.instance;
-					}
+				if (instanceName) {
+					const tsInstances = instances.getTypeScriptInstance({ instance: instanceName });
+					instance = tsInstances.instance;
+				}
 
-					checkNode(sourceFile, instance).then(() => {
-						callback(null, content, sourceMap);
-						resolve(content);
-					});
-					break;
-			}
-		}
-		catch (e) {
-			reject(e);
+				checkNode(sourceFile, instance).then(() => {
+					callback(null, content, sourceMap);
+					resolve(content);
+				});
+				break;
 		}
 	});
 }
