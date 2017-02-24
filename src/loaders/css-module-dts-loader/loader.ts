@@ -41,18 +41,17 @@ function generateDTSFile(filePath: string): Promise<void> {
 	});
 }
 
-function checkNodeForCSSImport(node: Node, filePaths: string[]) {
+function checkNodeForCSSImport(node: Node, filePaths: string[]): string | void {
 	if (node.kind === SyntaxKind.StringLiteral) {
 		const importPath = node.getText().replace(/\'|\"/g, '');
 		if (/.css$/.test(importPath)) {
 			const parentFileName = node.getSourceFile().fileName;
-			const absoluteCssFileName = resolve(dirname(parentFileName), importPath);
-			filePaths.push(absoluteCssFileName);
+			return resolve(dirname(parentFileName), importPath);
 		}
 	}
 }
 
-function checkNode(node: Node, filePaths: string[]) {
+function checkNode(node: Node, filePaths: string[] = []): string[] {
 	switch (node.kind) {
 		case SyntaxKind.SourceFile:
 			forEachChild(node, (childNode: Node) => {
@@ -61,10 +60,12 @@ function checkNode(node: Node, filePaths: string[]) {
 			break;
 		case SyntaxKind.ImportDeclaration:
 			forEachChild(node, (childNode: Node) => {
-				checkNodeForCSSImport(childNode, filePaths);
+				const path = checkNodeForCSSImport(childNode, filePaths);
+				path && filePaths.push(path);
 			});
 			break;
 	}
+	return filePaths;
 }
 
 export default function (this: Webpack, content: string, sourceMap?: string) {
@@ -85,9 +86,7 @@ export default function (this: Webpack, content: string, sourceMap?: string) {
 			break;
 		case 'ts':
 			const sourceFile = createSourceFile(this.resourcePath, content, ScriptTarget.Latest, true);
-			const cssFilePaths: string[] = [];
-
-			checkNode(sourceFile, cssFilePaths);
+			const cssFilePaths = checkNode(sourceFile);
 
 			if (cssFilePaths.length) {
 				if (instanceName) {
