@@ -4,6 +4,7 @@ import MockModule from '../../support/MockModule';
 import * as sinon from 'sinon';
 
 const cssFilePath = '/path/to/file.css';
+const cssFilePath2 = '/path/to/file2.css';
 
 const cssContent = `
 	.foo: {
@@ -14,6 +15,13 @@ const cssContent = `
 const tsContentWithCss = `
 	import thing from 'place';
 	import * as css from '${cssFilePath}';
+`;
+
+const tsContentWithMultipleCss = `
+	import thing from 'place';
+	import * as css from '${cssFilePath}';
+	import this from 'that';
+	import * as css2 from '${cssFilePath2}';
 `;
 
 const tsContentWithoutCss = `
@@ -172,6 +180,32 @@ describe('css-module-dts-loader', () => {
 				},
 				resourcePath
 			}, tsContentWithCss);
+		});
+	});
+
+	it('should find multiple css import declarations in ts files and generate multiple dts files', () => {
+		mockUtils.getOptions.returns({
+			type: 'ts'
+		});
+
+		return new Promise((resolve, reject) => {
+			loaderUnderTest.call({
+				async() {
+					return () => {
+						try {
+							assert.isTrue(mockDTSGenerator.create.calledTwice);
+							assert.isTrue(mockDTSGenerator.create.firstCall.calledWith(cssFilePath));
+							assert.isTrue(mockDTSGenerator.create.secondCall.calledWith(cssFilePath2));
+							assert.isTrue(writeFile.calledTwice);
+							resolve();
+						}
+						catch (e) {
+							reject(e);
+						}
+					};
+				},
+				resourcePath
+			}, tsContentWithMultipleCss);
 		});
 	});
 
