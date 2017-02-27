@@ -1,3 +1,4 @@
+import webpack = require('webpack');
 import { createSourceFile, forEachChild, Node, ScriptTarget, SyntaxKind } from 'typescript';
 import { statSync } from 'fs';
 import { resolve, dirname } from 'path';
@@ -73,7 +74,7 @@ function traverseNode(node: Node, filePaths: string[] = []): string[] {
 	return filePaths;
 }
 
-export default function (this: Webpack, content: string, sourceMap?: string) {
+export default function (this: webpack.LoaderContext, content: string, sourceMap?: string) {
 	const callback = this.async();
 	const { type = 'ts', instanceName }: LoaderArgs = getOptions(this);
 
