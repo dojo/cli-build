@@ -9,11 +9,13 @@ import Compiler = require('../../support/webpack/Compiler');
 import MockPlugin from '../../support/MockPlugin';
 import { fetchCldrData } from '../../support/util';
 import I18nPlugin from '../../../src/plugins/I18nPlugin';
+import { hasExtension } from '../../../src/plugins/util/main';
 declare const require: Require;
 
 interface CldrTestOptions {
 	ast?: Program;
 	defaultLocale: string;
+	moduleCount: number;
 	moduleInfo: ModuleInfo | null;
 	moduleTemplateId: string;
 	supportedLocales: string[];
@@ -22,23 +24,48 @@ interface CldrTestOptions {
 interface ModuleInfo {
 	context?: string;
 	request: string;
-	contextInfo?: { issuer: string };
+	issuer?: string;
 }
 
 function applyCompilationPlugins(compilation: Compilation, ast: Program, moduleInfo?: ModuleInfo | null) {
 	const { normalModuleFactory, parser } = compilation.params;
 	if (typeof moduleInfo === 'undefined') {
 		moduleInfo = {
-			request: '@dojo/i18n/cldr/load/webpack',
-			contextInfo: { issuer: '/path/to/module/that/includes/cldr/load' }
+			issuer: '/path/to/module/that/includes/cldrLoad.ts',
+			request: '@dojo/i18n/cldr/load/webpack'
 		};
 	}
-	normalModuleFactory.mockApply('before-resolve', moduleInfo, () => undefined);
+	normalModuleFactory.mockApply('before-resolve', getBeforeResolveModule(moduleInfo), () => undefined);
+	normalModuleFactory.mockApply('after-resolve', getAfterResolveModule(moduleInfo), () => undefined);
 	parser.state.current = <any> {
-		userRequest: moduleInfo && moduleInfo.contextInfo && moduleInfo.contextInfo.issuer
+		userRequest: moduleInfo && moduleInfo.issuer
 	};
 	normalModuleFactory.mockApply('parser', parser);
 	parser.mockApply('program', ast);
+}
+
+function getAfterResolveModule(module: ModuleInfo | null) {
+	if (module === null) {
+		return module;
+	}
+	const { context, request } = module;
+	return {
+		context,
+		rawRequest: request,
+		userRequest: hasExtension(request) ? request : `${request}.ts`
+	};
+}
+
+function getBeforeResolveModule(module: ModuleInfo | null) {
+	if (module === null) {
+		return module;
+	}
+	const { context, issuer, request } = module;
+	const result: any = { context, request };
+	if (issuer) {
+		result.contextInfo = { issuer };
+	}
+	return result;
 }
 
 function loadAst() {
@@ -50,6 +77,7 @@ function testCldrInjection(options: Partial<CldrTestOptions>) {
 	const {
 		ast,
 		defaultLocale = 'en',
+		moduleCount = 1,
 		moduleInfo,
 		moduleTemplateId = '/path/to/@dojo/i18n/cldr/load/webpack.js',
 		supportedLocales
@@ -66,7 +94,11 @@ function testCldrInjection(options: Partial<CldrTestOptions>) {
 	compiler.mockApply('compilation', compilation);
 
 	if (ast) {
-		applyCompilationPlugins(compilation, ast, moduleInfo);
+		let i = 0;
+		while (i < moduleCount) {
+			applyCompilationPlugins(compilation, ast, moduleInfo);
+			i++;
+		}
 	}
 
 	return compilation.moduleTemplate.mockApply('module', '', {
@@ -121,12 +153,64 @@ describe('i18n', () => {
 			});
 		});
 
-		it('should not inject data to other modules', () => {
-			const source = testCldrInjection({
-				defaultLocale: 'en',
-				moduleTemplateId: '/path/to/module.js'
+		it('inject data only once', () => {
+			return loadAst().then((ast: Program) => {
+				const source = testCldrInjection({
+					ast,
+					defaultLocale: 'en',
+					moduleCount: 2
+				});
+
+				const cldrData = fetchCldrData('en');
+				const injected = `var __cldrData__ = ${JSON.stringify(cldrData)}`;
+				assert.strictEqual(source.source().indexOf(injected), 0);
 			});
-			assert.strictEqual(source, '', 'No data injected.');
+		});
+
+		it('should not inject CLDR data `@dojo/i18n/cldr/load` is not used', () => {
+			return loadAst().then((ast: Program) => {
+				const request = '/path/to/module.js';
+				const source = testCldrInjection({
+					ast,
+					defaultLocale: 'en',
+					moduleInfo: {
+						context: '/parent/context',
+						issuer: '/issuer/path',
+						request
+					},
+					moduleTemplateId: request
+				});
+
+				assert.strictEqual(source, '');
+			});
+		});
+
+		it('should not inject data to other modules', () => {
+			return loadAst().then((ast: Program) => {
+				const source = testCldrInjection({
+					ast,
+					defaultLocale: 'en',
+					moduleTemplateId: '/path/to/module.js'
+				});
+				assert.strictEqual(source, '', 'No data injected.');
+			});
+		});
+
+		it('should ignore node modules', () => {
+			return loadAst().then((ast: Program) => {
+				const source = testCldrInjection({
+					ast,
+					defaultLocale: 'en',
+					moduleInfo: {
+						context: '/parent/context',
+						issuer: '/node_modules/issuer/path',
+						request: '/node_modules/@dojo/i18n/cldr/load/webpack'
+					}
+				});
+
+				const injected = 'var __cldrData__ = {}';
+				assert.strictEqual(source.source().indexOf(injected), 0);
+			});
 		});
 
 		it('should ignore modules without an issuer', () => {
@@ -144,6 +228,23 @@ describe('i18n', () => {
 			});
 		});
 
+		it('should ignore non-JS modules', () => {
+			return loadAst().then((ast: Program) => {
+				const source = testCldrInjection({
+					ast,
+					defaultLocale: 'en',
+					moduleInfo: {
+						context: '/parent/context',
+						issuer: '/issuer/path',
+						request: '/@dojo/i18n/cldr/load/webpack.css'
+					}
+				});
+
+				const injected = 'var __cldrData__ = {}';
+				assert.strictEqual(source.source().indexOf(injected), 0);
+			});
+		});
+
 		it('should allow requests with relative paths', () => {
 			return loadAst().then((ast: Program) => {
 				const source = testCldrInjection({
@@ -152,7 +253,7 @@ describe('i18n', () => {
 					moduleInfo: {
 						context: '/path/to/@dojo/i18n',
 						request: './cldr/load/webpack',
-						contextInfo: { issuer: '/path/to/module/that/includes/cldr/load' }
+						issuer: '/path/to/module/that/includes/cldr/load.ts'
 					}
 				});
 

@@ -1,6 +1,7 @@
 import { deepAssign } from '@dojo/core/lang';
 import { CldrData } from '@dojo/i18n/cldr/load';
 import { Require } from '@dojo/interfaces/loader';
+import { Program } from 'estree';
 import * as fs from 'fs';
 import * as path from 'path';
 import ConcatSource = require('webpack-sources/lib/ConcatSource');
@@ -8,7 +9,7 @@ import NormalModuleReplacementPlugin = require('webpack/lib/NormalModuleReplacem
 import Compiler = require('webpack/lib/Compiler');
 import InjectModulesPlugin from './InjectModulesPlugin';
 import getCldrUrls from './util/i18n';
-import { hasExtension, isRelative, mergeUnique } from './util/main';
+import { hasExtension, mergeUnique } from './util/main';
 
 declare const require: Require;
 
@@ -72,6 +73,14 @@ function isCldrLoadModule(path: string): boolean {
 	return /cldr\/load\/webpack/.test(path);
 }
 
+function isJsModule(mid: string): boolean {
+	return /\.(j|t)sx?$/.test(mid);
+}
+
+function isNodeModule(mid: string): boolean {
+	return mid.indexOf('node_modules') > -1;
+}
+
 /**
  * A webpack plugin that ensures CLDR data and locale-specific messages are available to webpack.
  */
@@ -114,20 +123,68 @@ export default class DojoI18nPlugin {
 		}
 
 		compiler.plugin('compilation', (compilation, data) => {
-			const astMap = new Map();
+			const astMap = new Map<string, Program>();
 			const containsLoad: string[] = [];
+			const contextMap = new Map<string, { issuer: string; request: string; }[]>();
+
+			// An internal set of all fully-resolved module paths, used to determine whether a module path
+			// should be added to the issuer map (see below). This exists entirely for performance reasons,
+			// specifically to reduce the number of AST objects held in memory. Since modules are parsed only
+			// once, this is needed to ensure the issuer map decrementer works correctly.
+			const moduleSet = new Set<string>();
+
+			// An internal map of issuer paths to an array of fully-resolved dependency paths.
+			// This map exists entirely for performance reasons, specifically to reduce the number of AST
+			// objects held in memory.
+			const issuerMap = new Map<string, string[]>();
 
 			data.normalModuleFactory.plugin('before-resolve', (result: any, callback: any) => {
 				if (!result) {
 					return callback();
 				}
 
-				let request = isRelative(result.request) ? path.join(result.context, result.request) : result.request;
-
-				const { contextInfo } = result;
+				const { context, contextInfo, request } = result;
 				const issuer = contextInfo && contextInfo.issuer;
-				if (issuer && issuer.indexOf('node_modules') < 0 && isCldrLoadModule(request)) {
-					containsLoad.push(issuer);
+
+				if (issuer && !isNodeModule(issuer)) {
+					let requestData = contextMap.get(context);
+					if (!requestData) {
+						requestData = [];
+						contextMap.set(context, requestData);
+					}
+					requestData.push({ issuer, request });
+				}
+
+				return callback(null, result);
+			});
+
+			data.normalModuleFactory.plugin('after-resolve', (result: any, callback: any) => {
+				if (!result) {
+					return callback();
+				}
+
+				const { context, rawRequest, userRequest } = result;
+				const requestData = contextMap.get(context);
+				if (requestData) {
+					const issuer = requestData.filter((item: { issuer: string; request: string; }) => item.request === rawRequest)
+						.map(item => item.issuer)[0];
+
+					let issuerData = issuerMap.get(issuer);
+					if (!issuerData) {
+						issuerData = [];
+						issuerMap.set(issuer, issuerData);
+					}
+
+					if (isJsModule(userRequest)) {
+						if (!moduleSet.has(userRequest)) {
+							issuerData.push(userRequest);
+							moduleSet.add(userRequest);
+						}
+
+						if (isCldrLoadModule(userRequest)) {
+							containsLoad.push(issuer);
+						}
+					}
 				}
 
 				return callback(null, result);
@@ -135,9 +192,32 @@ export default class DojoI18nPlugin {
 
 			data.normalModuleFactory.plugin('parser', (parser: any) => {
 				parser.plugin('program', (ast: any) => {
-					const path = parser.state.current.userRequest;
-					if (path) {
-						astMap.set(path, ast);
+					const { issuer, userRequest } = parser.state.current;
+
+					if (userRequest) {
+						if (!isNodeModule(userRequest) && isJsModule(userRequest)) {
+							astMap.set(userRequest, ast);
+						}
+
+						/* istanbul ignore next: internal performance enhancement that has no effect on output */
+						if (issuer && issuer.userRequest) {
+							const issuerData = issuerMap.get(issuer.userRequest) as string[];
+
+							if (issuerData) {
+								const index = issuerData.indexOf(userRequest);
+
+								if (index > -1) {
+									issuerData.splice(index, 1);
+								}
+
+								if (issuerData.length === 0) {
+									issuerMap.delete(issuer.userRequest);
+									if (containsLoad.indexOf(issuer.userRequest) < 0) {
+										astMap.delete(issuer.userRequest);
+									}
+								}
+							}
+						}
 					}
 				});
 			});
@@ -145,7 +225,7 @@ export default class DojoI18nPlugin {
 			compilation.moduleTemplate.plugin('module', (source: any, module: any) => {
 				if (isCldrLoadModule(module.userRequest)) {
 					const locales = this._getLocales();
-					const cldrData = containsLoad.map((path: string) => getCldrUrls(path, astMap.get(path)))
+					const cldrData = containsLoad.map((path: string) => getCldrUrls(path, astMap.get(path) as Program))
 						.reduce(mergeUnique, [])
 						.map((url: string) => {
 							return locales.map((locale: string) => url.replace('{locale}', locale));
