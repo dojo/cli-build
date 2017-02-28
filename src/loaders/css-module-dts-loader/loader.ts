@@ -25,11 +25,6 @@ type LoaderArgs = {
 	instanceName?: string;
 }
 
-export type Webpack = {
-	resourcePath: string;
-	async(): (error: Error | null, result: string, sourceMap?: string) => void;
-}
-
 const creator: DtsCreatorInstance = new DtsCreator();
 
 const mTimeMap = new Map<string, Date>();
