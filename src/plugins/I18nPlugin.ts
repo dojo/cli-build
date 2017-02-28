@@ -5,6 +5,7 @@ import { Program } from 'estree';
 import * as fs from 'fs';
 import * as path from 'path';
 import ConcatSource = require('webpack-sources/lib/ConcatSource');
+import NormalModule = require('webpack/lib/NormalModule');
 import NormalModuleReplacementPlugin = require('webpack/lib/NormalModuleReplacementPlugin');
 import Compiler = require('webpack/lib/Compiler');
 import InjectModulesPlugin from './InjectModulesPlugin';
@@ -73,10 +74,18 @@ function isCldrLoadModule(path: string): boolean {
 	return /cldr\/load\/webpack/.test(path);
 }
 
+/**
+ * @private
+ * Determine whether the specified module path is for a JavaScript/TypeScript module.
+ */
 function isJsModule(mid: string): boolean {
 	return /\.(j|t)sx?$/.test(mid);
 }
 
+/**
+ * @private
+ * Determine whether the specified module path is for a node module.
+ */
 function isNodeModule(mid: string): boolean {
 	return mid.indexOf('node_modules') > -1;
 }
@@ -138,7 +147,7 @@ export default class DojoI18nPlugin {
 			// objects held in memory.
 			const issuerMap = new Map<string, string[]>();
 
-			data.normalModuleFactory.plugin('before-resolve', (result: any, callback: any) => {
+			data.normalModuleFactory.plugin('before-resolve', (result, callback) => {
 				if (!result) {
 					return callback();
 				}
@@ -158,7 +167,7 @@ export default class DojoI18nPlugin {
 				return callback(null, result);
 			});
 
-			data.normalModuleFactory.plugin('after-resolve', (result: any, callback: any) => {
+			data.normalModuleFactory.plugin('after-resolve', (result, callback) => {
 				if (!result) {
 					return callback();
 				}
@@ -190,9 +199,9 @@ export default class DojoI18nPlugin {
 				return callback(null, result);
 			});
 
-			data.normalModuleFactory.plugin('parser', (parser: any) => {
-				parser.plugin('program', (ast: any) => {
-					const { issuer, userRequest } = parser.state.current;
+			data.normalModuleFactory.plugin('parser', (parser) => {
+				parser.plugin('program', (ast: Program) => {
+					const { issuer, userRequest } = parser.state.current as any;
 
 					if (userRequest) {
 						if (!isNodeModule(userRequest) && isJsModule(userRequest)) {
@@ -222,7 +231,7 @@ export default class DojoI18nPlugin {
 				});
 			});
 
-			compilation.moduleTemplate.plugin('module', (source: any, module: any) => {
+			compilation.moduleTemplate.plugin('module', (source, module: NormalModule) => {
 				if (isCldrLoadModule(module.userRequest)) {
 					const locales = this._getLocales();
 					const cldrData = containsLoad.map((path: string) => getCldrUrls(path, astMap.get(path) as Program))

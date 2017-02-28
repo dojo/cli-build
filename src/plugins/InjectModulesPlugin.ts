@@ -146,12 +146,12 @@ export default class InjectModulesPlugin {
 
 		setContext(this, compiler);
 
-		compiler.plugin('compilation', (compilation: any, data: any) => {
+		compiler.plugin('compilation', (compilation, data) => {
 			// Listening to the "resolver" event gives access to the resolver function that allows the injected module
 			// IDs to be mapped to not only their resources, but also to any loaders.
 			data.normalModuleFactory.plugin('resolver', (resolver: NormalModuleFactory.Resolver): NormalModuleFactory.Resolver => {
-				return (data: any, callback: NormalModuleFactory.ResolverCallback): any => {
-					resolver(data, (error?: Error, result?: any) => {
+				return (data: NormalModuleFactory.BeforeData, callback: NormalModuleFactory.ResolverCallback): void => {
+					resolver(data, (error, result) => {
 						if (error) {
 							return callback(error);
 						}
@@ -176,10 +176,10 @@ export default class InjectModulesPlugin {
 				};
 			});
 
-			compilation.plugin('optimize-chunks', (chunks: any[]) => {
-				this._modules.forEach((module: any) => {
-					chunks.forEach((chunk: any) => {
-						const requests = chunk.modules.map((module: any) => module.userRequest);
+			compilation.plugin('optimize-chunks', (chunks) => {
+				this._modules.forEach((module: NormalModule) => {
+					chunks.forEach((chunk) => {
+						const requests = chunk.modules.map((module: NormalModule) => module.userRequest);
 
 						if (requests.some((id: string) => resources.indexOf(id) > -1)) {
 							chunk.addModule(module);
