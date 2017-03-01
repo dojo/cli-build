@@ -1,18 +1,19 @@
-import Parser = require('./Parser');
 import Pluginable from './Pluginable';
 
-class Compiler extends Pluginable {
+import WebpackCompiler = require('webpack/lib/Compiler');
+
+import MockCompilationParams = require('./CompilationParams');
+
+class MockCompiler extends Pluginable {
 	applied: any[];
 	options: any;
-	parser: Parser;
 
 	constructor(options?: any) {
 		super();
 		this.applied = [];
-		this.parser = new Parser();
 		this.options = options || {
 			resolve: {
-				root: '/root/path'
+				modules: [ '/root/path' ]
 			}
 		};
 	}
@@ -20,7 +21,20 @@ class Compiler extends Pluginable {
 	apply(...args: any[]) {
 		this.applied = this.applied.concat(args);
 	}
+
+	mockApply(name: string, ...args: any[]) {
+		if (name === 'compilation' && args.length === 1) {
+			args[1] = new MockCompilationParams();
+		}
+		return super.mockApply(name, ...args);
+	}
+
+	run(callback: Function) {}
+	runAsChild(callback: Function) {}
+	watch(options: any, handler: (error: Error | null, stats: any) => void): WebpackCompiler.Watching {
+		return null as any;
+	}
 }
 
 // Node-style export used to maintain consistency with other webpack mocks.
-export = Compiler;
+export = MockCompiler;

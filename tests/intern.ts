@@ -40,6 +40,7 @@ export const loaderOptions = {
 		{ name: 'cldr-data', location: 'node_modules/cldr-data' },
 		{ name: 'cldrjs', location: 'node_modules/cldrjs' },
 		{ name: '@dojo', location: 'node_modules/@dojo' },
+		{ name: 'grunt-dojo2', location: 'node_modules/grunt-dojo2'},
 		{ name: 'globalize', location: 'node_modules/globalize', main: 'dist/globalize' }
 	],
 	map: {
@@ -62,4 +63,4 @@ export const loaderOptions = {
 export const suites = [ 'tests/unit/all' ];
 
 // A regular expression matching URLs to files that should not be included in code coverage analysis
-export const excludeInstrumentation = /(?:node_modules|bower_components|tests)[\/\\]|webpack\.config/;
+export const excludeInstrumentation = /(?:node_modules|bower_components|tests)[\/\\]|webpack\.config|templates/;

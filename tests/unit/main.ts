@@ -17,8 +17,8 @@ describe('main', () => {
 		sandbox = sinon.sandbox.create();
 		mockModule = new MockModule('../../src/main');
 		mockModule.dependencies(['./webpack.config', 'webpack', 'webpack-dev-server']);
-		mockWebpack = mockModule.getMock('webpack');
-		mockWebpackConfigModule = mockModule.getMock('./webpack.config');
+		mockWebpack = mockModule.getMock('webpack').ctor;
+		mockWebpackConfigModule = mockModule.getMock('./webpack.config').default;
 		mockWebpackConfig = {
 			entry: {
 				'src/main': [
@@ -27,7 +27,7 @@ describe('main', () => {
 				]
 			}
 		};
-		mockWebpackConfigModule.ctor.returns(mockWebpackConfig);
+		mockWebpackConfigModule.returns(mockWebpackConfig);
 		moduleUnderTest = mockModule.getModuleUnderTest().default;
 		sandbox.stub(console, 'log');
 	});
@@ -38,49 +38,59 @@ describe('main', () => {
 	});
 
 	it('should register supported arguments', () => {
-		const helper = { yargs: { option: sandbox.stub() } };
-		moduleUnderTest.register(helper);
+		const options = sandbox.stub();
+		moduleUnderTest.register(options);
 		assert.deepEqual(
-			helper.yargs.option.firstCall.args,
+			options.firstCall.args,
 			[ 'w', { alias: 'watch', describe: 'watch and serve' } ]
 		);
 		assert.deepEqual(
-			helper.yargs.option.secondCall.args,
+			options.secondCall.args,
 			[ 'p', { alias: 'port', describe: 'port to serve on when using --watch', type: 'number' }],
 		);
 		assert.deepEqual(
-			helper.yargs.option.thirdCall.args,
+			options.thirdCall.args,
 			[ 't', { alias: 'with-tests', describe: 'build tests as well as sources' }]
 		);
 		assert.deepEqual(
-			helper.yargs.option.args[3],
+			options.args[3],
 			[ 'locale', { describe: 'The default locale for the application', type: 'string' }],
 		);
 		assert.deepEqual(
-			helper.yargs.option.args[4],
+			options.args[4],
 			[ 'supportedLocales', { describe: 'Any additional locales supported by the application', type: 'array' }]
 		);
 		assert.deepEqual(
-			helper.yargs.option.args[5],
+			options.args[5],
 			[ 'messageBundles', { describe: 'Any message bundles to include in the build', type: 'array' }]
+		);
+		assert.deepEqual(
+			options.args[6],
+			[ 'element', { describe: 'Path to a custom element descriptor factory', type: 'string' }]
+		);
+		assert.deepEqual(
+			options.args[7],
+			[ 'elementPrefix', { describe: 'Output file for custom element', type: 'string' }]
 		);
 	});
 
 	it('should run compile and log results on success', () => {
-		mockWebpack.run = sandbox.stub().yields(false, 'some stats');
+		const run = sandbox.stub().yields(false, 'some stats');
+		mockWebpack.returns({ run });
 		return moduleUnderTest.run({}, {}).then(() => {
-			assert.isTrue(mockWebpack.run.calledOnce);
+			assert.isTrue(run.calledOnce);
 			assert.isTrue((<sinon.SinonStub> console.log).calledWith('some stats'));
 		});
 	});
 
 	it('should run compile and reject on failure', () => {
 		const compilerError = new Error('compiler error');
-		mockWebpack.run = sandbox.stub().yields(compilerError, null);
+		const run = sandbox.stub().yields(compilerError, null);
+		mockWebpack.returns({ run });
 		return moduleUnderTest.run({}, {}).then(
 			throwImmediately,
 			(e: Error) => {
-				assert.isTrue(mockWebpack.run.calledOnce);
+				assert.isTrue(run.calledOnce);
 				assert.equal(e, compilerError);
 			}
 		);
@@ -93,7 +103,7 @@ describe('main', () => {
 		return new Promise((resolve) => setTimeout(resolve, 10)).then(() => {
 			assert.isTrue(mockWebpackDevServer.listen.calledOnce);
 			assert.isTrue((<sinon.SinonStub> console.log).firstCall.calledWith('Starting server on http://localhost:9999'));
-			assert.equal(mockWebpackConfig.devtool, 'eval-source-map');
+			assert.equal(mockWebpackConfig.devtool, 'inline-source-map');
 			assert.equal(mockWebpackConfig.entry['src/main'][0], 'webpack-dev-server/client?');
 		});
 	});
@@ -112,33 +122,37 @@ describe('main', () => {
 	});
 
 	describe('i18n options', () => {
+		beforeEach(() => {
+			mockWebpack.returns({
+				run: sandbox.stub().yields(null, 'stats and stuff')
+			});
+		});
+
 		it('should correctly set i18n options', () => {
-			moduleUnderTest.run({}, {
+			return moduleUnderTest.run({}, {
 				locale: 'en',
 				supportedLocales: [ 'fr' ],
 				messageBundles: [ 'nls/main' ]
-			});
-			return new Promise((resolve) => setTimeout(resolve, 10)).then(() => {
-				assert.isTrue(mockWebpackConfigModule.ctor.calledWith({
+			}).then(() => {
+				assert.isTrue(mockWebpackConfigModule.calledWith({
 					locale: 'en',
 					supportedLocales: [ 'fr' ],
 					messageBundles: [ 'nls/main' ]
-				}), JSON.stringify(mockWebpack.ctor.args));
+				}), JSON.stringify(mockWebpack.args));
 			});
 		});
 
 		it('should allow string values for supported locales and message bundles', () => {
-			moduleUnderTest.run({}, {
+			return moduleUnderTest.run({}, {
 				locale: 'en',
 				supportedLocales: 'fr',
 				messageBundles: 'nls/main'
-			});
-			return new Promise((resolve) => setTimeout(resolve, 10)).then(() => {
-				assert.isTrue(mockWebpackConfigModule.ctor.calledWith({
+			}).then(() => {
+				assert.isTrue(mockWebpackConfigModule.calledWith({
 					locale: 'en',
 					supportedLocales: [ 'fr' ],
 					messageBundles: [ 'nls/main' ]
-				}), JSON.stringify(mockWebpack.ctor.args));
+				}), JSON.stringify(mockWebpack.args));
 			});
 		});
 	});

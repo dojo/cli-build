@@ -1,6 +1,9 @@
 import * as path from 'path';
-import * as ConcatSource from 'webpack-core/lib/ConcatSource';
-import * as NormalModuleReplacementPlugin from 'webpack/lib/NormalModuleReplacementPlugin';
+import ConcatSource = require('webpack-sources/lib/ConcatSource');
+import NormalModuleReplacementPlugin = require('webpack/lib/NormalModuleReplacementPlugin');
+import Compiler = require('webpack/lib/Compiler');
+import NormalModule = require('webpack/lib/NormalModule');
+import Parser = require('webpack/lib/Parser');
 import { getBasePath, resolveMid } from './util';
 
 interface ModuleIdMap {
@@ -20,7 +23,7 @@ interface ModuleIdMap {
  * @return
  * True if the module should be included in the load map; false otherwise.3u
  */
-function isContextual(module: any, issuers: string[]): boolean {
+function isContextual(module: NormalModule, issuers: string[]): boolean {
 	const { rawRequest, userRequest } = module;
 	const relative = /^\.(\.*)\//;
 	const request = userRequest.replace(/\.[a-z0-9]+$/i, '');
@@ -64,23 +67,25 @@ export default class DojoLoadPlugin {
 	 * @param compiler
 	 * The compiler instance.
 	 */
-	apply(compiler: any) {
+	apply(compiler: Compiler) {
 		const idMap = Object.create(null) as ModuleIdMap;
-		const basePath = compiler.options.resolve.root[0];
+		const basePath = compiler.options.resolve.modules[0];
 		const bundleLoader = /bundle.*\!/;
 		const issuers: string[] = [];
 
 		compiler.apply(new NormalModuleReplacementPlugin(/@dojo\/core\/load\.js/, resolveMid('@dojo/core/load/webpack')));
 
-		compiler.parser.plugin('expression require', function (this: any): boolean {
-			issuers.push(getBasePath(this.state.current.userRequest));
-			this.state.current.meta.isPotentialLoad = true;
-			return true;
-		});
+		compiler.plugin('compilation', (compilation, params) => {
+			params.normalModuleFactory.plugin('parser', function (parser) {
+				parser.plugin('expression require', function (): boolean {
+					const state = <Parser.NormalModuleState> this.state;
+					issuers.push(getBasePath(state.current.userRequest));
+					state.current.meta.isPotentialLoad = true;
+					return true;
+				});
+			});
 
-		compiler.plugin('compilation', (compilation: any) => {
-
-			compilation.moduleTemplate.plugin('module', (source: any, module: any) => {
+			compilation.moduleTemplate.plugin('module', (source, module: NormalModule) => {
 				if (module.meta && module.meta.isPotentialLoad) {
 					const path = stripPath(basePath, module.userRequest);
 					const require = `var require = function () { return '${path}'; };`;
@@ -94,8 +99,8 @@ export default class DojoLoadPlugin {
 				return source;
 			});
 
-			compilation.plugin('optimize-module-ids', (modules: any[]) => {
-				modules.forEach((module: any) => {
+			compilation.plugin('optimize-module-ids', (modules: NormalModule[]) => {
+				modules.forEach(module => {
 					const { rawRequest, userRequest } = module;
 
 					if (rawRequest) {
