@@ -109,7 +109,7 @@ describe('main', () => {
 	it('should not print stats if they aren\'t there', () => {
 		const run = sandbox.stub().yields(false, null);
 		mockWebpack.returns({ run });
-		return moduleUnderTest.run({}, {}).then(() => {
+		return moduleUnderTest.run(getMockConfiguration(), {}).then(() => {
 			assert.isTrue(run.calledOnce);
 			assert.isFalse((<sinon.SinonStub> console.log).called);
 		});
@@ -258,7 +258,7 @@ describe('main', () => {
 		});
 
 		it('should pass the profile option to webpack', () => {
-			return moduleUnderTest.run({}, {
+			return moduleUnderTest.run(getMockConfiguration(), {
 				debug: true
 			}).then(() => {
 				assert.isTrue(mockWebpackConfigModule.calledWith({
@@ -280,7 +280,7 @@ describe('main', () => {
 				profile: true
 			});
 
-			return moduleUnderTest.run(null, {
+			return moduleUnderTest.run(getMockConfiguration(), {
 				debug: true
 			}).then(() => {
 				assert.isTrue(fsMock.called);
@@ -300,7 +300,7 @@ describe('main', () => {
 		});
 
 		it('should set the element prefix if it matches the pattern', () => {
-			return moduleUnderTest.run({}, {
+			return moduleUnderTest.run(getMockConfiguration(), {
 				'element': '/path/to/createTestElement.ts'
 			}).then(() => {
 				assert.isTrue(mockWebpackConfigModule.calledWith({
@@ -313,7 +313,7 @@ describe('main', () => {
 		it('should error if the element prefix does not match the pattern', () => {
 			const exitMock = sandbox.stub(process, 'exit');
 
-			return moduleUnderTest.run({}, {
+			return moduleUnderTest.run(getMockConfiguration(), {
 				'element': '/path/to/myelement.ts'
 			}).then(() => {
 				assert.isTrue(exitMock.called);
