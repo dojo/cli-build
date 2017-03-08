@@ -18,8 +18,10 @@ describe('main', () => {
 	function getMockConfiguration(config?: any) {
 		return {
 			configuration: {
-				get() {
-					return Promise.resolve(config || undefined);
+				get(name: string) {
+					if (config && name in config) {
+						return config[name];
+					}
 				}
 			}
 		};
@@ -188,9 +190,11 @@ describe('main', () => {
 
 		it('should load options from .dojorc', () => {
 			const config = getMockConfiguration({
-				locale: 'en',
-				supportedLocales: 'fr',
-				messageBundles: 'nls/main'
+				'build-webpack': {
+					locale: 'en',
+					supportedLocales: 'fr',
+					messageBundles: 'nls/main'
+				}
 			});
 			return moduleUnderTest.run(config, {}).then(() => {
 				assert.isTrue(mockWebpackConfigModule.calledWith({
@@ -203,7 +207,9 @@ describe('main', () => {
 
 		it('should load use command line options over those from .dojorc', () => {
 			const config = getMockConfiguration({
-				supportedLocales: 'fr'
+				'build-webpack': {
+					supportedLocales: 'fr'
+				}
 			});
 			return moduleUnderTest.run(config, {
 				locale: 'en',
@@ -220,9 +226,11 @@ describe('main', () => {
 
 		it('should not override .dojorc with undefined values', () => {
 			const config = getMockConfiguration({
-				locale: 'en',
-				supportedLocales: [ 'fr', 'es' ],
-				messageBundles: 'nls/main'
+				'build-webpack': {
+					locale: 'en',
+					supportedLocales: [ 'fr', 'es' ],
+					messageBundles: 'nls/main'
+				}
 			});
 			return moduleUnderTest.run(config, {
 				locale: undefined,

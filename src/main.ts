@@ -195,23 +195,22 @@ const command: Command = {
 		});
 	},
 	run(helper: Helper, args: BuildArgs) {
-		return helper.configuration.get().then((dojoRc: BuildArgs = Object.create(null)) => {
-			const options: WebpackOptions = {
-				compress: true,
-				stats: {
-					colors: true,
-					chunks: false
-				}
-			};
-			const configArgs = getConfigArgs(mergeConfigArgs(dojoRc, args));
+		const dojoRc = helper.configuration.get('build-webpack') || Object.create(null);
+		const options: WebpackOptions = {
+			compress: true,
+			stats: {
+				colors: true,
+				chunks: false
+			}
+		};
+		const configArgs = getConfigArgs(mergeConfigArgs(dojoRc as BuildArgs, args));
 
-			if (args.watch) {
-				return watch(config(configArgs), options, args);
-			}
-			else {
-				return compile(config(configArgs), options);
-			}
-		});
+		if (args.watch) {
+			return watch(config(configArgs), options, args);
+		}
+		else {
+			return compile(config(configArgs), options);
+		}
 	},
 	eject(helper: Helper) {
 		const ejectOutput: EjectOutput = {
