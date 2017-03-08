@@ -1,3 +1,4 @@
+import Map from '@dojo/shim/Map';
 import {
 	ArrayExpression,
 	AssignmentExpression,

@@ -1,6 +1,8 @@
 import { deepAssign } from '@dojo/core/lang';
 import { CldrData } from '@dojo/i18n/cldr/load';
 import { Require } from '@dojo/interfaces/loader';
+import Map from '@dojo/shim/Map';
+import Set from '@dojo/shim/Set';
 import { Program } from 'estree';
 import * as fs from 'fs';
 import * as path from 'path';

@@ -2,7 +2,6 @@ import { beforeEach, describe, it } from 'intern!bdd';
 import * as assert from 'intern/chai!assert';
 import * as path from 'path';
 import * as sinon from 'sinon';
-import Pluginable from '../../support/webpack/Pluginable';
 import { assign } from '@dojo/core/lang';
 import NormalModuleFactory = require('webpack/lib/NormalModuleFactory');
 import MockChunk = require('../../support/webpack/Chunk');
