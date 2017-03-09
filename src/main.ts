@@ -214,7 +214,7 @@ const command: Command = {
 				]
 			},
 			hints: [
-				'to build run ' + underline('webpack -config ./config/build-webpack/webpack.config.js')
+				'to build run ' + underline('./node_modules/webpack/bin/webpack.js --config ./config/build-webpack/webpack.config.js')
 			]
 		};
 
