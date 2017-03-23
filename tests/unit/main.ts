@@ -95,6 +95,16 @@ describe('main', () => {
 			options.args[ 8 ],
 			[ 'debug', { describe: 'Generate package information useful for debugging', type: 'boolean' } ]
 		);
+
+		assert.deepEqual(
+			options.args[ 9 ],
+			[ 'disableLazyWidgetDetection', { describe: 'Disable lazy widget loading detection', type: 'boolean' } ]
+		);
+
+		assert.deepEqual(
+			options.args[ 10 ],
+			[ 'target', { describe: 'Build target environment "web" (default) or "node"', type: 'string' } ]
+		);
 	});
 
 	it('should run compile and log results on success', () => {

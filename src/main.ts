@@ -205,6 +205,11 @@ const command: Command = {
 			describe: 'Disable lazy widget loading detection',
 			type: 'boolean'
 		});
+
+		options('target', {
+			describe: 'Build target environment "web" (default) or "node"',
+			type: 'string'
+		});
 	},
 	run(helper: Helper, args: BuildArgs) {
 		const dojoRc = helper.configuration.get('build-webpack') || Object.create(null);
