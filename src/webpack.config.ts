@@ -123,7 +123,11 @@ function webpackConfig(args: Partial<BuildArgs>) {
 				return new ExtractTextPlugin({ filename: 'main.css', allChunks: true });
 			}),
 			...includeWhen(!args.watch && !args.withTests, (args) => {
-				return [ new OptimizeCssAssetsPlugin() ];
+				return [ new OptimizeCssAssetsPlugin({
+					cssProcessorOptions: {
+						map: { inline: false }
+					}
+				}) ];
 			}),
 			includeWhen(args.element, () => {
 				return new CopyWebpackPlugin([
