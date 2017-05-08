@@ -95,8 +95,8 @@ export default function (this: webpack.LoaderContext, content: string, sourceMap
 					}
 
 					generationPromises = cssFilePaths.map((cssFilePath) => generateDTSFile(cssFilePath));
-					break;
 				}
+				break;
 		}
 		return Promise.all(generationPromises);
 	})
