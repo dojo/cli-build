@@ -1,5 +1,5 @@
 {
-	"name": "dojo-cli-build",
+	"name": "@dojo/cli-build-webpack",
 	"dependencies": {
 		"yargs": "registry:npm/yargs#5.0.0+20160817153026"
 	}
