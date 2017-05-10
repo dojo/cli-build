@@ -6,7 +6,7 @@ import Map from '@dojo/shim/Map';
 const DtsCreator = require('typed-css-modules');
 const { getOptions } = require('loader-utils');
 const instances = require('ts-loader/dist/instances');
-import { isRelative } from '../../plugins/util/main';
+import { isRelative } from '../../util/main';
 
 type TSLoaderInstances = {
 	files: {

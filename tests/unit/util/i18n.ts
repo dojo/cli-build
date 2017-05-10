@@ -3,13 +3,13 @@ import { Require } from '@dojo/interfaces/loader';
 import { Program } from 'estree';
 import { describe, it } from 'intern!bdd';
 import * as assert from 'intern/chai!assert';
-import getCldrUrls, { getLoadCallUrls, getLoadImports } from '../../../../src/plugins/util/i18n';
+import getCldrUrls, { getLoadCallUrls, getLoadImports } from '../../../src/util/i18n';
 
 declare const require: Require;
 
 function loadAst(complete = true) {
 	const file = complete ? 'complete' : 'relative';
-	const url = require.toUrl(`../../../support/mocks/ast/cldr-${file}.json`);
+	const url = require.toUrl(`../../support/mocks/ast/cldr-${file}.json`);
 	return coreLoad(url).then(([ json ]: [ Program ]) => json);
 }
 

@@ -9,7 +9,7 @@ import Compiler = require('../../support/webpack/Compiler');
 import MockPlugin from '../../support/MockPlugin';
 import { fetchCldrData } from '../../support/util';
 import I18nPlugin from '../../../src/plugins/I18nPlugin';
-import { hasExtension } from '../../../src/plugins/util/main';
+import { hasExtension } from '../../../src/util/main';
 declare const require: Require;
 
 interface CldrTestOptions {
