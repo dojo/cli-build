@@ -1,10 +1,12 @@
 import { beforeEach, afterEach, describe, it } from 'intern!bdd';
 import * as assert from 'intern/chai!assert';
+import { resolve } from 'path';
 import MockModule from '../../support/MockModule';
 import * as sinon from 'sinon';
 
-const cssFilePath = '/path/to/file.css';
-const cssFilePath2 = '/path/to/file2.css';
+const cssFilePath = './file.css';
+const cssFilePath2 = 'path/to/file2.css';
+const cssFilePath3 = '/path/to/file3.css';
 
 const cssContent = `
 	.foo: {
@@ -22,6 +24,7 @@ const tsContentWithMultipleCss = `
 	import * as css from '${cssFilePath}';
 	import this from 'that';
 	import * as css2 from '${cssFilePath2}';
+	import * as css3 from '${cssFilePath3}';
 `;
 
 const tsContentWithoutCss = `
@@ -153,8 +156,10 @@ describe('css-module-dts-loader', () => {
 				resourcePath
 			}, tsContentWithCss);
 		}).then(() => {
+			const expectedPath = resolve(process.cwd(), 'test', cssFilePath);
+
 			assert.isTrue(mockDTSGenerator.create.calledOnce);
-			assert.isTrue(mockDTSGenerator.create.firstCall.calledWith(cssFilePath));
+			assert.isTrue(mockDTSGenerator.create.firstCall.calledWith(expectedPath));
 			assert.isTrue(writeFile.calledOnce);
 		});
 	});
@@ -172,10 +177,14 @@ describe('css-module-dts-loader', () => {
 				resourcePath
 			}, tsContentWithMultipleCss);
 		}).then(() => {
-			assert.isTrue(mockDTSGenerator.create.calledTwice);
-			assert.isTrue(mockDTSGenerator.create.firstCall.calledWith(cssFilePath));
-			assert.isTrue(mockDTSGenerator.create.secondCall.calledWith(cssFilePath2));
-			assert.isTrue(writeFile.calledTwice);
+			const expectedPath = resolve(process.cwd(), 'test', cssFilePath);
+			const expectedPath2 = resolve(process.cwd(), 'node_modules', cssFilePath2);
+
+			assert.isTrue(mockDTSGenerator.create.calledThrice);
+			assert.isTrue(mockDTSGenerator.create.firstCall.calledWith(expectedPath));
+			assert.isTrue(mockDTSGenerator.create.secondCall.calledWith(expectedPath2));
+			assert.isTrue(mockDTSGenerator.create.thirdCall.calledWith(cssFilePath3));
+			assert.isTrue(writeFile.calledThrice);
 		});
 	});
 
