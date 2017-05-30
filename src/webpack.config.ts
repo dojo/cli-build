@@ -214,6 +214,7 @@ function webpackConfig(args: Partial<BuildArgs>) {
 			filename: '[name].js',
 			chunkFilename: '[name].js'
 		},
+		target: args.target || 'web',
 		devtool: 'source-map',
 		resolve: {
 			modules: [
