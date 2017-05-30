@@ -11,7 +11,7 @@ export const proxyUrl = 'http://localhost:9000/';
 // automatically
 export const capabilities = {
 	project: 'Dojo 2',
-	name: '@dojo/cli-build'
+	name: '@dojo/cli-build-webpack'
 };
 
 // Support running unit tests from a web server that isn't the intern proxy
