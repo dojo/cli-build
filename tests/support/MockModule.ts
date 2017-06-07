@@ -1,76 +1,28 @@
 import { RootRequire } from '@dojo/interfaces/loader';
 import * as mockery from 'mockery';
-import * as sinon from 'sinon';
+import Sandbox, { getBasePath, load, unload } from './Sandbox';
 
 declare const require: RootRequire;
-const dojoNodePlugin = 'intern/dojo/node';
-
-function load(modulePath: string): any {
-	const mid = `${dojoNodePlugin}!${modulePath}`;
-	return require(mid);
-}
-
-function unload(modulePath: string): void {
-	const abs = require.toUrl(modulePath);
-	const plugin = require.toAbsMid(dojoNodePlugin);
-	require.undef(`${plugin}!${abs}`);
-}
-
-function resolvePath(basePath: string, modulePath: string): string {
-	return modulePath.replace('./', `${basePath}/`);
-}
-
-function getBasePath(modulePath: string): string {
-	const chunks = modulePath.split('/');
-	chunks.pop();
-	return chunks.join('/');
-}
 
 export default class MockModule {
-	private basePath: string;
 	private moduleUnderTestPath: string;
-	private mocks: any;
-	private sandbox: sinon.SinonSandbox;
+	private sandbox: Sandbox;
 
 	constructor(moduleUnderTestPath: string) {
-		this.basePath = getBasePath(moduleUnderTestPath);
 		this.moduleUnderTestPath = moduleUnderTestPath;
-		this.sandbox = sinon.sandbox.create();
-		this.mocks = {};
+		this.sandbox = new Sandbox(getBasePath(moduleUnderTestPath));
 	}
 
 	dependencies(dependencies: string[]): void {
-		dependencies.forEach((dependencyName) => {
-			let dependency = load(resolvePath(this.basePath, dependencyName));
-			const mock: any = {};
-
-			for (let prop in dependency) {
-				if (typeof dependency[prop] === 'function') {
-					mock[prop] = function () {};
-					this.sandbox.stub(mock, prop);
-				} else {
-					mock[prop] = dependency[prop];
-				}
-			}
-
-			if (typeof dependency === 'function') {
-				const ctor = this.sandbox.stub().returns(mock);
-				mockery.registerMock(dependencyName, ctor);
-				mock.ctor = ctor;
-			}
-			else {
-				mockery.registerMock(dependencyName, mock);
-			}
-			this.mocks[dependencyName] = mock;
-		});
+		this.sandbox.dependencies(dependencies);
 	}
 
 	getMock(dependencyName: string): any {
-		return this.mocks[dependencyName];
+		return this.sandbox.getMock(dependencyName);
 	}
 
 	getModuleUnderTest(): any {
-		mockery.enable({ warnOnUnregistered: false, useCleanCache: true });
+		this.sandbox.start();
 		const allowable = require.toUrl(this.moduleUnderTestPath) + '.js';
 		mockery.registerAllowable(allowable, true);
 		return load(this.moduleUnderTestPath);
@@ -78,8 +30,6 @@ export default class MockModule {
 
 	destroy(): void {
 		unload(this.moduleUnderTestPath);
-		this.sandbox.restore();
-		mockery.deregisterAll();
-		mockery.disable();
+		this.sandbox.destroy();
 	}
 }
