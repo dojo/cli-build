@@ -9,11 +9,11 @@ const basePath = process.cwd();
 const configPath = resolve(basePath, '_build/src/webpack.config.js');
 const configString = readFileSync(configPath);
 const dirname = resolve(basePath, '_build/src');
-let mockModule: Sandbox;
+let sandbox: Sandbox;
 
 function start(cli = true) {
-	mockModule = new Sandbox('../../src');
-	mockModule.dependencies([
+	sandbox = new Sandbox('../../src');
+	sandbox.dependencies([
 		'./plugins/CoreLoadPlugin',
 		'./plugins/I18nPlugin',
 		'copy-webpack-plugin',
@@ -26,7 +26,7 @@ function start(cli = true) {
 		'webpack/lib/IgnorePlugin',
 		'webpack'
 	]);
-	mockModule.start();
+	sandbox.start();
 
 	const exports = {};
 	const context: any = createContext({
@@ -50,7 +50,7 @@ function start(cli = true) {
 
 describe('webpack.config.ts', () => {
 	afterEach(() => {
-		mockModule && mockModule.destroy();
+		sandbox && sandbox.destroy();
 	});
 
 	function runTests() {
@@ -58,7 +58,7 @@ describe('webpack.config.ts', () => {
 			const bannerPath = resolve(basePath, 'src/banner.md');
 			const expected = readFileSync(bannerPath, 'utf8');
 
-			const webpack = mockModule.getMock('webpack');
+			const webpack = sandbox.getMock('webpack');
 			assert.isTrue(webpack.BannerPlugin.calledWith(expected));
 		});
 	}
