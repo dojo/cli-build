@@ -66,6 +66,7 @@ declare module 'webpack/lib/webpack' {
 	import WebpackNormalModuleReplacementPlugin = require('webpack/lib/NormalModuleReplacementPlugin');
 	import WebpackCommonsChunkPlugin = require('webpack/lib/optimize/CommonsChunkPlugin');
 	import WebpackUglifyJsPlugin = require('webpack/lib/optimize/UglifyJsPlugin');
+	import WebpackWatchIgnorePlugin = require('webpack/lib/WatchIgnorePlugin');
 
 	function webpack(options: webpack.Config, callback?: Function): WebpackCompiler;
 
@@ -74,10 +75,12 @@ declare module 'webpack/lib/webpack' {
 		export type Compiler = WebpackCompiler;
 		export type ContextReplacementPlugin = WebpackContextReplacementPlugin;
 		export type NormalModuleReplacementPlugin = WebpackNormalModuleReplacementPlugin;
+		export type WatchIgnorePlugin = WebpackWatchIgnorePlugin;
 		export const BannerPlugin: typeof WebpackBannerPlugin;
 		export const Compiler: typeof WebpackCompiler;
 		export const ContextReplacementPlugin: typeof WebpackContextReplacementPlugin;
 		export const NormalModuleReplacementPlugin: typeof WebpackNormalModuleReplacementPlugin;
+		export const WatchIgnorePlugin: typeof WebpackWatchIgnorePlugin;
 
 		namespace optimize {
 			type CommonsChunkPlugin = WebpackCommonsChunkPlugin;
@@ -657,6 +660,17 @@ declare module 'webpack/lib/Template' {
 	}
 
 	export = Template;
+}
+
+declare module 'webpack/lib/WatchIgnorePlugin' {
+	import webpack = require('webpack');
+
+	class WatchIgnorePlugin implements webpack.Plugin {
+		constructor(paths: Array<string | RegExp>);
+		apply(compiler: webpack.Compiler): void;
+	}
+
+	export = WatchIgnorePlugin;
 }
 
 declare module 'webpack/lib/optimize/CommonsChunkPlugin' {
