@@ -18,7 +18,6 @@ const packagePath = isCLI ? '.' : '@dojo/cli-build-webpack';
 const CoreLoadPlugin = require(`${packagePath}/plugins/CoreLoadPlugin`).default;
 const I18nPlugin = require(`${packagePath}/plugins/I18nPlugin`).default;
 const basePath = process.cwd();
-const bannerPath = isCLI ? path.join(__dirname, './banner.md') : require.resolve(`${packagePath}/banner.md`);
 
 let tslintExists = false;
 try {
@@ -104,7 +103,7 @@ function webpackConfig(args: Partial<BuildArgs>) {
 			};
 		}),
 		plugins: [
-			new webpack.BannerPlugin(readFileSync(bannerPath, 'utf8')),
+			new webpack.BannerPlugin(readFileSync(require.resolve(`${packagePath}/banner.md`), 'utf8')),
 			new IgnorePlugin(/request\/providers\/node/),
 			new NormalModuleReplacementPlugin(/\.m.css$/, result => {
 				const requestFileName = path.resolve(result.context, result.request);

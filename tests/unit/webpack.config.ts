@@ -3,17 +3,17 @@ import { afterEach, beforeEach, describe, it } from 'intern!bdd';
 import * as assert from 'intern/chai!assert';
 import { resolve } from 'path';
 import { createContext, runInContext } from 'vm';
-import Sandbox from '../support/Sandbox';
+import MockModule from '../support/MockModule';
 
 const basePath = process.cwd();
 const configPath = resolve(basePath, '_build/src/webpack.config.js');
 const configString = readFileSync(configPath);
 const dirname = resolve(basePath, '_build/src');
-let sandbox: Sandbox;
+let mockModule: MockModule;
 
 function start(cli = true) {
-	sandbox = new Sandbox('../../src');
-	sandbox.dependencies([
+	mockModule = new MockModule('../../src/webpack.config');
+	mockModule.dependencies([
 		'./plugins/CoreLoadPlugin',
 		'./plugins/I18nPlugin',
 		'copy-webpack-plugin',
@@ -26,7 +26,7 @@ function start(cli = true) {
 		'webpack/lib/IgnorePlugin',
 		'webpack'
 	]);
-	sandbox.start();
+	mockModule.start();
 
 	const exports = {};
 	const context: any = createContext({
@@ -40,7 +40,7 @@ function start(cli = true) {
 		__dirname: dirname
 	});
 
-	const js = configString.toString('utf8').replace('@dojo/cli-build-webpack', dirname);
+	const js = configString.toString('utf8').replace(/\$\{packagePath\}/g, dirname);
 	runInContext(js, context);
 
 	if (cli) {
@@ -50,7 +50,7 @@ function start(cli = true) {
 
 describe('webpack.config.ts', () => {
 	afterEach(() => {
-		sandbox && sandbox.destroy();
+		mockModule && mockModule.destroy();
 	});
 
 	function runTests() {
@@ -58,7 +58,7 @@ describe('webpack.config.ts', () => {
 			const bannerPath = resolve(basePath, 'src/banner.md');
 			const expected = readFileSync(bannerPath, 'utf8');
 
-			const webpack = sandbox.getMock('webpack');
+			const webpack = mockModule.getMock('webpack');
 			assert.isTrue(webpack.BannerPlugin.calledWith(expected));
 		});
 	}
