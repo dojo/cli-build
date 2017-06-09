@@ -106,7 +106,6 @@ function webpackConfig(args: Partial<BuildArgs>) {
 		plugins: [
 			new webpack.BannerPlugin(readFileSync(require.resolve(`${packagePath}/banner.md`), 'utf8')),
 			new IgnorePlugin(/request\/providers\/node/),
-			new IgnoreUnmodifiedPlugin(),
 			new NormalModuleReplacementPlugin(/\.m.css$/, result => {
 				const requestFileName = path.resolve(result.context, result.request);
 				const jsFileName = requestFileName + '.js';
@@ -119,6 +118,9 @@ function webpackConfig(args: Partial<BuildArgs>) {
 				}
 			}),
 			new webpack.ContextReplacementPlugin(/dojo-app[\\\/]lib/, { test: () => false }),
+			...includeWhen(args.watch, () => {
+				return [ new IgnoreUnmodifiedPlugin() ];
+			}),
 			includeWhen(args.element, args => {
 				return new ExtractTextPlugin({ filename: `${args.elementPrefix}.css` });
 			}, () => {
