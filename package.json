@@ -78,6 +78,7 @@
     "umd-compat-loader": "^2.0.1",
     "webpack": "^2.2.1",
     "webpack-bundle-analyzer-sunburst": "^1.2.0",
-    "webpack-dev-server": "^2.3.0"
+    "webpack-dev-server": "^2.3.0",
+    "worker-loader": "^0.8.0"
   }
 }
