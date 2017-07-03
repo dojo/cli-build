@@ -7,12 +7,13 @@
 
 The official dojo 2 build command.
 
-*WARNING* This is _beta_ software. While we do not anticipate significant changes to the API at this stage, we may feel the need to do so. This is not yet production ready, so you should use at your own risk. 
+*WARNING* This is _beta_ software. While we do not anticipate significant changes to the API at this stage, we may feel the need to do so. This is not yet production ready, so you should use at your own risk.
 
 - [Usage](#usage)
 - [Features](#features)
   - [Building](#building)
   - [Building a custom element](#building-a-custom-element)
+  - [Feature optimization](#feature-optimization)
   - [Eject](#eject)
   - [3rd party library integration](#interop-with-external-libraries)
 - [How to I contribute?](#how-do-i-contribute)
@@ -79,6 +80,33 @@ If the source file does not follow the pattern `create[custom element]Element`, 
 
 ```bash
 dojo build webpack --element=src/path/to/element.ts --elementPrefix=the-special
+```
+
+### Feature optimization
+
+This command supports the ability to optimize code based on statically asserted features.  The tool can search the source code for modules that attempt to detect features using a [`@dojo/has`](https://github.com/dojo/has) type of API.  By supplying a feature set (or sets) on the command line, the build will be optimized to optimize code branches, making the code smaller and slightly more efficient.  This allows targeting of particular platforms.  The tool will not optimize code, when specifying multiple feature sets, they do not align.  It will instead continue to leave that feature to be detected at run-time.
+
+From the command line, the feature sets are provided to the `-f` or `--feature` argument.  The available feature sets are aligned to platforms.  The currently available feature sets are:
+
+|Feature Set|Description|
+|-|-|
+|`android`|This feature set represents Android 5+ with integrated Chrome browser.  *Note* it is not suitable for Android 4.4.|
+|`chrome`|This feature set represents Chrome 59+ or Opera 46+[<sup>1</sup>](#note-1)|
+|`edge`|This feature set represents Edge 15+[<sup>1</sup>](#note-1)|
+|`firefox`|This feature set represents Firefox 54+[<sup>1</sup>](#note-1)|
+|`ie11`|This feature set represents Internet Explorer 11|
+|`ios`|This feature set represents iOS 10.3+[<sup>2</sup>](#note-2)|
+|`node`|This feature set represents Node.js 7+[<sup>2</sup>](#note-2)|
+|`safari`|This feature set represents Safari 10+[<sup>2</sup>](#note-2)|
+
+<span id="note-1">[1]:</span> Many of these features were present in earlier versions, but the specific version was the GA release at the time of writing when this was validated.
+
+<span id="note-2">[2]:</span> At least on of the features was not present in previous releases.
+
+An example of generating a build that _hardwires_ features for Microsoft Edge and Chrome, you would use the following on the command line:
+
+```shell
+$ dojo build -f edge chrome
 ```
 
 ### Eject
