@@ -4,7 +4,7 @@ import * as path from 'path';
 import { existsSync, readFileSync } from 'fs';
 import { BuildArgs } from './main';
 import Set from '@dojo/shim/Set';
-import getFeatures from './getFeatures';
+import GetFeaturesType from './getFeatures';
 import HasPluginType from './plugins/HasPlugin';
 const IgnorePlugin = require('webpack/lib/IgnorePlugin');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
@@ -21,6 +21,7 @@ const ExternalLoaderPlugin = require(`${packagePath}/plugins/ExternalLoaderPlugi
 const HasPlugin: typeof HasPluginType = require(`${packagePath}/plugins/HasPlugin`).default;
 const I18nPlugin = require(`${packagePath}/plugins/I18nPlugin`).default;
 const IgnoreUnmodifiedPlugin = require(`${packagePath}/plugins/IgnoreUnmodifiedPlugin`).default;
+const getFeatures: typeof GetFeaturesType = require(`${packagePath}/getFeatures`).default;
 const basePath = process.cwd();
 
 let tslintExists = false;
