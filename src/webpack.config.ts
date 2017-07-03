@@ -4,6 +4,8 @@ import * as path from 'path';
 import { existsSync, readFileSync } from 'fs';
 import { BuildArgs } from './main';
 import Set from '@dojo/shim/Set';
+import getFeatures from './getFeatures';
+import HasPluginType from './plugins/HasPlugin';
 const IgnorePlugin = require('webpack/lib/IgnorePlugin');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
@@ -16,6 +18,7 @@ const isCLI = process.env.DOJO_CLI;
 const packagePath = isCLI ? '.' : '@dojo/cli-build-webpack';
 const CoreLoadPlugin = require(`${packagePath}/plugins/CoreLoadPlugin`).default;
 const ExternalLoaderPlugin = require(`${packagePath}/plugins/ExternalLoaderPlugin`).default;
+const HasPlugin: typeof HasPluginType = require(`${packagePath}/plugins/HasPlugin`).default;
 const I18nPlugin = require(`${packagePath}/plugins/I18nPlugin`).default;
 const IgnoreUnmodifiedPlugin = require(`${packagePath}/plugins/IgnoreUnmodifiedPlugin`).default;
 const basePath = process.cwd();
@@ -30,6 +33,8 @@ type IncludeCallback = (args: BuildArgs) => any;
 
 function webpackConfig(args: Partial<BuildArgs>) {
 	args = args || {};
+
+	const hasFlags = getFeatures(args);
 
 	const cssLoader = ExtractTextPlugin.extract({ use: 'css-loader?sourceMap!resolve-url-loader' });
 	const localIdentName = (args.watch || args.withTests) ? '[name]__[local]__[hash:base64:5]' : '[hash:base64:8]';
@@ -162,8 +167,9 @@ function webpackConfig(args: Partial<BuildArgs>) {
 				ignoredModules,
 				mapAppModules: args.withTests
 			}),
-			...includeWhen(args.element, () => [
-				new webpack.optimize.CommonsChunkPlugin({
+			new HasPlugin(hasFlags),
+			...includeWhen(args.element, () => {
+				return [ new webpack.optimize.CommonsChunkPlugin({
 					name: 'widget-core',
 					filename: 'widget-core.js'
 				})

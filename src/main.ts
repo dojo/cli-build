@@ -25,6 +25,7 @@ export interface BuildArgs {
 	bundles: Bundles;
 	externals: { outputPath?: string; dependencies: ExternalDep[] };
 	[index: string]: any;
+	features: string | string[];
 }
 
 interface ConfigFactory {
@@ -205,6 +206,12 @@ const command: Command<BuildArgs> = {
 		options('disableLazyWidgetDetection', {
 			describe: 'Disable lazy widget loading detection',
 			type: 'boolean'
+		});
+
+		options('f', {
+			alias: 'features',
+			describe: 'Features sets to optimize the build with\n\nValid values are: android, chrome, edge, firefox, ie11, ios, node, safari',
+			type: 'array'
 		});
 	},
 	run(helper: Helper, args: BuildArgs): Promise<void> {

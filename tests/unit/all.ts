@@ -3,6 +3,7 @@ import './webpack.config';
 import './postcss.config';
 import './plugins/CoreLoadPlugin';
 import './plugins/ExternalLoaderPlugin';
+import './plugins/HasPlugin';
 import './plugins/I18nPlugin';
 import './plugins/IgnoreUnmodifiedPlugin';
 import './plugins/InjectModulesPlugin';
