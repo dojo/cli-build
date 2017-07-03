@@ -226,10 +226,10 @@ const command: Command<BuildArgs> = {
 		const configArgs = getConfigArgs(mergeConfigArgs(dojoRc as BuildArgs, args));
 
 		if (args.watch) {
-			return watch(config(configArgs), options, args);
+			return watch(config(configArgs), options, args) as Promise<void>;
 		}
 		else {
-			return compile(config(configArgs), options);
+			return compile(config(configArgs), options) as Promise<void>;
 		}
 	},
 	eject(helper: Helper) {
