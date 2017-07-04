@@ -1,8 +1,9 @@
+import { readFileSync } from 'fs';
 import { BuildArgs } from './main';
 
 export type FeatureMap = { [feature: string]: boolean };
 
-const packagePath = process.env.DOJO_CLI ? '.' : '@dojo/cli-build-webpack';
+const isCli = !!process.env.DOJO_CLI;
 
 /**
  * A simple wrapper for require to return a `FeatureMap` from JSON
@@ -10,7 +11,14 @@ const packagePath = process.env.DOJO_CLI ? '.' : '@dojo/cli-build-webpack';
  */
 function resolve(mid: string): FeatureMap | undefined {
 	try {
-		const result: FeatureMap = require(mid);
+		let result: FeatureMap;
+		/* istanbul ignore if */
+		if (isCli) {
+			result = require(mid);
+		}
+		else {
+			result = JSON.parse(readFileSync((require as any).toUrl(mid), 'utf8'));
+		}
 		return result;
 	}
 	catch (e) { }
@@ -28,7 +36,7 @@ export default function getFeatures(args: Partial<BuildArgs>): FeatureMap {
 
 	const featureNames = Array.isArray(args.features) ? args.features : [ args.features ];
 	const features = featureNames
-		.map((name) => resolve(`${packagePath}/features/${name}.json`));
+		.map((name) => resolve(`./features/${name}.json`));
 
 	if (!features.every((exists) => !!exists)) {
 		features.forEach((exists, idx) => {
@@ -43,9 +51,6 @@ export default function getFeatures(args: Partial<BuildArgs>): FeatureMap {
 	// conflict with each other.  Once a value conflicts, it is removed from the feature map.
 	const seenFeatures = new Set<string>();
 	return (features as FeatureMap[]).reduce((previous, current) => {
-		if (!current) {
-			return previous;
-		}
 		Object.keys(current).forEach((key) => {
 			if (!(key in previous) && !seenFeatures.has(key)) {
 				seenFeatures.add(key);

@@ -1,4 +1,5 @@
 import './main';
+import './getFeatures';
 import './webpack.config';
 import './postcss.config';
 import './plugins/CoreLoadPlugin';
@@ -9,5 +10,6 @@ import './plugins/IgnoreUnmodifiedPlugin';
 import './plugins/InjectModulesPlugin';
 import './plugins/util/i18n';
 import './plugins/util/main';
+import './plugins/util/walk';
 import './loaders/css-module-decorator-loader';
 import './loaders/css-module-dts-loader';

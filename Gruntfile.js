@@ -5,7 +5,7 @@ module.exports = function(grunt) {
 			'staticDefinitionFiles-dev': {
 				expand: true,
 				cwd: 'src',
-				src: [ '**/*.md' ],
+				src: [ '**/*.md', '**/*.json' ],
 				dest: '<%= devDirectory %>/src/'
 			}
 		}

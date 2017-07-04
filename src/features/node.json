@@ -40,6 +40,6 @@
 	"postmessage": true,
 	"raf": true,
 	"setimmediate": true,
-	"xhr": true,
-	"xhr2": true
+	"xhr": false,
+	"xhr2": false
 }
