@@ -96,12 +96,13 @@ From the command line, the feature sets are provided to the `-f` or `--feature` 
 |`firefox`|This feature set represents Firefox 54+[<sup>1</sup>](#note-1)|
 |`ie11`|This feature set represents Internet Explorer 11|
 |`ios`|This feature set represents iOS 10.3+[<sup>2</sup>](#note-2)|
-|`node`|This feature set represents Node.js 7+[<sup>2</sup>](#note-2)|
+|`node`|This feature set represents Node.js 6/7[<sup>2</sup>](#note-2)|
+|`node8`|This feature set represents Node.js 8+|
 |`safari`|This feature set represents Safari 10+[<sup>2</sup>](#note-2)|
 
 <span id="note-1">[1]:</span> Many of these features were present in earlier versions, but the specific version was the GA release at the time of writing when this was validated.
 
-<span id="note-2">[2]:</span> At least on of the features was not present in previous releases.
+<span id="note-2">[2]:</span> At least one of the features was not present in previous releases.
 
 An example of generating a build that _hardwires_ features for Microsoft Edge and Chrome, you would use the following on the command line:
 

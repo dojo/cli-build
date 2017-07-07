@@ -210,7 +210,7 @@ const command: Command<BuildArgs> = {
 
 		options('f', {
 			alias: 'features',
-			describe: 'Features sets to optimize the build with\n\nValid values are: android, chrome, edge, firefox, ie11, ios, node, safari',
+			describe: 'Features sets to optimize the build with\n\nValid values are: android, chrome, edge, firefox, ie11, ios, node, node8, safari',
 			type: 'array'
 		});
 	},
