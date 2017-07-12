@@ -33,6 +33,7 @@ function webpackConfig(args: Partial<BuildArgs>) {
 
 	const cssLoader = ExtractTextPlugin.extract({ use: 'css-loader?sourceMap' });
 	const localIdentName = (args.watch || args.withTests) ? '[name]__[local]__[hash:base64:5]' : '[hash:base64:8]';
+	const includesExternals = args.externals && Object.keys(args.externals).length;
 	const cssModuleLoader = ExtractTextPlugin.extract({
 		use: [
 			'css-module-decorator-loader',
@@ -181,7 +182,7 @@ function webpackConfig(args: Partial<BuildArgs>) {
 			}, () => {
 				return new HtmlWebpackPlugin({
 					inject: true,
-					chunks: [ 'src/main' ],
+					chunks: includeWhen(!includesExternals, () => [ 'src/main' ]),
 					template: 'src/index.html'
 				});
 			}),
@@ -218,7 +219,7 @@ function webpackConfig(args: Partial<BuildArgs>) {
 					})
 				];
 			}),
-			...includeWhen(args.externals && Object.keys(args.externals).length, () => {
+			...includeWhen(includesExternals, () => {
 				const { externals = {} } = args;
 				const externalModules = Object.keys(externals);
 				const loaderModule = externalModules.reduce((prev: string | undefined, next: string) => {
@@ -240,7 +241,7 @@ function webpackConfig(args: Partial<BuildArgs>) {
 							return `'${module}/${config.main}'`;
 						}
 
-						return `'${module}'`
+						return `'${module}'`;
 					})
 					.join(', ');
 
@@ -255,10 +256,12 @@ function webpackConfig(args: Partial<BuildArgs>) {
 						{
 							from: path.join(__dirname, 'templates/requireExternals.js'),
 							to: 'externals/requireExternals.js',
-							transform: (content: any) => content.toString().replace("require('')", `require(
-							${args.externalConfig && JSON.stringify(args.externalConfig) || '{}'}, [
-							 ${mids} 
-							])`)
+							transform: (content: any) => content.toString()
+								.replace(
+									'/* External Config */',
+									args.externalConfig && JSON.stringify(args.externalConfig) || '{}'
+								)
+								.replace('/* External Layer MIDs */', mids)
 						}
 					]),
 					new HtmlWebpackIncludeAssetsPlugin({
@@ -272,7 +275,7 @@ function webpackConfig(args: Partial<BuildArgs>) {
 			})
 		],
 		output: {
-			libraryTarget: 'umd',
+			libraryTarget: "umd",
 			path: includeWhen(args.element, args => {
 				return path.resolve(`./dist/${args.elementPrefix}`);
 			}, () => {
