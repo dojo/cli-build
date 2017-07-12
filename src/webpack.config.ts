@@ -7,6 +7,7 @@ import Set from '@dojo/shim/Set';
 const IgnorePlugin = require('webpack/lib/IgnorePlugin');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
+const HtmlWebpackIncludeAssetsPlugin = require('html-webpack-include-assets-plugin');
 const ExtractTextPlugin = require('extract-text-webpack-plugin');
 const OptimizeCssAssetsPlugin = require('optimize-css-assets-webpack-plugin');
 const BundleAnalyzerPlugin = require('webpack-bundle-analyzer-sunburst').BundleAnalyzerPlugin;
@@ -73,9 +74,23 @@ function webpackConfig(args: Partial<BuildArgs>) {
 	const config: webpack.Config = {
 		externals: [
 			function (context, request, callback) {
-				if (/^intern[!\/]/.test(request)) {
+				const { externals } = args;
+				function isRequestForPackage(packageName: string) {
+					return new RegExp(`^${packageName}[!\/]`).test(request);
+				}
+
+				const externalModules = Object.keys(externals);
+				const isExternalPackage = externals && externalModules.some((key) => {
+					const moduleConfig = externals[key];
+					const packages = Array.isArray(moduleConfig) ?
+						moduleConfig : (typeof moduleConfig !== 'boolean' && moduleConfig.packages || []);
+					return isRequestForPackage(key) || packages.some(isRequestForPackage);
+				});
+
+				if (isExternalPackage || isExternalPackage || isRequestForPackage('intern')) {
 					return callback(null, 'amd ' + request);
 				}
+
 				callback();
 			}
 		],
@@ -150,13 +165,13 @@ function webpackConfig(args: Partial<BuildArgs>) {
 					filename: 'widget-core.js'
 				}) ];
 			}),
-			...includeWhen(!args.watch && !args.withTests, (args) => {
-				return [ new webpack.optimize.UglifyJsPlugin({
-					sourceMap: true,
-					compress: { warnings: false },
-					exclude: /tests[/]/
-				}) ];
-			}),
+			// ...includeWhen(!args.watch && !args.withTests, (args) => {
+			// 	return [ new webpack.optimize.UglifyJsPlugin({
+			// 		sourceMap: true,
+			// 		compress: { warnings: false },
+			// 		exclude: /tests[/]/
+			// 	}) ];
+			// }),
 			includeWhen(args.element, args => {
 				return new HtmlWebpackPlugin({
 					inject: false,
@@ -200,6 +215,58 @@ function webpackConfig(args: Partial<BuildArgs>) {
 						chunks: [ '../_build/src/main' ],
 						template: 'src/index.html',
 						filename: '../_build/src/index.html'
+					})
+				];
+			}),
+			...includeWhen(args.externals && Object.keys(args.externals).length, () => {
+				const { externals = {} } = args;
+				const externalModules = Object.keys(externals);
+				const loaderModule = externalModules.reduce((prev: string | undefined, next: string) => {
+					if (prev) {
+						return prev;
+					}
+
+					const config = externals[next];
+
+					if (config && !Array.isArray(config) && typeof config !== 'boolean' && config.hasLoader) {
+						return next;
+					}
+				}, undefined);
+				const mids = externalModules.filter((module) => module !== loaderModule)
+					.map((module) => {
+						const config = externals[ module ];
+
+						if (config && !Array.isArray(config) && typeof config !== 'boolean' && config.main) {
+							return `'${module}/${config.main}'`;
+						}
+
+						return `'${module}'`
+					})
+					.join(', ');
+
+				return [
+					new CopyWebpackPlugin([
+						...includeWhen(!loaderModule, () => [
+							{ from: path.join(__dirname, 'node_modules/dojo'), to: 'externals/dojo' }
+						]),
+						...externalModules.map((module) => ({
+							from: `node_modules/${module}`, to: `externals/${module}`
+						})),
+						{
+							from: path.join(__dirname, 'templates/requireExternals.js'),
+							to: 'externals/requireExternals.js',
+							transform: (content: any) => content.toString().replace("require('')", `require(
+							${args.externalConfig && JSON.stringify(args.externalConfig) || '{}'}, [
+							 ${mids} 
+							])`)
+						}
+					]),
+					new HtmlWebpackIncludeAssetsPlugin({
+						assets: [
+							`externals/${loaderModule ? `${loaderModule}/`: '' }dojo/dojo.js`,
+							'externals/requireExternals.js'
+						],
+						append: false
 					})
 				];
 			})
