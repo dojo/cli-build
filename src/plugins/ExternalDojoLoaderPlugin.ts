@@ -23,7 +23,18 @@ export type DojoDependency = true | string[] | {
 	 * work. A DojoDependency that is an array of strings is equivalent to only defining this property.
 	 *
 	 */
-	packages: string[]
+	packages: string[];
+
+	/**
+	 * This can be used to specify the location, relative to the externals folder, where the dependency should be copied.
+	 */
+	to?: string;
+
+	/**
+	 * If this dependency should be required immediately, this property can be set to true. This is useful for eagerly
+	 * loading layer files so that its modules will be available immediately.
+	 */
+	fetchImmediately?: boolean;
 };
 
 export interface ExternalDojoDependencyConfig {
@@ -54,33 +65,44 @@ export default class ExternalDojoLoaderPlugin {
 			}
 		}, undefined);
 		const mids = externalModules.filter((module) => module !== loaderModule)
-			.map((module) => {
-				const config = externals[ module ];
+			.reduce((mids, module) => {
+				const config = externals[module];
 
-				if (config && !Array.isArray(config) && typeof config !== 'boolean' && config.main) {
-					return `'${module}/${config.main}'`;
+				if (config && !Array.isArray(config) && typeof config !== 'boolean' && config.fetchImmediately) {
+					const base = (config.to || module).replace('.js', '');
+					mids.push(config.main ? `'${base}/${config.main}'` : `'${base}'`);
 				}
 
-				return `'${module}'`;
-			})
+				return mids;
+			}, [] as string[])
+			.concat([ `'../src/main.js'` ])
 			.join(', ');
 
+		function getDirectoryToCopyTo(module: string) {
+			const config = externals[module];
+			if (config && !Array.isArray(config) && typeof config !== 'boolean' && config.to) {
+				return `externals/${config.to}`;
+			}
+
+			return `externals/${module}`;
+		}
+
 		const copyConfig = [
-			...externalModules.map((module) => ({ from: `node_modules/${module}`, to: `externals/${module}`})),
+			...externalModules.map((module) => ({ from: `node_modules/${module}`, to: getDirectoryToCopyTo(module) })),
 			{
-				from: path.join(__dirname, 'templates/requireExternals.js'),
+				from: path.join(__dirname, '../templates/requireExternals.js'),
 				to: 'externals/requireExternals.js',
 				transform: (content: any) => content.toString()
 					.replace(
 						'/* External Config */',
-						this._externalConfig && JSON.stringify(this._externalConfig) || '{}'
+						this._externalConfig && `${JSON.stringify(this._externalConfig)}, ` || ''
 					)
 					.replace('/* External Layer MIDs */', mids)
 			}
 		];
 
 		if (!loaderModule) {
-			copyConfig.push({ from: path.join(__dirname, 'node_modules/dojo'), to: 'externals/dojo' });
+			copyConfig.push({ from: path.join(__dirname, '../node_modules/dojo'), to: 'externals/dojo' });
 		}
 
 		compiler.apply(new CopyWebpackPlugin(copyConfig));
