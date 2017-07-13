@@ -4,6 +4,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { underline } from 'chalk';
 import webpack = require('webpack');
+import { ExternalDojoDependencyConfig } from './plugins/ExternalDojoLoaderPlugin';
 const WebpackDevServer: any = require('webpack-dev-server');
 const config: ConfigFactory = require('./webpack.config');
 const pkgDir = require('pkg-dir');
@@ -24,7 +25,7 @@ export interface BuildArgs extends Argv {
 	debug: boolean;
 	disableLazyWidgetDetection: boolean;
 	bundles: Bundles;
-	externals: { [ dependency: string ]: true | string[] | { main?: string, hasLoader: boolean; packages: string[] } };
+	externals: ExternalDojoDependencyConfig;
 	externalConfig: { [ key: string ]: any };
 }
 

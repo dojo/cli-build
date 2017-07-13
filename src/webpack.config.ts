@@ -4,10 +4,10 @@ import * as path from 'path';
 import { existsSync, readFileSync } from 'fs';
 import { BuildArgs } from './main';
 import Set from '@dojo/shim/Set';
+import ExternalDojoLoaderPlugin from './plugins/ExternalDojoLoaderPlugin';
 const IgnorePlugin = require('webpack/lib/IgnorePlugin');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
-const HtmlWebpackIncludeAssetsPlugin = require('html-webpack-include-assets-plugin');
 const ExtractTextPlugin = require('extract-text-webpack-plugin');
 const OptimizeCssAssetsPlugin = require('optimize-css-assets-webpack-plugin');
 const BundleAnalyzerPlugin = require('webpack-bundle-analyzer-sunburst').BundleAnalyzerPlugin;
@@ -219,63 +219,10 @@ function webpackConfig(args: Partial<BuildArgs>) {
 					})
 				];
 			}),
-			...includeWhen(includesExternals, () => {
-				const { externals = {} } = args;
-				const externalModules = Object.keys(externals);
-				const loaderModule = externalModules.reduce((prev: string | undefined, next: string) => {
-					if (prev) {
-						return prev;
-					}
-
-					const config = externals[next];
-
-					if (config && !Array.isArray(config) && typeof config !== 'boolean' && config.hasLoader) {
-						return next;
-					}
-				}, undefined);
-				const mids = externalModules.filter((module) => module !== loaderModule)
-					.map((module) => {
-						const config = externals[ module ];
-
-						if (config && !Array.isArray(config) && typeof config !== 'boolean' && config.main) {
-							return `'${module}/${config.main}'`;
-						}
-
-						return `'${module}'`;
-					})
-					.join(', ');
-
-				return [
-					new CopyWebpackPlugin([
-						...includeWhen(!loaderModule, () => [
-							{ from: path.join(__dirname, 'node_modules/dojo'), to: 'externals/dojo' }
-						]),
-						...externalModules.map((module) => ({
-							from: `node_modules/${module}`, to: `externals/${module}`
-						})),
-						{
-							from: path.join(__dirname, 'templates/requireExternals.js'),
-							to: 'externals/requireExternals.js',
-							transform: (content: any) => content.toString()
-								.replace(
-									'/* External Config */',
-									args.externalConfig && JSON.stringify(args.externalConfig) || '{}'
-								)
-								.replace('/* External Layer MIDs */', mids)
-						}
-					]),
-					new HtmlWebpackIncludeAssetsPlugin({
-						assets: [
-							`externals/${loaderModule ? `${loaderModule}/`: '' }dojo/dojo.js`,
-							'externals/requireExternals.js'
-						],
-						append: false
-					})
-				];
-			})
+			...includeWhen(includesExternals, () => new ExternalDojoLoaderPlugin(args))
 		],
 		output: {
-			libraryTarget: "umd",
+			libraryTarget: 'umd',
 			path: includeWhen(args.element, args => {
 				return path.resolve(`./dist/${args.elementPrefix}`);
 			}, () => {
