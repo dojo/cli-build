@@ -87,6 +87,30 @@ Ejecting `@dojo/cli-build-webpack` will produce a `config/build-webpack/webpack.
 node_modules/.bin/webpack --config=config/build-webpack/webpack.config.js
 ```
 
+### Interop with Dojo 1 libraries
+Dojo 1 libraries, whether built or not, can be included in a Dojo 2 application by configuring certain options in the project's `.dojorc` file.
+ `.dojorc` is a JSON file that contains configuration for Dojo CLI tasks. Configuration for the `dojo build` task can be provided under the `build-webpack` property. Dojo 1 dependencies can be specified via a property called `externals` within the `build-webpack` config.
+ `externals` is an object and the keys are paths, relative to `node_modules`, specifying the directories or files of the Dojo 1 dependencies that should be included. Each value can take three possible types:
+ * `true`: Use this if none of the other options apply
+ * An array listing the package names that are in the dependency. This list is needed in order to tell the build process to leave the resolution of these
+ files up to Dojo. If any module from a package is imported within application code but not specified in this list, it will fail at runtime.
+ * An object that contains three properties:
+    * `package`: array of package names, this array serves the same purpose as providing an array as the value.
+    * `hasLoader`: A flag to indicate that the specified layer includes a loader and a separate loader is not needed.
+    * `main`: Can be provided if the external dependency is a folder. This is a path within the module to the file to be required. The folder or file
+     itself will be required if this is not specified.
+Types for these modules can be installed in `node_modules/@types` just like any other dependency.
+
+If the built layer contains all of the dependencies of the Dojo 1 library, then the `externals` config is all that's needed to get a working build.
+However, in some cases not all dependencies are built into the layer file itself. This if often the case for i18n resources, with some plugins, if modules
+are intentionally excluded from a build, etc. Making sure the dependency works in this cases requires two additional steps:
+* Whatever path is provided in `externals` will be included in the build, so make sure to point to the project folder and not just the layer file itself,
+if it has external dependencies.
+* Since these dependencies are not in the build file, they will not be cached, and the loader will need to determine the correct URL to retrieve them.
+For a build module that includes a loader, this will often be accomplished automatically by virtue of the baked in `dojoConfig`. If this is not the case a
+`dojoConfig` can be provided in `.dojorc` under the `externalConfig` property. Note that by default paths in this config will be relative to the loader.
+If none of the provided dependencies includes a loader, this will be `<APP_URL>/externals/dojo/dojo.js`.
+
 ## How do I contribute?
 
 We appreciate your interest!  Please see the [Dojo 2 Meta Repository](https://github.com/dojo/meta#readme) for the
