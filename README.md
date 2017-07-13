@@ -95,21 +95,24 @@ Dojo 1 libraries, whether built or not, can be included in a Dojo 2 application 
  * An array listing the package names that are in the dependency. This list is needed in order to tell the build process to leave the resolution of these
  files up to Dojo. If any module from a package is imported within application code but not specified in this list, it will fail at runtime.
  * An object that contains three properties:
-    * `package`: array of package names, this array serves the same purpose as providing an array as the value.
-    * `hasLoader`: A flag to indicate that the specified layer includes a loader and a separate loader is not needed.
+    * `packages`: An array of package names, this array serves the same purpose as providing an array as the value.
+    * `hasLoader`: An optional flag to indicate that the specified layer includes a loader and a separate loader is not needed.
     * `main`: Can be provided if the external dependency is a folder. This is a path within the module to the file to be required. The folder or file
-     itself will be required if this is not specified.
-Types for these modules can be installed in `node_modules/@types` just like any other dependency.
+     itself will be required if this is not specified. This is only relevant if `fetchImmediately` is `true`.
+    * `to`: An alternate location for a dependency to be copied to. The location is relative to the `externals`
+     folder. This can be useful if, for example, multiple built modules are being used that have shared dependencies, to ensure that only one copy
+     of each is included in the final build.
+    * `fetchImmediately`: An optional flag that indicates this dependency should be loaded before the main application layer. The typical use case
+    for this is to load a layer file so that its contained modules will be available to the application.
+
+Types for any dependencies included in `externals` can be installed in `node_modules/@types` just like any other dependency.
 
 If the Dojo 1 library in question is a built layer, and contains all of its dependencies within the layer, then the `externals` config is all that's needed to get a working build.
 However, in some cases not all dependencies are built into the layer file itself. This is often the case for i18n resources, with some plugins, if modules
-are intentionally excluded from a build, etc. Making sure the dependency works in this cases requires 1-2 additional steps:
-* Whatever path is provided in `externals` will be included in the build, so make sure to point to the project folder and not just the layer file itself,
-if it has external dependencies.
-* Since these dependencies are not in the build file, they will not be cached, and the loader will need to determine the correct URL to retrieve them.
-For a built module that includes a loader, this will often be accomplished automatically by virtue of the baked in `dojoConfig`. If this is not the case a
-`dojoConfig` can be provided in `.dojorc` under the `externalConfig` property. Note that by default paths in this config will be relative to the loader.
-If none of the provided dependencies includes a loader, this will be `<APP_URL>/externals/dojo/dojo.js`.
+are intentionally excluded from a build, if multiple layers have shared dependencies, etc. In this case some additional configuration may be needed.
+To this end, the `externalConfig` property in the `.dojorc` configuration for `build-webpack` can be specified. This property will be passed as is to
+ the loader to configure it. The [`dojoConfig` documentation](https://dojotoolkit.org/documentation/tutorials/1.10/dojo_config/) elaborates on the
+  available configuration options.
 
 ## How do I contribute?
 
