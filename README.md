@@ -101,13 +101,13 @@ Dojo 1 libraries, whether built or not, can be included in a Dojo 2 application 
      itself will be required if this is not specified.
 Types for these modules can be installed in `node_modules/@types` just like any other dependency.
 
-If the built layer contains all of the dependencies of the Dojo 1 library, then the `externals` config is all that's needed to get a working build.
-However, in some cases not all dependencies are built into the layer file itself. This if often the case for i18n resources, with some plugins, if modules
-are intentionally excluded from a build, etc. Making sure the dependency works in this cases requires two additional steps:
+If the Dojo 1 library in question is a built layer, and contains all of its dependencies within the layer, then the `externals` config is all that's needed to get a working build.
+However, in some cases not all dependencies are built into the layer file itself. This is often the case for i18n resources, with some plugins, if modules
+are intentionally excluded from a build, etc. Making sure the dependency works in this cases requires 1-2 additional steps:
 * Whatever path is provided in `externals` will be included in the build, so make sure to point to the project folder and not just the layer file itself,
 if it has external dependencies.
 * Since these dependencies are not in the build file, they will not be cached, and the loader will need to determine the correct URL to retrieve them.
-For a build module that includes a loader, this will often be accomplished automatically by virtue of the baked in `dojoConfig`. If this is not the case a
+For a built module that includes a loader, this will often be accomplished automatically by virtue of the baked in `dojoConfig`. If this is not the case a
 `dojoConfig` can be provided in `.dojorc` under the `externalConfig` property. Note that by default paths in this config will be relative to the loader.
 If none of the provided dependencies includes a loader, this will be `<APP_URL>/externals/dojo/dojo.js`.
 

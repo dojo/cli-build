@@ -4,7 +4,6 @@ import * as path from 'path';
 import { existsSync, readFileSync } from 'fs';
 import { BuildArgs } from './main';
 import Set from '@dojo/shim/Set';
-import ExternalDojoLoaderPlugin from './plugins/ExternalDojoLoaderPlugin';
 const IgnorePlugin = require('webpack/lib/IgnorePlugin');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
@@ -17,6 +16,7 @@ const postcssCssNext = require('postcss-cssnext');
 const isCLI = process.env.DOJO_CLI;
 const packagePath = isCLI ? '.' : '@dojo/cli-build-webpack';
 const CoreLoadPlugin = require(`${packagePath}/plugins/CoreLoadPlugin`).default;
+const ExternalDojoLoaderPlugin = require(`${packagePath}/plugins/ExternalDojoLoaderPlugin`).default;
 const I18nPlugin = require(`${packagePath}/plugins/I18nPlugin`).default;
 const basePath = process.cwd();
 
@@ -33,7 +33,7 @@ function webpackConfig(args: Partial<BuildArgs>) {
 
 	const cssLoader = ExtractTextPlugin.extract({ use: 'css-loader?sourceMap' });
 	const localIdentName = (args.watch || args.withTests) ? '[name]__[local]__[hash:base64:5]' : '[hash:base64:8]';
-	const includesExternals = args.externals && Object.keys(args.externals).length;
+	const includesExternals = Boolean(args.externals && Object.keys(args.externals).length);
 	const cssModuleLoader = ExtractTextPlugin.extract({
 		use: [
 			'css-module-decorator-loader',
@@ -219,7 +219,7 @@ function webpackConfig(args: Partial<BuildArgs>) {
 					})
 				];
 			}),
-			...includeWhen(includesExternals, () => new ExternalDojoLoaderPlugin(args))
+			...includeWhen(includesExternals, () => [ new ExternalDojoLoaderPlugin(args) ])
 		],
 		output: {
 			libraryTarget: 'umd',
