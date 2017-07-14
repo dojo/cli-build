@@ -111,7 +111,7 @@ files up to Dojo. If any module from a package is imported within application co
 
 Types for any dependencies included in `externals` can be installed in `node_modules/@types` just like any other dependency.
 
-If the Dojo 1 library in question is a built layer, and contains all of its dependencies within the layer, then the `externals` config is all that's
+If the Dojo 1 library in question is a built layer, and has no external dependencies, then the `externals` config is all that's
 needed to get a working build. However, in some cases not all dependencies are built into the layer file itself. This is often the case for i18n
 resources, with some plugins, if modules are intentionally excluded from a build, if multiple layers have shared dependencies, etc. In this case some
 additional configuration may be needed. To this end, the `externalConfig` property in the `.dojorc` configuration for `build-webpack` can be specified.
