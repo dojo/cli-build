@@ -150,23 +150,26 @@ describe('ExternalDojoLoaderPlugin', () => {
 		const expectedCopyArgs = plugin.createCopyConfig(convertedExternals, 'module');
 
 		plugin.apply(compiler);
-		mockModule.destroy();
 
-		assert.equal(compiler.applied.length, 2);
-		assert.isTrue(copyMock.calledOnce);
-		const copyArgs = copyMock.args[0][0];
-		assert.equal(typeof copyArgs[4].transform, 'function');
+		try {
+			assert.equal(compiler.applied.length, 2);
+			const copyArgs = copyMock.args[0][0];
+			assert.equal(typeof copyArgs[4].transform, 'function');
 
-		assert.equal(
-			copyArgs[4].transform('require(/* External Config */[ /* External Layer MIDs */ ])'),
-			`require({"packages":[{"name":"package","location":"package"}]}, [ 'moduleFour/sub/module', '../src/main.js' ])`
-		);
+			assert.equal(
+				copyArgs[4].transform('require(/* External Config */[ /* External Layer MIDs */ ])'),
+				`require({"packages":[{"name":"package","location":"package"}]}, [ 'moduleFour/sub/module', '../src/main.js' ])`
+			);
 
-		// assign expected function to actual value so we can do a deep comparison of arguments
-		copyArgs[4].transform = (<any> expectedCopyArgs[4]).transform;
-		assert.deepEqual(copyArgs, expectedCopyArgs);
+			// assign expected function to actual value so we can do a deep comparison of arguments
+			copyArgs[4].transform = (<any> expectedCopyArgs[4]).transform;
+			assert.deepEqual(copyArgs, expectedCopyArgs);
 
-		assert.isTrue(htmlMock.calledOnce);
-		assert.deepEqual(htmlMock.args[0][0], plugin.createHtmlAssetsConfig(convertedExternals, 'module'));
+			assert.deepEqual(htmlMock.args[0][0], plugin.createHtmlAssetsConfig(convertedExternals, 'module'));
+		} catch (error) {
+			throw error;
+		} finally {
+			mockModule.destroy();
+		}
 	});
 });
