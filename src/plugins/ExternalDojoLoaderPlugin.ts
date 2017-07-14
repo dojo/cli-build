@@ -9,16 +9,18 @@ export type DojoDependencyDescriptor = {
 	 * If not provided, `main.js` will be loaded by default.
 	 */
 	main?: string;
+
 	/**
-	 * Optional flag indicating whether this module includes a loader. If no module contains a loader an un-built Dojo
+	 * Optional flag indicating whether this module includes a loader. If no module contains a loader an un-built Dojo 1
 	 * loader will be included in the build.
 	 */
 	hasLoader?: boolean;
+
 	/**
 	 * A List of packages defined by this dependency. This is used to populate the externals config. Any packages
-	 * that are defined by this dependency and imported in the application but not included in this list or will not
-	 * work. A DojoDependency that is an array of strings is equivalent to only defining this property.
-	 *
+	 * that are defined by this dependency and imported in the application but not included in this list will not
+	 * work. A DojoDependency that is an array of strings is equivalent to an object that only defines the packages
+	 * property.
 	 */
 	packages?: string[];
 
