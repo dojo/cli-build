@@ -107,7 +107,8 @@ export default class ExternalDojoLoaderPlugin {
 				`externals/${path || 'dojo/dojo.js'}`,
 				'externals/requireExternals.js'
 			],
-		append: false };
+			append: false
+		};
 	}
 
 	determineLoaderModule(externals: ExternalDojoDependencyConfig<DojoDependencyDescriptor>) {
@@ -132,7 +133,8 @@ export default class ExternalDojoLoaderPlugin {
 	}
 
 	getMIDs(externals: ExternalDojoDependencyConfig<DojoDependencyDescriptor>, loaderModule?: string): string {
-		return Object.keys(externals).filter((module) => module !== loaderModule)
+		return Object.keys(externals)
+			.filter((module) => module !== loaderModule)
 			.reduce((mids, module) => {
 				const config = externals[module];
 
