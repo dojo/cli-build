@@ -98,13 +98,13 @@ Dojo 1 libraries, whether built or not, can be included in a Dojo 2 application 
     * `packages`: An array of package names, this array serves the same purpose as providing an array as the value.
     * `hasLoader`: An optional flag to indicate that the specified layer includes a loader and a separate loader is not needed.
     * `main`: Can be provided if the external dependency is a folder. This is a path within the module to the file to be required. The folder or file
-     itself will be required if this is not specified. This is only relevant if `fetchImmediately` or `hasLoader` is `true`.
+     itself will be required if this is not specified. This is only relevant if `loadImmediately` or `hasLoader` is `true`.
     * `to`: An alternate location for a dependency to be copied to. The location is relative to the `externals`
      folder. This can be useful if, for example, multiple built modules are being used that have shared dependencies, to ensure that only one copy
      of each is included in the final build.
-    * `fetchImmediately`: An optional flag that indicates this dependency should be loaded before the main application layer. The typical use case
+    * `loadImmediately`: An optional flag that indicates this dependency should be loaded before the main application layer. The typical use case
     for this is to load a layer file so that its contained modules will be available to the application. If a dependency has the loader,
-     `fetchImmediately` is not needed as the loader script will be executed regardless.
+     `loadImmediately` is not needed as the loader script will be executed regardless.
 
 Types for any dependencies included in `externals` can be installed in `node_modules/@types` just like any other dependency.
 

@@ -3,7 +3,6 @@ import * as path from 'path';
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 const HtmlWebpackIncludeAssetsPlugin = require('html-webpack-include-assets-plugin');
 
-
 export type DojoDependencyDescriptor = {
 	/**
 	 * The path to the main file to be loaded. Can be provided if this dependency is a folder.
@@ -32,7 +31,7 @@ export type DojoDependencyDescriptor = {
 	 * If this dependency should be required immediately, this property can be set to true. This is useful for eagerly
 	 * loading layer files so that its modules will be available immediately.
 	 */
-	fetchImmediately?: boolean;
+	loadImmediately?: boolean;
 };
 
 /**
@@ -112,17 +111,15 @@ export default class ExternalDojoLoaderPlugin {
 	}
 
 	determineLoaderModule(externals: ExternalDojoDependencyConfig<DojoDependencyDescriptor>) {
-		return Object.keys(externals).reduce((prev: string | undefined, next: string) => {
-			if (prev) {
-				return prev;
-			}
+		for (let module of Object.keys(externals)) {
+			const dependency = externals[module];
 
-			const config = externals[next];
-
-			if (config && config.hasLoader) {
-				return next;
+			if (dependency && dependency.hasLoader) {
+				return module;
 			}
-		}, undefined);
+		}
+
+		return undefined;
 	}
 
 	getDirectoryToCopyTo(externals: ExternalDojoDependencyConfig<DojoDependencyDescriptor>, module: string) {
@@ -134,12 +131,12 @@ export default class ExternalDojoLoaderPlugin {
 		return `externals/${module}`;
 	}
 
-	getMIDs(externals: ExternalDojoDependencyConfig<DojoDependencyDescriptor>, loaderModule?: string) {
+	getMIDs(externals: ExternalDojoDependencyConfig<DojoDependencyDescriptor>, loaderModule?: string): string {
 		return Object.keys(externals).filter((module) => module !== loaderModule)
 			.reduce((mids, module) => {
 				const config = externals[module];
 
-				if (config && config.fetchImmediately) {
+				if (config && config.loadImmediately) {
 					mids.push(`'${this.getPath(module, config, false)}'`);
 				}
 
