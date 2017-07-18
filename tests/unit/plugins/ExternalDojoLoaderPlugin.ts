@@ -25,7 +25,7 @@ describe('ExternalDojoLoaderPlugin', () => {
 
 		function createConfig(path: string) {
 			return {
-				assets: [ `externals/${path}`, 'externals/requireExternals.js' ],
+				assets: [ `externals/${path}`, 'externals/requireExternals.js', 'main.css' ],
 				append: false
 			};
 		}
@@ -81,7 +81,7 @@ describe('ExternalDojoLoaderPlugin', () => {
 				fetchWithToAndExtension: { loadImmediately: true, to: 'to.js' },
 				fetchWithMain: { loadImmediately: true, main: 'main' }
 			}, 'loader'),
-			`'fetch', 'fetch/path', 'fetchWithExtension', 'to', 'to', 'fetchWithMain/main', '../src/main.js'`
+			`'fetch', 'fetch/path', 'fetchWithExtension', 'to', 'to', 'fetchWithMain/main', 'src/main.js'`
 		);
 	});
 
@@ -158,7 +158,7 @@ describe('ExternalDojoLoaderPlugin', () => {
 
 			assert.equal(
 				copyArgs[4].transform('require(/* External Config */[ /* External Layer MIDs */ ])'),
-				`require({"packages":[{"name":"package","location":"package"}]}, [ 'moduleFour/sub/module', '../src/main.js' ])`
+				`require({"packages":[{"name":"package","location":"package"}]}, [ 'moduleFour/sub/module', 'src/main.js' ])`
 			);
 
 			// assign expected function to actual value so we can do a deep comparison of arguments
