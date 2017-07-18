@@ -107,7 +107,8 @@ export default class ExternalDojoLoaderPlugin {
 		return {
 			assets: [
 				`externals/${path || 'dojo/dojo.js'}`,
-				'externals/requireExternals.js'
+				'externals/requireExternals.js',
+				'main.css'
 			],
 			append: false
 		};
@@ -146,7 +147,7 @@ export default class ExternalDojoLoaderPlugin {
 
 				return mids;
 			}, [] as string[])
-			.concat([ `'../src/main.js'` ])
+			.concat([ `'src/main.js'` ])
 			.join(', ');
 	}
 

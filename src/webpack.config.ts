@@ -31,13 +31,13 @@ type IncludeCallback = (args: BuildArgs) => any;
 function webpackConfig(args: Partial<BuildArgs>) {
 	args = args || {};
 
-	const cssLoader = ExtractTextPlugin.extract({ use: 'css-loader?sourceMap' });
+	const cssLoader = ExtractTextPlugin.extract({ use: 'css-loader?sourceMap!resolve-url-loader' });
 	const localIdentName = (args.watch || args.withTests) ? '[name]__[local]__[hash:base64:5]' : '[hash:base64:8]';
 	const includesExternals = Boolean(args.externals && Object.keys(args.externals).length);
 	const cssModuleLoader = ExtractTextPlugin.extract({
 		use: [
 			'css-module-decorator-loader',
-			`css-loader?modules&sourceMap&importLoaders=1&localIdentName=${localIdentName}`,
+			`css-loader?modules&sourceMap&importLoaders=1&localIdentName=${localIdentName}!resolve-url-loader`,
 			{
 				loader: 'postcss-loader?sourceMap',
 				options: {
@@ -75,13 +75,13 @@ function webpackConfig(args: Partial<BuildArgs>) {
 	const config: webpack.Config = {
 		externals: [
 			function (context, request, callback) {
-				const { externals } = args;
+				const { externals = {} } = args;
 				function isRequestForPackage(packageName: string) {
 					return new RegExp(`^${packageName}[!\/]`).test(request);
 				}
 
 				const externalModules = Object.keys(externals);
-				const isExternalPackage = externals && externalModules.some((key) => {
+				const isExternalPackage = externalModules.some((key) => {
 					const moduleConfig = externals[key];
 					const packages = Array.isArray(moduleConfig) ?
 						moduleConfig : (typeof moduleConfig !== 'boolean' && moduleConfig.packages || []);
