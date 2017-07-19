@@ -250,7 +250,8 @@ function webpackConfig(args: Partial<BuildArgs>) {
 					{
 						loader: 'ts-loader',
 						options: {
-							instance: 'dojo'
+							instance: 'dojo',
+							configFileName: args.withTests ? 'tsconfig-tests.json' : 'tsconfig.json'
 						}
 					}
 				]},
@@ -272,7 +273,8 @@ function webpackConfig(args: Partial<BuildArgs>) {
 							{
 								loader: 'ts-loader',
 								options: {
-									instance: 'dojo'
+									instance: 'dojo',
+									configFileName: 'tsconfig-tests.json'
 								}
 							}
 						] }
