@@ -16,6 +16,7 @@ function start(cli = true) {
 	mockModule.dependencies([
 		'./plugins/CoreLoadPlugin',
 		'./plugins/ExternalLoaderPlugin',
+		'./plugins/ExternalLoaderUmdTemplatePlugin',
 		'./plugins/I18nPlugin',
 		'copy-webpack-plugin',
 		'extract-text-webpack-plugin',
