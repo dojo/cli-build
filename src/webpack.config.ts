@@ -3,7 +3,9 @@ import NormalModuleReplacementPlugin = require('webpack/lib/NormalModuleReplacem
 import * as path from 'path';
 import { existsSync, readFileSync } from 'fs';
 import { BuildArgs } from './main';
+import { ExternalDep } from './plugins/ExternalLoaderPlugin';
 import Set from '@dojo/shim/Set';
+import Map from '@dojo/shim/Map';
 const IgnorePlugin = require('webpack/lib/IgnorePlugin');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
@@ -16,7 +18,7 @@ const postcssCssNext = require('postcss-cssnext');
 const isCLI = process.env.DOJO_CLI;
 const packagePath = isCLI ? '.' : '@dojo/cli-build-webpack';
 const CoreLoadPlugin = require(`${packagePath}/plugins/CoreLoadPlugin`).default;
-const ExternalDojoLoaderPlugin = require(`${packagePath}/plugins/ExternalDojoLoaderPlugin`).default;
+const ExternalLoaderPlugin = require(`${packagePath}/plugins/ExternalLoaderPlugin`).default;
 const I18nPlugin = require(`${packagePath}/plugins/I18nPlugin`).default;
 const basePath = process.cwd();
 
@@ -28,12 +30,27 @@ try {
 
 type IncludeCallback = (args: BuildArgs) => any;
 
+function orderByList(list: string[]) {
+	return function(chunk1: { names: string[] }, chunk2: { names: string[] }) {
+		const index1 = list.indexOf(chunk1.names[0]);
+		const index2 = list.indexOf(chunk2.names[0]);
+		if (index2 === -1 || index1 < index2) {
+			return -1;
+		}
+		if (index1 === -1 || index1 > index2) {
+			return 1;
+		}
+		return 0;
+	};
+}
+
 function webpackConfig(args: Partial<BuildArgs>) {
 	args = args || {};
 
 	const cssLoader = ExtractTextPlugin.extract({ use: 'css-loader?sourceMap!resolve-url-loader' });
 	const localIdentName = (args.watch || args.withTests) ? '[name]__[local]__[hash:base64:5]' : '[hash:base64:8]';
-	const includesExternals = Boolean(args.externals && Object.keys(args.externals).length);
+	const includesExternals = Boolean(args.externals && args.externals.length);
+	const loaderMap = new Map<string, string>();
 	const cssModuleLoader = ExtractTextPlugin.extract({
 		use: [
 			'css-module-decorator-loader',
@@ -75,20 +92,27 @@ function webpackConfig(args: Partial<BuildArgs>) {
 	const config: webpack.Config = {
 		externals: [
 			function (context, request, callback) {
-				const { externals = {} } = args;
-				function isRequestForPackage(packageName: string) {
-					return new RegExp(`^${packageName}[!\/]`).test(request);
+				const { externals = [] } = args;
+				function isRequestForPackage(packageName?: string) {
+					return Boolean(packageName && new RegExp(`^${packageName}[!\/]`).test(request));
 				}
 
-				const externalModules = Object.keys(externals);
-				const isExternalPackage = externalModules.some((key) => {
-					const moduleConfig = externals[key];
-					const packages = Array.isArray(moduleConfig) ?
-						moduleConfig : (typeof moduleConfig !== 'boolean' && moduleConfig.packages || []);
-					return isRequestForPackage(key) || packages.some(isRequestForPackage);
-				});
+				const matchesExternalConfig = externals.reduce(
+					(matched, external) => {
+						if (matched) {
+							return matched;
+						}
+						const newMatch = external.deps.map((dep) => typeof dep === 'string' ? dep : dep.name)
+								.some(isRequestForPackage);
+						if (newMatch) {
+							loaderMap.set(request, external.type);
+						}
 
-				if (isExternalPackage || isRequestForPackage('intern')) {
+						return newMatch;
+					}, false
+				);
+
+				if (matchesExternalConfig || isRequestForPackage('intern')) {
 					return callback(null, 'amd ' + request);
 				}
 
@@ -106,6 +130,13 @@ function webpackConfig(args: Partial<BuildArgs>) {
 					path.join(basePath, 'src/main.css'),
 					path.join(basePath, 'src/main.ts')
 				],
+				...includeWhen(includesExternals, () => {
+					return {
+						'src/loaders': args.externals && args.externals.map(({ loader }) =>
+							path.join(basePath, loader)
+						)
+					};
+				}),
 				...includeWhen(args.withTests, () => {
 					return {
 						'../_build/tests/unit/all': [ path.join(basePath, 'tests/unit/all.ts') ],
@@ -165,14 +196,19 @@ function webpackConfig(args: Partial<BuildArgs>) {
 					name: 'widget-core',
 					filename: 'widget-core.js'
 				}) ];
-			}),
-			...includeWhen(!args.watch && !args.withTests, (args) => {
-				return [ new webpack.optimize.UglifyJsPlugin({
-					sourceMap: true,
-					compress: { warnings: false },
-					exclude: /tests[/]/
+			}, () => {
+				return [ new webpack.optimize.CommonsChunkPlugin({
+					name: 'src/shared',
+					minChunks: 2
 				}) ];
 			}),
+			// ...includeWhen(!args.watch && !args.withTests, (args) => {
+			// 	return [ new webpack.optimize.UglifyJsPlugin({
+			// 		sourceMap: true,
+			// 		compress: { warnings: false },
+			// 		exclude: /tests[/]/
+			// 	}) ];
+			// }),
 			includeWhen(args.element, args => {
 				return new HtmlWebpackPlugin({
 					inject: false,
@@ -182,7 +218,12 @@ function webpackConfig(args: Partial<BuildArgs>) {
 			}, () => {
 				return new HtmlWebpackPlugin({
 					inject: true,
-					chunks: includeWhen(!includesExternals, () => [ 'src/main' ]),
+					chunks: [
+						...includeWhen(!args.element, () => [ 'src/shared' ]),
+						...includeWhen(includesExternals, () => [ 'src/loaders' ]),
+						'src/main'
+					],
+					chunksSortMode: orderByList([ 'src/shared', 'src/loaders', 'src/main' ]),
 					template: 'src/index.html'
 				});
 			}),
@@ -219,10 +260,15 @@ function webpackConfig(args: Partial<BuildArgs>) {
 					})
 				];
 			}),
-			...includeWhen(includesExternals, () => [ new ExternalDojoLoaderPlugin(args) ])
+			...includeWhen(includesExternals, () => [ new ExternalLoaderPlugin({
+				externals: (args.externals && args.externals.reduce((prev, next) => prev.concat(next.deps), [] as ExternalDep[])),
+				loaderMap
+			}) ])
 		],
 		output: {
-			libraryTarget: 'umd',
+			...includeWhen(!includesExternals, () => ({
+				libraryTarget: 'umd'
+			})),
 			path: includeWhen(args.element, args => {
 				return path.resolve(`./dist/${args.elementPrefix}`);
 			}, () => {
