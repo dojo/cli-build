@@ -26,8 +26,7 @@ describe('ExternalLoaderPlugin', () => {
 
 		const compiler = new Compiler();
 		const compilation = new Compilation();
-		const pluginStub = stub(compiler, 'plugin');
-		pluginStub.callsFake((...args: any[]) => {
+		const pluginStub = stub(compiler, 'plugin', (...args: any[]) => {
 			const callback = args[1];
 			callback(compilation);
 		});
