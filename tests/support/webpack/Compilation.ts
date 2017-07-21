@@ -6,6 +6,7 @@ class MockCompilation extends Pluginable {
 	options: any;
 	modules: any[];
 	moduleTemplate: Pluginable;
+	mainTemplate: Pluginable;
 	// Non-standard property used only for testing
 	params: CompilationParams;
 	resolvers: any[];

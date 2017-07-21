@@ -49,8 +49,8 @@ export default class ExternalLoaderUmdTemplatePlugin {
 		return modules.map(module => `__WEBPACK_EXTERNAL_MODULE_${module.id}__`).join(', ');
 	}
 
-	static libraryName(library: string[], mainTemplate: FullMainTemplate, hash: any, chunk: any) {
-		return JSON.stringify(ExternalLoaderUmdTemplatePlugin.replaceKeys(library.concat([]).pop() || '', mainTemplate, hash, chunk));
+	static libraryName(library: string | string[], mainTemplate: FullMainTemplate, hash: any, chunk: any) {
+		return JSON.stringify(ExternalLoaderUmdTemplatePlugin.replaceKeys(([] as string[]).concat(library).pop() || '', mainTemplate, hash, chunk));
 	}
 
 	static replaceKeys(str: string, mainTemplate: FullMainTemplate, hash: any, chunk: any) {
@@ -72,6 +72,9 @@ export default class ExternalLoaderUmdTemplatePlugin {
 			let root: string | string[] = [];
 			if (typeof request === 'object') {
 				root = request['root'];
+			}
+			else {
+				root = request;
 			}
 			return `root${ExternalLoaderUmdTemplatePlugin.accessorToObjectAccess(([] as string[]).concat(root))}`;
 		}).join(', '), mainTemplate, hash, chunk);
@@ -108,7 +111,7 @@ export default class ExternalLoaderUmdTemplatePlugin {
 		const check = 'if (typeof dojoExternalModulesLoader === "undefined") {\nrunWebpackUMD(root, factory);\n}\nelse {\n';
 		const load = keys.map((key) => {
 			return `dojoExternalModulesLoader.load('${key}', [ ${customExternalLoaders[key].map((m: any) => `'${m.request}'`).join(', ')} ]);\n`;
-		});
+		}).join('');
 		const wait = 'dojoExternalModulesLoader.waitForActiveLoads().then(function (modules) {\n' +
 			'factory = factory.bind.apply(factory, [ null ].concat(modules));\n' +
 			'runWebpackUMD(root, factory);\n})\n}\n';
@@ -116,7 +119,7 @@ export default class ExternalLoaderUmdTemplatePlugin {
 	}
 
 	static wrapInUmdDef(customLoaderUmdBlock: string, orderedModules: FullModule[]) {
-		return '(function webpackUniversalModuleDefinition(root, factory) {\n' + customLoaderUmdBlock +
+		return '(function webpackUniversalModuleDefinition(root, factory) {\n' + customLoaderUmdBlock + '\n' +
 				'})(this, function(' + ExternalLoaderUmdTemplatePlugin.externalsArguments(orderedModules) + ') {\nreturn ';
 	}
 
@@ -133,9 +136,9 @@ export default class ExternalLoaderUmdTemplatePlugin {
 		const externals = chunk.modules.filter(module => module.external);
 		let defaultExternals = externals.filter(module => typeof module.request !== 'string' || !loaderMap.has(module.request));
 		const customExternals = externals.reduce((previous, module) => {
-			const request = (typeof module.request === 'string' && module.request) || '';
+			const request = typeof module.request === 'string' && module.request;
 			const loader = request && loaderMap.get(request);
-			if (loader) {
+			if (request && loader) {
 				return previous.concat([ { request, id: module.id, loader } ]);
 			}
 			return previous;
@@ -220,7 +223,7 @@ export default class ExternalLoaderUmdTemplatePlugin {
 				'		exports[' +
 				ExternalLoaderUmdTemplatePlugin.libraryName(
 					names.commonjs || names.root, mainTemplate, hash, chunk
-				) + '] = factory(${externalsRequireArray});\n' +
+				) + `] = factory(${externalsRequireArray});\n` +
 				'	else\n' +
 				'		' +
 				ExternalLoaderUmdTemplatePlugin.replaceKeys(
@@ -228,14 +231,14 @@ export default class ExternalLoaderUmdTemplatePlugin {
 							mainTemplate,
 							hash,
 							chunk
-				) + ' = factory(${externalsRootArray});\n' :
-				'	else {\n' +
+				) + ` = factory(${externalsRootArray});\n` :
+				('	else {\n' +
 				(defaultExternals.length > 0 ?
 						`		var a = typeof exports === "object" ? factory(${externalsRequireArray}) : factory(${externalsRootArray});\n` :
 						'		var a = factory();\n'
 				) +
 				'		for(var i in a) (typeof exports === "object" ? exports : root)[i] = a[i];\n' +
-				'	}\n'
+				'	}\n')
 		);
 	}
 
