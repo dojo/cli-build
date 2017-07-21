@@ -285,5 +285,5 @@ describe('ExternalLoaderUmdTemplatePlugin', () => {
 		plugin.apply(compilation as any);
 		assert.isTrue(templateStub.calledOnce);
 		assert.isTrue(pluginStub.calledTwice);
-	})
+	});
 });
