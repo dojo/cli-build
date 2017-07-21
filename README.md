@@ -13,6 +13,8 @@ The official dojo 2 build command.
   - [Building](#building)
   - [Building a custom element](#building-a-custom-element)
   - [Eject](#eject)
+  - [3rd pary library integration](#interop-with-external-libraries)
+    - [Defining a Loader](#defining-a-loader)
 - [How to I contribute?](#how-do-i-contribute)
   - [Installation](#installation)
   - [Testing](#testing)
@@ -100,7 +102,8 @@ External dependencies can be specified via a property called `externals` within 
 * `deps`: This is an array that defines what dependencies should be loaded with this loader, and configures the build to copy the appropriate files
  from `node_modules` into the built application. Each entry in the `deps` array can either be a string or an object. Each string value in the array should be the 'name' of a package or module that should be loaded with this loader. The `name` property of an object in this array serves the same purpose. In addition to `name`, each object must have a `from` property, and can optionally specify a `to` property. `from` is the path, relative to `node_modules`, from which this dependency should be copied. If `to` is not specified, then the dependency will be copied to `externals/${from}`. If `to` is specified then it will be copied to `externals/${to}`.
 
-####Defining a Loader
+#### Defining a Loader
+
 The file specified by the `loader` property should use the `@dojo/cli-build-webpack/registerLoader` module to register a loader.
 The default export of `registerLoader` is a function that takes a string and a callback function. The string is the unique key that identifies the
 loader, and should match the value of the `type` property in the entry in `externals` that describes the loader and its dependencies.
