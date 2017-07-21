@@ -11,7 +11,7 @@ function isPromise<T>(anything: any): anything is Promise<T> {
 	return anything && (<any> anything).then && typeof anything.then === 'function';
 }
 
-function injectScript(path: string) {
+export function injectScript(path: string) {
 	return new Promise<void>((resolve, reject) => {
 		const doc: Document = global.document;
 		const scriptTag = doc.createElement('script');
@@ -33,6 +33,7 @@ global.dojoExternalModulesLoader = {
 		if (loaderPromiseOrRetriever) {
 			const loaderPromise = isPromise(loaderPromiseOrRetriever) ?
 				loaderPromiseOrRetriever : loaderPromiseOrRetriever(injectScript);
+			externalLoaders[type] = loaderPromise;
 			const loadedPromise = loaderPromise.then(load => load(modules));
 
 			activeLoads.push(loadedPromise);

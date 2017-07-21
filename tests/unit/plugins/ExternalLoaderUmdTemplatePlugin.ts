@@ -18,6 +18,9 @@ describe('ExternalLoaderUmdTemplatePlugin', () => {
 
 	afterEach(() => {
 		mockTemplate.applyPluginsWaterfall.reset();
+		if (mockTemplate.plugin.restore) {
+			mockTemplate.plugin.restore();
+		}
 	});
 
 	it('should serialize object accessors', () => {
@@ -277,6 +280,148 @@ describe('ExternalLoaderUmdTemplatePlugin', () => {
 
 		const plugin = new ExternalLoaderUmdTemplatePlugin({
 			name: { amd: 'name', root: 'name', commonjs: 'name' },
+			namedDefine: false,
+			optionalAmdExternalAsGlobal: true,
+			loaderMap: map
+		});
+
+		plugin.apply(compilation as any);
+		assert.isTrue(templateStub.calledOnce);
+		assert.isTrue(pluginStub.calledTwice);
+	});
+
+	it('should handle having only some properties defined for name', () => {
+		const modules: any[] = [
+			{ id: 1, request: 'ignored' },
+			{ id: 2, external: true, request: 'request' },
+			{ id: 3, external: true, request: 'optional', optional: true },
+			{ id: 4, external: true, request: 'loader' },
+			{ id: 5, external: true, request: 'loader-too' }
+		];
+
+		const defaultExternals: any[] = modules.slice(1, 3);
+		const map = new Map<string, string>();
+		map.set('loader', 'loader');
+		map.set('loader-too', 'loader');
+		const customExternalLoaders: any = {
+			'loader': [ modules[3], modules[4] ]
+		};
+		const orderedModules = [ modules[3], modules[4] ].concat(defaultExternals);
+		const keys = [ 'loader' ];
+		const source = 'source';
+
+		let optionalExternals: any[] = [ modules[2] ];
+		let requiredExternals: any[] = [ modules[1] ];
+		const amdWithOptionalDeps = ExternalLoaderUmdTemplatePlugin.writeAmdCode(optionalExternals, requiredExternals, { amd: 'name' }, false, mockTemplate, null, null);
+		const cjs2 = ExternalLoaderUmdTemplatePlugin.writeCommonsjs2Code(defaultExternals, mockTemplate, null, null);
+		const cjs = ExternalLoaderUmdTemplatePlugin.writeCommonjsCode(defaultExternals, { commonjs: 'name' }, mockTemplate, null, null);
+
+		const modifiedSource = new ConcatSource(new OriginalSource(
+			ExternalLoaderUmdTemplatePlugin.wrapInUmdDef(
+				ExternalLoaderUmdTemplatePlugin.wrapInCustomLoad(
+					cjs2 + amdWithOptionalDeps + cjs,
+					keys,
+					customExternalLoaders
+				), orderedModules
+			), 'webpack/universalModuleDefinition'), source, ';\n})'
+		);
+
+		const compilation = new Compilation();
+		(<any> compilation).templatesPlugin = () => {};
+		const templateStub = stub(compilation, 'templatesPlugin', (...args: any[]) => {
+			assert.equal(
+				args[1](source, { modules }, null).source(),
+				modifiedSource.source()
+			);
+		});
+		const pluginStub = stub(mockTemplate, 'plugin', (...args: any[]) => {
+			if (args[0] === 'global-hash-paths') {
+				assert.deepEqual(args[1]([]), [ 'name' ]);
+			}
+			else if (args[0] === 'hash') {
+				const update = stub();
+				args[1]({ update });
+				assert.deepEqual(update.args, [ [ 'umd' ], [ 'undefined' ], [ 'undefined' ], [ 'name' ] ]);
+			}
+			else {
+				throw new Error('Unexpected call to `plugin`');
+			}
+		});
+		compilation.mainTemplate = mockTemplate;
+
+		const plugin = new ExternalLoaderUmdTemplatePlugin({
+			name: { commonjs: 'name' },
+			namedDefine: false,
+			optionalAmdExternalAsGlobal: true,
+			loaderMap: map
+		});
+
+		plugin.apply(compilation as any);
+		assert.isTrue(templateStub.calledOnce);
+		assert.isTrue(pluginStub.calledTwice);
+	});
+
+	it('should handle being passed a string as its name', () => {
+		const modules: any[] = [
+			{ id: 1, request: 'ignored' },
+			{ id: 2, external: true, request: 'request' },
+			{ id: 3, external: true, request: 'optional', optional: true },
+			{ id: 4, external: true, request: 'loader' },
+			{ id: 5, external: true, request: 'loader-too' }
+		];
+
+		const defaultExternals: any[] = modules.slice(1, 3);
+		const map = new Map<string, string>();
+		map.set('loader', 'loader');
+		map.set('loader-too', 'loader');
+		const customExternalLoaders: any = {
+			'loader': [ modules[3], modules[4] ]
+		};
+		const orderedModules = [ modules[3], modules[4] ].concat(defaultExternals);
+		const keys = [ 'loader' ];
+		const source = 'source';
+
+		let optionalExternals: any[] = [ modules[2] ];
+		let requiredExternals: any[] = [ modules[1] ];
+		const amdWithOptionalDeps = ExternalLoaderUmdTemplatePlugin.writeAmdCode(optionalExternals, requiredExternals, { amd: 'name' }, false, mockTemplate, null, null);
+		const cjs2 = ExternalLoaderUmdTemplatePlugin.writeCommonsjs2Code(defaultExternals, mockTemplate, null, null);
+		const cjs = ExternalLoaderUmdTemplatePlugin.writeCommonjsCode(defaultExternals, { commonjs: 'name' }, mockTemplate, null, null);
+
+		const modifiedSource = new ConcatSource(new OriginalSource(
+			ExternalLoaderUmdTemplatePlugin.wrapInUmdDef(
+				ExternalLoaderUmdTemplatePlugin.wrapInCustomLoad(
+					cjs2 + amdWithOptionalDeps + cjs,
+					keys,
+					customExternalLoaders
+				), orderedModules
+			), 'webpack/universalModuleDefinition'), source, ';\n})'
+		);
+
+		const compilation = new Compilation();
+		(<any> compilation).templatesPlugin = () => {};
+		const templateStub = stub(compilation, 'templatesPlugin', (...args: any[]) => {
+			assert.equal(
+				args[1](source, { modules }, null).source(),
+				modifiedSource.source()
+			);
+		});
+		const pluginStub = stub(mockTemplate, 'plugin', (...args: any[]) => {
+			if (args[0] === 'global-hash-paths') {
+				assert.deepEqual(args[1]([]), [ 'name', 'name', 'name' ]);
+			}
+			else if (args[0] === 'hash') {
+				const update = stub();
+				args[1]({ update });
+				assert.deepEqual(update.args, [ [ 'umd' ], [ 'name' ], [ 'name' ], [ 'name' ] ]);
+			}
+			else {
+				throw new Error('Unexpected call to `plugin`');
+			}
+		});
+		compilation.mainTemplate = mockTemplate;
+
+		const plugin = new ExternalLoaderUmdTemplatePlugin({
+			name: 'name',
 			namedDefine: false,
 			optionalAmdExternalAsGlobal: true,
 			loaderMap: map

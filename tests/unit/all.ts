@@ -1,5 +1,6 @@
 import './main';
 import './webpack.config';
+import './registerLoader';
 import './plugins/CoreLoadPlugin';
 import './plugins/ExternalLoaderPlugin';
 import './plugins/ExternalLoaderUmdTemplatePlugin';
