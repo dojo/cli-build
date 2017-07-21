@@ -87,22 +87,32 @@ Ejecting `@dojo/cli-build-webpack` will produce a `config/build-webpack/webpack.
 node_modules/.bin/webpack --config=config/build-webpack/webpack.config.js
 ```
 
-### Interop with External libraries
+### Interop with external libraries
 
-External libraries that can not be loaded normally via webpack, can be included in a Dojo 2 application by providing a loader and configuring certain options in the project's `.dojorc` file.
+External libraries that can not be loaded normally via webpack can be included in a Dojo 2 application by providing a custom loader, and some
+configuration in the project's `.dojorc` file.
 `.dojorc` is a JSON file that contains configuration for Dojo 2 CLI tasks. Configuration for the `dojo build` task can be provided under the
-`build-webpack` property. External dependencies can be specified via a property called `externals` within the `build-webpack` config.
+`build-webpack` property.
+External dependencies can be specified via a property called `externals` within the `build-webpack` config.
 `externals` is an array. Each entry is an object that defines an external loader and any dependencies that should be loaded by that loader. Each entry has three properties:
 * `type`: This is the unique key under which the loader will be registered.
 * `loader`: This is the path to the file that registers the loader.
-* `deps`: This is an array that defines the dependencies that should be loaded with this loader. Each entry in the `deps` array can either be a string, or an object. Each string value in the array should be the 'name' of a package or module that should be loaded with this loader. The `name` property of an object in this array serves the same purpose. In addition to `name`, each object must have a `from` property, and can optionally specify a `to` property. `from` is the path, relative to `node_modules`, from which this dependency should be copied. If `to` is not specified, then the dependency will be copied to `externals/${from}`. If `to` is specified then it will be copied to `externals/${to}`.
+* `deps`: This is an array that defines what dependencies should be loaded with this loader, and configures the build to copy the appropriate files
+ from `node_modules` into the built application. Each entry in the `deps` array can either be a string or an object. Each string value in the array should be the 'name' of a package or module that should be loaded with this loader. The `name` property of an object in this array serves the same purpose. In addition to `name`, each object must have a `from` property, and can optionally specify a `to` property. `from` is the path, relative to `node_modules`, from which this dependency should be copied. If `to` is not specified, then the dependency will be copied to `externals/${from}`. If `to` is specified then it will be copied to `externals/${to}`.
 
 ####Defining a Loader
-The file specified by the `loader` property, should use the `@dojo/cli-build-webpack/registerLoader` module to register a loader.
- The default export of `registerLoader` is a function that takes a string and a callback function. The string is the unique key that identifies this loader, and should correspond to the value of the `type` property specified for this loader.
- The provided callback function will be called with one argument, a function called `loadScript`, and should return a promise that resolves to a load function.
-  The load function takes an array of module IDs and returns a promise that resolves to an array of modules corresponding to the module IDs. The `loadScript` function can be used to load any external scripts, and returns a promise that resolves when the script has been loaded.
-  The path provided to `loadScript` will be relative to `src` in the built project. To load a Dojo 1 loader that had been copied to `externals/dojo/dojo.js`, for example, you could call `loadScript('../externals/dojo/dojo.js')`. The code below provides a simple example of using the `registerLoader` function to register a loader for Dojo 1 modules. It assumes that the Dojo loader is at the above mentioned path, and that the actual modules that will be loaded are located at `externals/third-party`
+The file specified by the `loader` property should use the `@dojo/cli-build-webpack/registerLoader` module to register a loader.
+The default export of `registerLoader` is a function that takes a string and a callback function. The string is the unique key that identifies the
+loader, and should match the value of the `type` property in the entry in `externals` that describes the loader and its dependencies.
+The provided callback function will be called with one argument, a function called `loadScript`, and should return a promise that resolves to a "load
+function".
+The load function takes an array of module IDs and returns a promise that resolves to an array of modules corresponding to the module IDs.
+The `loadScript` function passed to the callback can be used to load external scripts needed to prepare the loader, and returns a promise that resolves
+when the script has been loaded.
+The path provided to `loadScript` will be relative to `src` in the built project. To load a Dojo 1 loader that had been copied to
+`externals/dojo/dojo.js`, for example, you could call `loadScript('../externals/dojo/dojo.js')`. The code below provides a simple example of using the `
+registerLoader` function to register a loader for Dojo 1 modules. It assumes that the Dojo loader is at the above mentioned path, and that the actual
+modules that will be loaded are located at `externals/third-party`
 
 ```typescript
 import registerLoader from '@dojo/cli-build-webpack/registerLoader';
@@ -110,8 +120,14 @@ import Promise from '@dojo/shim/Promise';
 
 registerLoader('dojo1', (loadScript): any => {
 	return loadScript('../externals/dojo/dojo.js').then(() => {
-		const require: (...args: any[]) => void = (<any> window).require;
-		return (moduleIds: string[]): Promise<any[]> => new Promise((resolve) => {
+		const require: {
+		    (...args: any[]) => void;
+		    on(event: string, callback: Function): { remove: Function };
+        } = (<any> window).require;
+		return (moduleIds: string[]): Promise<any[]> => new Promise((resolve, reject) => {
+		    const handle = require.on('error', (error: any) => {
+		        reject(error);
+		    });
 			require({
 				baseUrl: 'externals',
 				packages: [
@@ -119,6 +135,7 @@ registerLoader('dojo1', (loadScript): any => {
 					{ location: 'dojo', name: 'dojo' }
 				]
 			}, moduleIds, function () {
+			    handle.remove();
 				resolve(Array.from(arguments));
 			});
 		});
