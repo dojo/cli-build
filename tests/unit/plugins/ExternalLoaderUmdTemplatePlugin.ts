@@ -1,9 +1,10 @@
 import { describe, it, afterEach, beforeEach } from 'intern!bdd';
 import * as assert from 'intern/chai!assert';
-import Map from '@dojo/shim/Map';
 import Compilation = require('../../support/webpack/Compilation');
 import ExternalLoaderUmdTemplatePlugin from '../../../src/plugins/ExternalLoaderUmdTemplatePlugin';
 import { stub } from 'sinon';
+import { Hash } from 'crypto';
+import Chunk = require('webpack/lib/Chunk');
 const ConcatSource = require('webpack-sources').ConcatSource;
 const OriginalSource = require('webpack-sources').OriginalSource;
 
@@ -11,6 +12,9 @@ let mockTemplate: any = {
 	applyPluginsWaterfall: stub(),
 	plugin: () => {}
 };
+const hash: Hash = <any> {};
+const chunk: Chunk = <any> {};
+
 describe('ExternalLoaderUmdTemplatePlugin', () => {
 	beforeEach(() => {
 		mockTemplate.applyPluginsWaterfall.returnsArg(1);
@@ -44,11 +48,9 @@ describe('ExternalLoaderUmdTemplatePlugin', () => {
 	});
 
 	it('should delegate to the template to determine the library name', () => {
-		const hash = 'hash';
-		const chunk = 'chunk';
 		ExternalLoaderUmdTemplatePlugin.libraryName('library', mockTemplate, hash, chunk);
 		ExternalLoaderUmdTemplatePlugin.libraryName([ 'library' ], mockTemplate, hash, chunk);
-		ExternalLoaderUmdTemplatePlugin.libraryName([], mockTemplate, 'hash', 'chunk');
+		ExternalLoaderUmdTemplatePlugin.libraryName([], mockTemplate, hash, chunk);
 
 		assert.isTrue(mockTemplate.applyPluginsWaterfall.calledThrice);
 		assert.deepEqual(mockTemplate.applyPluginsWaterfall.args, [
@@ -62,7 +64,7 @@ describe('ExternalLoaderUmdTemplatePlugin', () => {
 		assert.equal(ExternalLoaderUmdTemplatePlugin.externalsDepsArray(<any> [
 			{ request: 'one' },
 			{ request: { amd: 'two' } }
-		], mockTemplate, null, null), '["one", "two"]');
+		], mockTemplate, hash, chunk), '["one", "two"]');
 	});
 
 	it('should create an access array for the root', () => {
@@ -70,12 +72,12 @@ describe('ExternalLoaderUmdTemplatePlugin', () => {
 			{ request: { root: 'root-string' } },
 			{ request: { root: [ 'root', 'array' ]} },
 			{ request: 'request-string' }
-		], mockTemplate, null, null), 'root["root-string"], root["root"]["array"], root["request-string"]');
+		], mockTemplate, hash, chunk), 'root["root-string"], root["root"]["array"], root["request-string"]');
 	});
 
 	it('should throw an error for an undefined request', () => {
 		assert.throws(() => {
-			ExternalLoaderUmdTemplatePlugin.externalsRequireArray('type', <any> [ { request: undefined } ], mockTemplate, null, null);
+			ExternalLoaderUmdTemplatePlugin.externalsRequireArray('type', <any> [ { request: undefined } ], mockTemplate, hash, chunk);
 		}, /Missing external configuration for type:type/);
 	});
 
@@ -86,7 +88,7 @@ describe('ExternalLoaderUmdTemplatePlugin', () => {
 			{ request: 'optional-dependency', optional: true }
 		];
 		assert.equal(
-			ExternalLoaderUmdTemplatePlugin.externalsRequireArray('amd', modules, mockTemplate, null, null),
+			ExternalLoaderUmdTemplatePlugin.externalsRequireArray('amd', modules, mockTemplate, hash, chunk),
 			'require("value"), require("string-value"), ' +
 				'(function webpackLoadOptionalExternalModule() { try { return require("optional-dependency"); } catch(e) {} }())'
 		);
@@ -145,12 +147,12 @@ describe('ExternalLoaderUmdTemplatePlugin', () => {
 
 		let optionalExternals: any[] = [ modules[2] ];
 		let requiredExternals: any[] = [ modules[1] ];
-		const amdWithOptionalDeps = ExternalLoaderUmdTemplatePlugin.writeAmdCode(optionalExternals, requiredExternals, { amd: 'name' }, false, mockTemplate, null, null);
+		const amdWithOptionalDeps = ExternalLoaderUmdTemplatePlugin.writeAmdCode(optionalExternals, requiredExternals, { amd: 'name' }, false, mockTemplate, hash, chunk);
 		optionalExternals = [];
 		requiredExternals = defaultExternals;
-		const amdWithoutOptionalDeps = ExternalLoaderUmdTemplatePlugin.writeAmdCode(optionalExternals, requiredExternals, { amd: 'name' }, false, mockTemplate, null, null);
-		const cjs2 = ExternalLoaderUmdTemplatePlugin.writeCommonsjs2Code(defaultExternals, mockTemplate, null, null);
-		const cjs = ExternalLoaderUmdTemplatePlugin.writeCommonjsCode(defaultExternals, { commonjs: 'name' }, mockTemplate, null, null);
+		const amdWithoutOptionalDeps = ExternalLoaderUmdTemplatePlugin.writeAmdCode(optionalExternals, requiredExternals, { amd: 'name' }, false, mockTemplate, hash, chunk);
+		const cjs2 = ExternalLoaderUmdTemplatePlugin.writeCommonsjs2Code(defaultExternals, mockTemplate, hash, chunk);
+		const cjs = ExternalLoaderUmdTemplatePlugin.writeCommonjsCode(defaultExternals, { commonjs: 'name' }, mockTemplate, hash, chunk);
 
 		const withOptionalDeps = new ConcatSource(new OriginalSource(
 			ExternalLoaderUmdTemplatePlugin.wrapInUmdDef(
@@ -187,7 +189,7 @@ describe('ExternalLoaderUmdTemplatePlugin', () => {
 
 	it('should use define when creating a named module', () => {
 		assert.equal(
-			ExternalLoaderUmdTemplatePlugin.writeAmdCode(<any> [ { request: 'value' }], [], { amd: 'name' }, true, mockTemplate, null, null),
+			ExternalLoaderUmdTemplatePlugin.writeAmdCode(<any> [ { request: 'value' }], [], { amd: 'name' }, true, mockTemplate, hash, chunk),
 			'		define("name", [], function webpack' +
 			'LoadOptionalExternalModuleAmd() {\n' +
 			'			return factory(root["value"]);\n	}' +
@@ -197,7 +199,7 @@ describe('ExternalLoaderUmdTemplatePlugin', () => {
 
 	it('should use root name if commonjs name is not provided', () => {
 		assert.equal(
-			ExternalLoaderUmdTemplatePlugin.writeCommonjsCode([], { root: 'root' }, mockTemplate, null, null),
+			ExternalLoaderUmdTemplatePlugin.writeCommonjsCode([], { root: 'root' }, mockTemplate, hash, chunk),
 			'	else if(typeof exports === "object")\n' +
 			'		exports["root"] = factory();\n	else\n		' +
 			'root["root"] = factory();\n'
@@ -206,14 +208,14 @@ describe('ExternalLoaderUmdTemplatePlugin', () => {
 
 	it('should use a fallback format if no name is provided', () => {
 		assert.equal(
-			ExternalLoaderUmdTemplatePlugin.writeCommonjsCode([], {}, mockTemplate, null, null),
+			ExternalLoaderUmdTemplatePlugin.writeCommonjsCode([], {}, mockTemplate, hash, chunk),
 			'	else {\n		var a = factory();\n' +
 			'		for(var i in a) (typeof exports === "object"' +
 			' ? exports : root)[i] = a[i];\n	}\n'
 		);
 
 		assert.equal(
-			ExternalLoaderUmdTemplatePlugin.writeCommonjsCode(<any> [ { request: 'request', id: 0 } ], {}, mockTemplate, null, null),
+			ExternalLoaderUmdTemplatePlugin.writeCommonjsCode(<any> [ { request: 'request', id: 0 } ], {}, mockTemplate, hash, chunk),
 			'	else {\n		var a = typeof exports === "object" ? factory(require("request")) : factory(root["request"])' +
 				';\n		for(var i in a) (typeof exports === "object"' +
 			' ? exports : root)[i] = a[i];\n	}\n'
@@ -242,9 +244,9 @@ describe('ExternalLoaderUmdTemplatePlugin', () => {
 
 		let optionalExternals: any[] = [ modules[2] ];
 		let requiredExternals: any[] = [ modules[1] ];
-		const amdWithOptionalDeps = ExternalLoaderUmdTemplatePlugin.writeAmdCode(optionalExternals, requiredExternals, { amd: 'name' }, false, mockTemplate, null, null);
-		const cjs2 = ExternalLoaderUmdTemplatePlugin.writeCommonsjs2Code(defaultExternals, mockTemplate, null, null);
-		const cjs = ExternalLoaderUmdTemplatePlugin.writeCommonjsCode(defaultExternals, { commonjs: 'name' }, mockTemplate, null, null);
+		const amdWithOptionalDeps = ExternalLoaderUmdTemplatePlugin.writeAmdCode(optionalExternals, requiredExternals, { amd: 'name' }, false, mockTemplate, hash, chunk);
+		const cjs2 = ExternalLoaderUmdTemplatePlugin.writeCommonsjs2Code(defaultExternals, mockTemplate, hash, chunk);
+		const cjs = ExternalLoaderUmdTemplatePlugin.writeCommonjsCode(defaultExternals, { commonjs: 'name' }, mockTemplate, hash, chunk);
 
 		const modifiedSource = new ConcatSource(new OriginalSource(
 			ExternalLoaderUmdTemplatePlugin.wrapInUmdDef(
@@ -312,9 +314,9 @@ describe('ExternalLoaderUmdTemplatePlugin', () => {
 
 		let optionalExternals: any[] = [ modules[2] ];
 		let requiredExternals: any[] = [ modules[1] ];
-		const amdWithOptionalDeps = ExternalLoaderUmdTemplatePlugin.writeAmdCode(optionalExternals, requiredExternals, { amd: 'name' }, false, mockTemplate, null, null);
-		const cjs2 = ExternalLoaderUmdTemplatePlugin.writeCommonsjs2Code(defaultExternals, mockTemplate, null, null);
-		const cjs = ExternalLoaderUmdTemplatePlugin.writeCommonjsCode(defaultExternals, { commonjs: 'name' }, mockTemplate, null, null);
+		const amdWithOptionalDeps = ExternalLoaderUmdTemplatePlugin.writeAmdCode(optionalExternals, requiredExternals, { amd: 'name' }, false, mockTemplate, hash, chunk);
+		const cjs2 = ExternalLoaderUmdTemplatePlugin.writeCommonsjs2Code(defaultExternals, mockTemplate, hash, chunk);
+		const cjs = ExternalLoaderUmdTemplatePlugin.writeCommonjsCode(defaultExternals, { commonjs: 'name' }, mockTemplate, hash, chunk);
 
 		const modifiedSource = new ConcatSource(new OriginalSource(
 			ExternalLoaderUmdTemplatePlugin.wrapInUmdDef(
@@ -383,9 +385,9 @@ describe('ExternalLoaderUmdTemplatePlugin', () => {
 
 		let optionalExternals: any[] = [ modules[2] ];
 		let requiredExternals: any[] = [ modules[1] ];
-		const amdWithOptionalDeps = ExternalLoaderUmdTemplatePlugin.writeAmdCode(optionalExternals, requiredExternals, { amd: 'name' }, false, mockTemplate, null, null);
-		const cjs2 = ExternalLoaderUmdTemplatePlugin.writeCommonsjs2Code(defaultExternals, mockTemplate, null, null);
-		const cjs = ExternalLoaderUmdTemplatePlugin.writeCommonjsCode(defaultExternals, { commonjs: 'name' }, mockTemplate, null, null);
+		const amdWithOptionalDeps = ExternalLoaderUmdTemplatePlugin.writeAmdCode(optionalExternals, requiredExternals, { amd: 'name' }, false, mockTemplate, hash, chunk);
+		const cjs2 = ExternalLoaderUmdTemplatePlugin.writeCommonsjs2Code(defaultExternals, mockTemplate, hash, chunk);
+		const cjs = ExternalLoaderUmdTemplatePlugin.writeCommonjsCode(defaultExternals, { commonjs: 'name' }, mockTemplate, hash, chunk);
 
 		const modifiedSource = new ConcatSource(new OriginalSource(
 			ExternalLoaderUmdTemplatePlugin.wrapInUmdDef(

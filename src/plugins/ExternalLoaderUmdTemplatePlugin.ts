@@ -1,72 +1,58 @@
-import Map from '@dojo/shim/Map';
 import Chunk = require('webpack/lib/Chunk');
 import Compilation = require('webpack/lib/Compilation');
 import MainTemplate = require('webpack/lib/MainTemplate');
 import Module = require('webpack/lib/Module');
+import { Hash } from 'crypto';
+import Source = require('webpack-sources/lib/Source');
 const ConcatSource = require('webpack-sources').ConcatSource;
 const OriginalSource = require('webpack-sources').OriginalSource;
 
-export interface FullMainTemplate extends MainTemplate {
-	applyPluginsWaterfall: (...args: any[]) => string;
-	plugin: (hook: string, callback: Function) => void;
-}
-
-export type RequestObj = { [ type: string ]: string | string[] };
-
-export interface FullModule extends Module {
-	external?: boolean;
-	request: RequestObj | string | Array<string> & RequestObj;
-	optional?: boolean;
-}
-
-export interface ChunkWithFullModules extends Chunk {
-	modules: FullModule[];
-}
-
-export type CustomLoaders = { [ loader: string ]: { id: number; loader: string; request: string }[] };
+export type Names = { root?: string | string[], commonjs?: string | string[], amd?: string | string[] };
+export type Loader = { id: number; loader: string; request: string };
+export type CustomLoaders = { [ loader: string ]: Loader[] };
 
 /**
  * Wraps source in a UMD wrapper, that also delegates to the global `dojoExternalModuleLoader`, if it is defined, for
  * loading modules that are identified in the provided loaderMap.
  */
 export default class ExternalLoaderUmdTemplatePlugin {
-	static accessorToObjectAccess(accessor: any[]) {
+	static accessorToObjectAccess(accessor: string[]): string {
 		return accessor.map(a => `[${JSON.stringify(a)}]`).join('');
 	}
 
-	static accessorAccess(base: string, accessor: any[]) {
-		accessor = (<any> []).concat(accessor);
-		return accessor.map((a, idx) => {
-			a = base + ExternalLoaderUmdTemplatePlugin.accessorToObjectAccess(accessor.slice(0, idx + 1));
-			if (idx === accessor.length - 1) {
+	static accessorAccess(base: string, accessor: string | string[]) {
+		const accessorArray: string[] = ([] as string[]).concat(accessor);
+		return accessorArray.map((a, idx) => {
+			a = base + ExternalLoaderUmdTemplatePlugin.accessorToObjectAccess(accessorArray.slice(0, idx + 1));
+			if (idx === accessorArray.length - 1) {
 				return a;
 			}
 			return `${a} = ${a} || {}`;
 		}).join(', ');
 	}
 
-	static externalsArguments(modules: FullModule[]) {
+	static externalsArguments(modules: { id: number }[]): string {
 		return modules.map(module => `__WEBPACK_EXTERNAL_MODULE_${module.id}__`).join(', ');
 	}
 
-	static libraryName(library: string | string[], mainTemplate: FullMainTemplate, hash: any, chunk: any) {
+	static libraryName(library: string | string[], mainTemplate: MainTemplate, hash: Hash, chunk: Chunk): string {
 		return JSON.stringify(ExternalLoaderUmdTemplatePlugin.replaceKeys(([] as string[]).concat(library).pop() || '', mainTemplate, hash, chunk));
 	}
 
-	static replaceKeys(str: string, mainTemplate: FullMainTemplate, hash: any, chunk: any) {
+	static replaceKeys(str: string, mainTemplate: MainTemplate, hash: Hash, chunk: Chunk): string {
 		return mainTemplate.applyPluginsWaterfall('asset-path', str, {
 			hash,
 			chunk
 		});
 	}
 
-	static externalsDepsArray(modules: FullModule[], mainTemplate: FullMainTemplate, hash: any, chunk: any) {
+	static externalsDepsArray(modules: Module[], mainTemplate: MainTemplate, hash: Hash, chunk: Chunk): string {
 		return `[${ExternalLoaderUmdTemplatePlugin.replaceKeys(modules.map(
 			module => JSON.stringify(typeof module.request === 'object' ? module.request.amd : module.request)
 		).join(', '), mainTemplate, hash, chunk)}]`;
 	}
 
-	static externalsRootArray(modules: FullModule[], mainTemplate: FullMainTemplate, hash: any, chunk: any) {
+	static externalsRootArray(modules: Module[], mainTemplate: MainTemplate, hash: Hash, chunk: Chunk): string {
 		return ExternalLoaderUmdTemplatePlugin.replaceKeys(modules.map(module => {
 			const request = module.request;
 			let root: string | string[] = [];
@@ -80,7 +66,7 @@ export default class ExternalLoaderUmdTemplatePlugin {
 		}).join(', '), mainTemplate, hash, chunk);
 	}
 
-	static externalsRequireArray(type: string, defaultExternals: FullModule[], mainTemplate: FullMainTemplate, hash: any, chunk: any) {
+	static externalsRequireArray(type: string, defaultExternals: Module[], mainTemplate: MainTemplate, hash: Hash, chunk: Chunk): string {
 		return ExternalLoaderUmdTemplatePlugin.replaceKeys(defaultExternals.map(module => {
 			let expr;
 			let request = module.request;
@@ -107,10 +93,10 @@ export default class ExternalLoaderUmdTemplatePlugin {
 		}).join(', '), mainTemplate, hash, chunk);
 	}
 
-	static wrapInCustomLoad(umdBlock: string, keys: string[], customExternalLoaders: CustomLoaders) {
+	static wrapInCustomLoad(umdBlock: string, keys: string[], customExternalLoaders: CustomLoaders): string {
 		const check = 'if (typeof dojoExternalModulesLoader === "undefined") {\nrunWebpackUMD(root, factory);\n}\nelse {\n';
 		const load = keys.map((key) => {
-			return `dojoExternalModulesLoader.load('${key}', [ ${customExternalLoaders[key].map((m: any) => `'${m.request}'`).join(', ')} ]);\n`;
+			return `dojoExternalModulesLoader.load('${key}', [ ${customExternalLoaders[key].map(m => `'${m.request}'`).join(', ')} ]);\n`;
 		}).join('');
 		const wait = 'dojoExternalModulesLoader.waitForActiveLoads().then(function (modules) {\n' +
 			'factory = factory.bind.apply(factory, [ null ].concat(modules));\n' +
@@ -118,21 +104,21 @@ export default class ExternalLoaderUmdTemplatePlugin {
 		return check + load + wait + 'function runWebpackUMD(root, factory) {\n' + umdBlock + '\n}\n';
 	}
 
-	static wrapInUmdDef(customLoaderUmdBlock: string, orderedModules: FullModule[]) {
+	static wrapInUmdDef(customLoaderUmdBlock: string, orderedModules: { id: number }[]): string {
 		return '(function webpackUniversalModuleDefinition(root, factory) {\n' + customLoaderUmdBlock + '\n' +
 				'})(this, function(' + ExternalLoaderUmdTemplatePlugin.externalsArguments(orderedModules) + ') {\nreturn ';
 	}
 
 	static wrapSource(
 		source: string,
-		chunk: ChunkWithFullModules,
-		hash: string,
-		mainTemplate: FullMainTemplate,
+		chunk: Chunk,
+		hash: Hash,
+		mainTemplate: MainTemplate,
 		optionalAmdExternalAsGlobal: boolean,
 		loaderMap: Map<string, string>,
-		names: { [ index: string ]: any },
+		names: Names,
 		namedDefine: boolean
-	) {
+	): Source {
 		const externals = chunk.modules.filter(module => module.external);
 		let defaultExternals = externals.filter(module => typeof module.request !== 'string' || !loaderMap.has(module.request));
 		const customExternals = externals.reduce((previous, module) => {
@@ -143,8 +129,8 @@ export default class ExternalLoaderUmdTemplatePlugin {
 			}
 			return previous;
 		}, [] as { id: number; request: string; loader: string }[]);
-		const optionalExternals: FullModule[] = [];
-		let requiredExternals: FullModule[] = [];
+		const optionalExternals: Module[] = [];
+		let requiredExternals: Module[] = [];
 		if (optionalAmdExternalAsGlobal) {
 			defaultExternals.forEach(module => {
 				if (module.optional) {
@@ -167,7 +153,7 @@ export default class ExternalLoaderUmdTemplatePlugin {
 		const keys = Object.keys(customExternalLoaders);
 		const orderedExternalModules = keys.reduce((prev, next) => {
 			return prev.concat(customExternalLoaders[next]);
-		}, [] as any[]);
+		}, [] as Array<Loader | Module>);
 
 		return new ConcatSource(new OriginalSource(
 			ExternalLoaderUmdTemplatePlugin.wrapInUmdDef(
@@ -181,7 +167,7 @@ export default class ExternalLoaderUmdTemplatePlugin {
 			), 'webpack/universalModuleDefinition'), source, ';\n})');
 	}
 
-	static writeAmdCode(optionalExternals: FullModule[], requiredExternals: FullModule[], names: { [ index: string ]: any }, namedDefine: boolean, mainTemplate: FullMainTemplate, hash: any, chunk: any) {
+	static writeAmdCode(optionalExternals: Module[], requiredExternals: Module[], names: Names, namedDefine: boolean, mainTemplate: MainTemplate, hash: Hash, chunk: Chunk) {
 		const amdFactory = ExternalLoaderUmdTemplatePlugin.writeAmdFactory(optionalExternals, requiredExternals, mainTemplate, hash, chunk);
 		const libraryName = names.amd && namedDefine === true && ExternalLoaderUmdTemplatePlugin.libraryName(names.amd, mainTemplate, hash, chunk);
 		const deps = requiredExternals.length > 0 ?
@@ -189,7 +175,7 @@ export default class ExternalLoaderUmdTemplatePlugin {
 		return '		' + (libraryName ? `define(${libraryName}, ` : 'require(') + `${deps}, ${amdFactory});\n`;
 	}
 
-	static writeAmdFactory(optionalExternals: FullModule[], requiredExternals: FullModule[], mainTemplate: FullMainTemplate, hash: any, chunk: any) {
+	static writeAmdFactory(optionalExternals: Module[], requiredExternals: Module[], mainTemplate: MainTemplate, hash: Hash, chunk: Chunk) {
 		if (optionalExternals.length > 0) {
 			const wrapperArguments = ExternalLoaderUmdTemplatePlugin.externalsArguments(requiredExternals);
 			const factoryArguments = requiredExternals.length > 0 ?
@@ -203,7 +189,7 @@ export default class ExternalLoaderUmdTemplatePlugin {
 		}
 	}
 
-	static writeCommonsjs2Code(defaultExternals: FullModule[], mainTemplate: FullMainTemplate, hash: any, chunk: any) {
+	static writeCommonsjs2Code(defaultExternals: Module[], mainTemplate: MainTemplate, hash: Hash, chunk: Chunk): string {
 		return '	if(typeof exports === "object" && typeof module === "object")\n' +
 			'		module.exports = factory(' +
 			ExternalLoaderUmdTemplatePlugin.externalsRequireArray(
@@ -211,23 +197,24 @@ export default class ExternalLoaderUmdTemplatePlugin {
 			) + ');\n	else if(typeof define === "function" && define.amd)\n';
 	}
 
-	static writeCommonjsCode(defaultExternals: FullModule[], names: { [ index: string ]: any }, mainTemplate: FullMainTemplate, hash: any, chunk: any) {
+	static writeCommonjsCode(defaultExternals: Module[], names: Names, mainTemplate: MainTemplate, hash: Hash, chunk: Chunk): string {
 		const externalsRequireArray = ExternalLoaderUmdTemplatePlugin.externalsRequireArray(
 			'commonjs', defaultExternals, mainTemplate, hash, chunk
 		);
 		const externalsRootArray = ExternalLoaderUmdTemplatePlugin.externalsRootArray(
 			defaultExternals, mainTemplate, hash, chunk
 		);
-		return (names.root || names.commonjs ?
+		const name = names.root || names.commonjs;
+		return (name ?
 				'	else if(typeof exports === "object")\n' +
 				'		exports[' +
 				ExternalLoaderUmdTemplatePlugin.libraryName(
-					names.commonjs || names.root, mainTemplate, hash, chunk
+					name, mainTemplate, hash, chunk
 				) + `] = factory(${externalsRequireArray});\n` +
 				'	else\n' +
 				'		' +
 				ExternalLoaderUmdTemplatePlugin.replaceKeys(
-							ExternalLoaderUmdTemplatePlugin.accessorAccess('root', names.root || names.commonjs),
+							ExternalLoaderUmdTemplatePlugin.accessorAccess('root', name),
 							mainTemplate,
 							hash,
 							chunk
@@ -243,7 +230,7 @@ export default class ExternalLoaderUmdTemplatePlugin {
 	}
 
 	private name?: string | string[];
-	private names: { [ index: string ]: any };
+	private names: Names;
 	private namedDefine: boolean;
 	private loaderMap: Map<string, string>;
 	private optionalAmdExternalAsGlobal: boolean;
@@ -252,7 +239,7 @@ export default class ExternalLoaderUmdTemplatePlugin {
 		loaderMap: Map<string, string>,
 		optionalAmdExternalAsGlobal?: boolean,
 		namedDefine?: boolean,
-		name?: string | string[] | { root?: string, amd?: string, commonjs?: string };
+		name?: string | string[] | Names;
 	}) {
 		const { name, loaderMap, namedDefine, optionalAmdExternalAsGlobal } = options;
 		if (typeof name === 'object' && !Array.isArray(name)) {
@@ -272,9 +259,9 @@ export default class ExternalLoaderUmdTemplatePlugin {
 	}
 
 	apply(compilation: Compilation & { templatesPlugin: (hook: string, callback: Function) => void }) {
-		const mainTemplate = compilation.mainTemplate as FullMainTemplate;
+		const mainTemplate = compilation.mainTemplate as MainTemplate;
 		compilation.templatesPlugin(
-			'render-with-entry', (source: string, chunk: ChunkWithFullModules, hash: any) =>
+			'render-with-entry', (source: string, chunk: Chunk, hash: Hash) =>
 				ExternalLoaderUmdTemplatePlugin.wrapSource(
 					source,
 					chunk,
@@ -286,7 +273,7 @@ export default class ExternalLoaderUmdTemplatePlugin {
 					this.namedDefine
 				)
 		);
-		mainTemplate.plugin('global-hash-paths', (paths: any[]) => {
+		mainTemplate.plugin('global-hash-paths', (paths: string[]) => {
 			if (this.names.root) {
 				paths = paths.concat(this.names.root);
 			}
@@ -298,7 +285,7 @@ export default class ExternalLoaderUmdTemplatePlugin {
 			}
 			return paths;
 		});
-		mainTemplate.plugin('hash', (hash: any) => {
+		mainTemplate.plugin('hash', (hash: Hash) => {
 			hash.update('umd');
 			hash.update(`${this.names.root}`);
 			hash.update(`${this.names.amd}`);

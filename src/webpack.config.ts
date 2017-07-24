@@ -5,7 +5,6 @@ import { existsSync, readFileSync } from 'fs';
 import { BuildArgs } from './main';
 import { ExternalDep } from './plugins/ExternalLoaderPlugin';
 import Set from '@dojo/shim/Set';
-import Map from '@dojo/shim/Map';
 const IgnorePlugin = require('webpack/lib/IgnorePlugin');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 const HtmlWebpackPlugin = require('html-webpack-plugin');

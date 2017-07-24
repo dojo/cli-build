@@ -393,6 +393,7 @@ declare module 'webpack/lib/Compiler' {
 		plugin(name: 'compile', fn: (this: Compiler, params: any) => void): void;
 		plugin(name: 'make', fn: (this: Compiler, compilation: Compilation) => void): void;
 		plugin(name: 'after-compile', fn: (this: Compiler, compilation: Compilation) => void): void;
+		plugin(name: 'this-compilation', fn: (compilation: Compilation) => void): void;
 	}
 
 	namespace Compiler {
@@ -499,6 +500,8 @@ declare module 'webpack/lib/Dependency' {
 
 declare module 'webpack/lib/MainTemplate' {
 	class MainTemplate {
+		applyPluginsWaterfall(name: string, ...config: any[]): string;
+		plugin(name: string, fn: Function): void;
 	}
 	export = MainTemplate;
 }
@@ -517,6 +520,10 @@ declare module 'webpack/lib/Module' {
 		chunks: Chunk[];
 		strict: boolean;
 		meta: any;
+		external?: boolean;
+		request: { [ type: string ]: string | string[] } | string |
+			Array<string> & { [ type: string ]: string | string[] };
+		optional?: boolean;
 
 		addChunk(chunk: Chunk): void;
 		removeChunk(chunk: Chunk): void;
