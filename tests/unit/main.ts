@@ -32,7 +32,7 @@ describe('main', () => {
 
 		sandbox = sinon.sandbox.create();
 		mockModule = new MockModule('../../src/main');
-		mockModule.dependencies(['./webpack.config', 'webpack', 'webpack-dev-server']);
+		mockModule.dependencies(['./webpack.config', 'webpack', 'webpack-dev-server', 'net']);
 		mockWebpack = mockModule.getMock('webpack').ctor;
 		mockWebpackConfigModule = mockModule.getMock('./webpack.config').ctor;
 		mockWebpackConfig = {
@@ -54,6 +54,28 @@ describe('main', () => {
 		sandbox.restore();
 		mockModule.destroy();
 	});
+
+	function markPortAsInUse(inUse: boolean, errorCode = 'EADDRINUSE') {
+		const net = mockModule.getMock('net');
+		net.createServer = () => {
+			const callbacks: { [event: string]: Function } = {};
+
+			return {
+				once(event: string, fn: Function) {
+					callbacks[event] = fn;
+				},
+				listen() {
+					if (inUse) {
+						callbacks['error']({code: errorCode});
+					} else {
+						callbacks['listening']();
+					}
+				},
+				close() {
+				}
+			};
+		};
+	}
 
 	it('should register supported arguments', () => {
 		const options = sandbox.stub();
@@ -131,6 +153,7 @@ describe('main', () => {
 	it('should run watch, setting appropriate webpack options', () => {
 		const mockWebpackDevServer = mockModule.getMock('webpack-dev-server');
 		mockWebpackDevServer.listen = sandbox.stub().yields();
+		markPortAsInUse(false);
 		moduleUnderTest.run(getMockConfiguration(), { watch: true });
 		return new Promise((resolve) => setTimeout(resolve, 10)).then(() => {
 			assert.isTrue(mockWebpackDevServer.listen.calledOnce);
@@ -140,10 +163,35 @@ describe('main', () => {
 		});
 	});
 
+	it('should run watch and reject on port in use', () => {
+		const mockWebpackDevServer = mockModule.getMock('webpack-dev-server');
+		mockWebpackDevServer.listen = sandbox.stub().yields();
+		markPortAsInUse(true);
+		return moduleUnderTest.run(getMockConfiguration(), { watch: true }).then(
+			throwImmediately,
+			(e: Error) => {
+				assert.isTrue(e.message.indexOf('in use') >= 0);
+			}
+		);
+	});
+
+	it('should run watch and reject on any listening error', () => {
+		const mockWebpackDevServer = mockModule.getMock('webpack-dev-server');
+		mockWebpackDevServer.listen = sandbox.stub().yields();
+		markPortAsInUse(true, 'SOMEERROR');
+		return moduleUnderTest.run(getMockConfiguration(), { watch: true }).then(
+			throwImmediately,
+			(e: Error) => {
+				assert.isTrue(e.message.indexOf('Unexpected error') >= 0);
+			}
+		);
+	});
+
 	it('should run watch and reject on failure', () => {
 		const compilerError = new Error('compiler error');
 		const mockWebpackDevServer = mockModule.getMock('webpack-dev-server');
 		mockWebpackDevServer.listen = sandbox.stub().yields(compilerError);
+		markPortAsInUse(false);
 		return moduleUnderTest.run(getMockConfiguration(), { watch: true }).then(
 			throwImmediately,
 			(e: Error) => {

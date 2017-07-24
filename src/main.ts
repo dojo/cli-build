@@ -3,6 +3,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { underline } from 'chalk';
 import webpack = require('webpack');
+import * as net from 'net';
 import { ExternalDep } from './plugins/ExternalLoaderPlugin';
 const WebpackDevServer: any = require('webpack-dev-server');
 const config: ConfigFactory = require('./webpack.config');
@@ -83,7 +84,28 @@ function mergeConfigArgs(...sources: BuildArgs[]): BuildArgs {
 	}, Object.create(null));
 }
 
-function watch(config: webpack.Config, options: WebpackOptions, args: BuildArgs): Promise<void> {
+async function isPortAvailable(port: number): Promise<boolean> {
+	const server = net.createServer();
+
+	return new Promise<boolean>((resolve, reject) => {
+		server.once('error', function (err: any) {
+			if (err.code === 'EADDRINUSE') {
+				resolve(false);
+			} else {
+				reject(new Error(`Unexpected error ${err.message}`));
+			}
+		});
+
+		server.once('listening', function () {
+			server.close();
+			resolve(true);
+		});
+
+		server.listen(port, '127.0.0.1');
+	});
+}
+
+async function watch(config: webpack.Config, options: WebpackOptions, args: BuildArgs): Promise<void> {
 	config.devtool = 'inline-source-map';
 
 	config.entry = (function (entry) {
@@ -102,10 +124,17 @@ function watch(config: webpack.Config, options: WebpackOptions, args: BuildArgs)
 	})(config.entry);
 
 	const compiler = webpack(config);
+	const port = args.port || 9999;
+
+	const willSucceed = await isPortAvailable(port);
+
+	if (!willSucceed) {
+		return Promise.reject(new Error(`Cannot start a build server because port ${port} is in use. Do you already have a build server running?`));
+	}
+
 	const server = new WebpackDevServer(compiler, options);
 
 	return new Promise<void>((resolve, reject) => {
-		const port = args.port || 9999;
 		server.listen(port, '127.0.0.1', (err: Error) => {
 			console.log(`Starting server on http://localhost:${port}`);
 			if (err) {
@@ -154,6 +183,8 @@ function buildNpmDependencies(): any {
 }
 
 const command: Command<BuildArgs> = {
+	group: 'build',
+	name: 'webpack',
 	description: 'create a build of your application',
 	register(options: OptionsHelper): void {
 		options('w', {
