@@ -1,5 +1,4 @@
 import Compiler = require('webpack/lib/Compiler');
-import Compilation = require('webpack/lib/Compilation');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 import ExternalLoaderUmdTemplatePlugin from './ExternalLoaderUmdTemplatePlugin';
 
@@ -50,7 +49,7 @@ export default class ExternalDojoLoaderPlugin {
 			} ]),
 			[] as { from: string, to: string }[]
 		)));
-		compiler.plugin('this-compilation', (compilation: Compilation) => {
+		compiler.plugin('this-compilation', (compilation) => {
 			compilation.apply(new ExternalLoaderUmdTemplatePlugin({
 				loaderMap: this.loaderMap,
 				name: this.name,
