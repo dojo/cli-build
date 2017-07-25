@@ -153,7 +153,7 @@ export default class ExternalLoaderUmdTemplatePlugin {
 		const keys = Object.keys(customExternalLoaders);
 		const orderedExternalModules = keys.reduce((prev, next) => {
 			return prev.concat(customExternalLoaders[next]);
-		}, [] as Array<Loader | Module>);
+		}, [] as (Loader | Module)[]);
 
 		return new ConcatSource(new OriginalSource(
 			ExternalLoaderUmdTemplatePlugin.wrapInUmdDef(
