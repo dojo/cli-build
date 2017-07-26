@@ -17,7 +17,7 @@ export interface BuildArgs {
 	messageBundles: string | string[];
 	supportedLocales: string | string[];
 	watch: boolean;
-	port: number;
+	port: string;
 	element: string;
 	elementPrefix: string;
 	withTests: boolean;
@@ -124,19 +124,42 @@ async function watch(config: webpack.Config, options: WebpackOptions, args: Buil
 	})(config.entry);
 
 	const compiler = webpack(config);
-	const port = args.port || 9999;
+	const portRange = String(args.port || '9999:9990');
+	let ports: number[] = [];
+	let serverPort: number | undefined;
 
-	const willSucceed = await isPortAvailable(port);
+	if (portRange.indexOf(':') >= 0) {
+		let [low, high] = portRange.split(':').map(p => parseInt(p, 10));
 
-	if (!willSucceed) {
-		return Promise.reject(new Error(`Cannot start a build server because port ${port} is in use. Do you already have a build server running?`));
+		if (high < low) {
+			[low, high] = [high, low];
+		}
+
+		for (let port = high; port >= low; port--) {
+			ports.push(port);
+		}
+	} else if (portRange.indexOf(',') >= 0) {
+		ports = portRange.split(',').map(p => parseInt(p, 10));
+	} else {
+		ports = [parseInt(portRange, 10)];
+	}
+
+	for (let i = 0; i < ports.length; i++) {
+		if (await isPortAvailable(ports[i])) {
+			serverPort = ports[i];
+			break;
+		}
+	}
+
+	if (!serverPort) {
+		return Promise.reject(new Error(`Cannot start a build server because the port is in use, tried ${ports.join(', ')}. Do you already have a build server running?`));
 	}
 
 	const server = new WebpackDevServer(compiler, options);
 
 	return new Promise<void>((resolve, reject) => {
-		server.listen(port, '127.0.0.1', (err: Error) => {
-			console.log(`Starting server on http://localhost:${port}`);
+		server.listen(serverPort, '127.0.0.1', (err: Error) => {
+			console.log(`Starting server on http://localhost:${serverPort}`);
 			if (err) {
 				reject(err);
 				return;
@@ -194,8 +217,8 @@ const command: Command<BuildArgs> = {
 
 		options('p', {
 			alias: 'port',
-			describe: 'port to serve on when using --watch',
-			type: 'number'
+			describe: 'port to serve on when using --watch. Can be a single port (9999), a range (9999:9990) or a list (9999,9997)',
+			type: 'string'
 		});
 
 		options('t', {

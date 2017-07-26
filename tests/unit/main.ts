@@ -77,6 +77,28 @@ describe('main', () => {
 		};
 	}
 
+	function markPortsAsInUse(ports: number[]) {
+		const net = mockModule.getMock('net');
+		net.createServer = () => {
+			const callbacks: { [event: string]: Function } = {};
+
+			return {
+				once(event: string, fn: Function) {
+					callbacks[event] = fn;
+				},
+				listen(port: number) {
+					if (ports.find(p => p === port)) {
+						callbacks['error']({code: 'EADDRINUSE'});
+					} else {
+						callbacks['listening']();
+					}
+				},
+				close() {
+				}
+			};
+		};
+	}
+
 	it('should register supported arguments', () => {
 		const options = sandbox.stub();
 		moduleUnderTest.register(options);
@@ -86,7 +108,7 @@ describe('main', () => {
 		);
 		assert.deepEqual(
 			options.secondCall.args,
-			[ 'p', { alias: 'port', describe: 'port to serve on when using --watch', type: 'number' }]
+			[ 'p', { alias: 'port', describe: 'port to serve on when using --watch. Can be a single port (9999), a range (9999:9990) or a list (9999,9997)', type: 'string' }]
 		);
 		assert.deepEqual(
 			options.thirdCall.args,
@@ -199,6 +221,50 @@ describe('main', () => {
 				assert.equal(e, compilerError);
 			}
 		);
+	});
+
+	it('should use a single port', () => {
+		const mockWebpackDevServer = mockModule.getMock('webpack-dev-server');
+		mockWebpackDevServer.listen = sandbox.stub().yields();
+		markPortsAsInUse([]);
+		moduleUnderTest.run(getMockConfiguration(), {watch: true, port: '123'});
+		return new Promise((resolve) => setTimeout(resolve, 10)).then(() => {
+			assert.isTrue(mockWebpackDevServer.listen.calledOnce, 'expected listen to be called on server');
+			assert.isTrue(mockWebpackDevServer.listen.firstCall.calledWith(123), 'expected listen to be called with port');
+		});
+	});
+
+	it('should pick from a list of ports', () => {
+		const mockWebpackDevServer = mockModule.getMock('webpack-dev-server');
+		mockWebpackDevServer.listen = sandbox.stub().yields();
+		markPortsAsInUse([123]);
+		moduleUnderTest.run(getMockConfiguration(), {watch: true, port: '123,456'});
+		return new Promise((resolve) => setTimeout(resolve, 10)).then(() => {
+			assert.isTrue(mockWebpackDevServer.listen.calledOnce, 'expected listen to be called on server');
+			assert.isTrue(mockWebpackDevServer.listen.firstCall.calledWith(456), 'expected listen to be called with port');
+		});
+	});
+
+	it('should pick from a range of ports', () => {
+		const mockWebpackDevServer = mockModule.getMock('webpack-dev-server');
+		mockWebpackDevServer.listen = sandbox.stub().yields();
+		markPortsAsInUse([456]);
+		moduleUnderTest.run(getMockConfiguration(), {watch: true, port: '456:454'});
+		return new Promise((resolve) => setTimeout(resolve, 10)).then(() => {
+			assert.isTrue(mockWebpackDevServer.listen.calledOnce, 'expected listen to be called on server');
+			assert.isTrue(mockWebpackDevServer.listen.firstCall.calledWith(455), 'expected listen to be called with port');
+		});
+	});
+
+	it('should pick from a range of ports, high to low', () => {
+		const mockWebpackDevServer = mockModule.getMock('webpack-dev-server');
+		mockWebpackDevServer.listen = sandbox.stub().yields();
+		markPortsAsInUse([]);
+		moduleUnderTest.run(getMockConfiguration(), {watch: true, port: '454:456'});
+		return new Promise((resolve) => setTimeout(resolve, 10)).then(() => {
+			assert.isTrue(mockWebpackDevServer.listen.calledOnce, 'expected listen to be called on server');
+			assert.isTrue(mockWebpackDevServer.listen.firstCall.calledWith(456), 'expected listen to be called with port');
+		});
 	});
 
 	describe('i18n options', () => {
