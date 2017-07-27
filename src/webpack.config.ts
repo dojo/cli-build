@@ -121,7 +121,7 @@ function webpackConfig(args: Partial<BuildArgs>) {
 							path.join(basePath, args.configureLoader)
 						])
 					]
-				 })),
+				})),
 				...includeWhen(args.withTests, () => {
 					return {
 						'../_build/tests/unit/all': [ path.join(basePath, 'tests/unit/all.ts') ],
