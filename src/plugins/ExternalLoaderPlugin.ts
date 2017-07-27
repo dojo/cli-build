@@ -3,6 +3,10 @@ const CopyWebpackPlugin = require('copy-webpack-plugin');
 const HtmlWebpackIncludeAssetsPlugin = require('html-webpack-include-assets-plugin');
 
 export type ExternalDescriptor = {
+	/**
+	 * The path that will be used to load this module. This property is used to configure the build to defer to the
+	 * external loader.
+	 */
 	name?: string
 
 	/**
@@ -47,37 +51,39 @@ export default class ExternalDojoLoaderPlugin {
 		hash?: boolean
 
 	}) {
-		const { externals, outputPath, pathPrefix, loaderConfigurer, hash } = options;
+		const { externals, outputPath = 'externals', pathPrefix, loaderConfigurer, hash } = options;
 		this._externals = externals;
-		this._outputPath = outputPath || 'externals';
-		this._pathPrefix = pathPrefix ? `${pathPrefix}/` : '';
+		this._outputPath = outputPath;
 		this._loaderConfigurer = loaderConfigurer;
 		this._hash = Boolean(hash);
+		this._pathPrefix = pathPrefix ? `${pathPrefix}/` : '';
 	}
 
 	apply(compiler: Compiler) {
 		const prefixPath = (path: string) => `${this._pathPrefix}${this._outputPath}/${path}`;
 
 		const toInject = this._externals.reduce((assets, external) => {
-			if (typeof external === 'string') {
-				return assets;
-			}
+				if (typeof external === 'string') {
+					return assets;
+				}
 
-			const { inject, to, from } = external;
-			const base = to || from;
+				const { inject, to, from } = external;
 
-			if (!inject) {
-				return assets;
-			}
+				if (!inject) {
+					return assets;
+				}
 
-			if (Array.isArray(inject)) {
-				return assets.concat(inject.map(path => prefixPath(`${base}/${path}`)));
-			}
+				const base = to || from;
 
-			const location = (typeof inject === 'string' && `${base}/${inject}`) || to || from;
+				if (Array.isArray(inject)) {
+					return assets.concat(inject.map(path => prefixPath(`${base}/${path}`)));
+				}
 
-			return assets.concat(prefixPath(location));
-		}, [] as string[]).concat(this._loaderConfigurer ? `${this._outputPath}/${this._loaderConfigurer}` : []);
+				const location = (typeof inject === 'string' && `${base}/${inject}`) || to || from;
+
+				return assets.concat(prefixPath(location));
+			}, [] as string[])
+			.concat(this._loaderConfigurer ? `${this._outputPath}/${this._loaderConfigurer}` : []);
 
 		compiler.apply(new CopyWebpackPlugin(
 			this._externals.reduce((config, external) => typeof external === 'string' ? config : config.concat([ {
@@ -85,7 +91,9 @@ export default class ExternalDojoLoaderPlugin {
 					to: `${this._pathPrefix}${this._outputPath}/${external.to || external.from}`
 
 				} ]), [] as { from: string, to: string, transform?: Function }[])
-				.concat(this._loaderConfigurer ? { from: this._loaderConfigurer, to: `${this._outputPath}/${this._loaderConfigurer}` } : [])
+				.concat(
+					this._loaderConfigurer ? { from: this._loaderConfigurer, to: `${this._outputPath}/${this._loaderConfigurer}` } : []
+				)
 		));
 		compiler.apply(
 			new HtmlWebpackIncludeAssetsPlugin({

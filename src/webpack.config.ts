@@ -29,20 +29,6 @@ try {
 
 type IncludeCallback = (args: BuildArgs) => any;
 
-function orderByList(list: string[]) {
-	return function(chunk1: { names: string[] }, chunk2: { names: string[] }) {
-		const index1 = list.indexOf(chunk1.names[0]);
-		const index2 = list.indexOf(chunk2.names[0]);
-		if (index2 === -1 || index1 < index2) {
-			return -1;
-		}
-		if (index1 === -1 || index1 > index2) {
-			return 1;
-		}
-		return 0;
-	};
-}
-
 function webpackConfig(args: Partial<BuildArgs>) {
 	args = args || {};
 
@@ -132,7 +118,7 @@ function webpackConfig(args: Partial<BuildArgs>) {
 			};
 		}),
 		plugins: [
-			new AutoRequireWebpackPlugin(/src[/]main/),
+			new AutoRequireWebpackPlugin(/src\/main/),
 			new webpack.BannerPlugin(readFileSync(require.resolve(`${packagePath}/banner.md`), 'utf8')),
 			new IgnorePlugin(/request\/providers\/node/),
 			new NormalModuleReplacementPlugin(/\.m.css$/, result => {
@@ -174,18 +160,19 @@ function webpackConfig(args: Partial<BuildArgs>) {
 				ignoredModules,
 				mapAppModules: args.withTests
 			}),
-			...includeWhen(args.element, () => [ new webpack.optimize.CommonsChunkPlugin({
+			...includeWhen(args.element, () => [
+				new webpack.optimize.CommonsChunkPlugin({
 					name: 'widget-core',
 					filename: 'widget-core.js'
-			}) ]),
-			...includeWhen(!args.watch && !args.withTests, (args) => {
+				})
+			]),
+			...includeWhen(!args.watch && !args.withTests, () => {
 				return [ new webpack.optimize.UglifyJsPlugin({
 					sourceMap: true,
 					compress: { warnings: false },
 					exclude: /tests[/]/
 				}) ];
-			})
-			,
+			}),
 			includeWhen(args.element, args => {
 				return new HtmlWebpackPlugin({
 					inject: false,
@@ -198,7 +185,6 @@ function webpackConfig(args: Partial<BuildArgs>) {
 					chunks: [
 						'src/main'
 					],
-					chunksSortMode: orderByList([ 'src/main' ]),
 					template: 'src/index.html'
 				});
 			}),
