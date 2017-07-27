@@ -114,12 +114,14 @@ function webpackConfig(args: Partial<BuildArgs>) {
 					path.join(basePath, 'src/main.css'),
 					path.join(basePath, 'src/main.ts')
 				],
-				'src/configureLoader': [
-					path.join(__dirname, 'configureLoader.js'),
-					...includeWhen(includesExternals && args.configureLoader, () => [
-						path.join(basePath, args.configureLoader)
-					])
-				],
+				...includeWhen(includesExternals, () => ({
+					'src/configureLoader': [
+						path.join(__dirname, 'configureLoader.js'),
+						...includeWhen(args.configureLoader, () => [
+							path.join(basePath, args.configureLoader)
+						])
+					]
+				 })),
 				...includeWhen(args.withTests, () => {
 					return {
 						'../_build/tests/unit/all': [ path.join(basePath, 'tests/unit/all.ts') ],
@@ -128,12 +130,14 @@ function webpackConfig(args: Partial<BuildArgs>) {
 							path.join(basePath, 'src/main.css'),
 							path.join(basePath, 'src/main.ts')
 						],
-						'../_build/src/configureLoader': [
-							path.join(__dirname, 'configureLoader.js'),
-							...includeWhen(includesExternals && args.configureLoader, () => [
-								path.join(basePath, args.configureLoader)
-							])
-						]
+						...includeWhen(includesExternals, () => ({
+							'../_build/src/configureLoader': [
+								path.join(__dirname, 'configureLoader.js'),
+								...includeWhen(includesExternals && args.configureLoader, () => [
+									path.join(basePath, args.configureLoader)
+								])
+							]
+						}))
 					};
 				})
 			};
