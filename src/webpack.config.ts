@@ -3,11 +3,11 @@ import NormalModuleReplacementPlugin = require('webpack/lib/NormalModuleReplacem
 import * as path from 'path';
 import { existsSync, readFileSync } from 'fs';
 import { BuildArgs } from './main';
-import { ExternalDep } from './plugins/ExternalLoaderPlugin';
 import Set from '@dojo/shim/Set';
 const IgnorePlugin = require('webpack/lib/IgnorePlugin');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
+const HtmlWebpackIncludeAssetsPlugin = require('html-webpack-include-assets-plugin');
 const ExtractTextPlugin = require('extract-text-webpack-plugin');
 const OptimizeCssAssetsPlugin = require('optimize-css-assets-webpack-plugin');
 const BundleAnalyzerPlugin = require('webpack-bundle-analyzer-sunburst').BundleAnalyzerPlugin;
@@ -49,7 +49,6 @@ function webpackConfig(args: Partial<BuildArgs>) {
 	const cssLoader = ExtractTextPlugin.extract({ use: 'css-loader?sourceMap!resolve-url-loader' });
 	const localIdentName = (args.watch || args.withTests) ? '[name]__[local]__[hash:base64:5]' : '[hash:base64:8]';
 	const includesExternals = Boolean(args.externals && args.externals.length);
-	const loaderMap = new Map<string, string>();
 	const cssModuleLoader = ExtractTextPlugin.extract({
 		use: [
 			'css-module-decorator-loader',
@@ -92,26 +91,12 @@ function webpackConfig(args: Partial<BuildArgs>) {
 		externals: [
 			function (context, request, callback) {
 				const { externals = [] } = args;
-				function isRequestForPackage(packageName?: string) {
-					return Boolean(packageName && new RegExp(`^${packageName}[!\/]`).test(request));
+				function isRequestFor(external?: string | { name?: string; optional?: boolean }) {
+					const name = external && (typeof external === 'string' ? external : external.name);
+					return Boolean(name && new RegExp(`^${name}[!\/]`).test(request));
 				}
 
-				const matchesExternalConfig = externals.reduce(
-					(matched, external) => {
-						if (matched) {
-							return matched;
-						}
-						const newMatch = external.deps.map((dep) => typeof dep === 'string' ? dep : dep.name)
-								.some(isRequestForPackage);
-						if (newMatch) {
-							loaderMap.set(request, external.type);
-						}
-
-						return newMatch;
-					}, false
-				);
-
-				if (matchesExternalConfig || isRequestForPackage('intern')) {
+				if (externals.some(isRequestFor) || isRequestFor('intern')) {
 					return callback(null, 'amd ' + request);
 				}
 
@@ -129,13 +114,12 @@ function webpackConfig(args: Partial<BuildArgs>) {
 					path.join(basePath, 'src/main.css'),
 					path.join(basePath, 'src/main.ts')
 				],
-				...includeWhen(includesExternals, () => {
-					return {
-						'src/loaders': args.externals && args.externals.map(({ loader }) =>
-							path.join(basePath, loader)
-						)
-					};
-				}),
+				'src/configureLoader': [
+					path.join(__dirname, 'configureLoader.js'),
+					...includeWhen(includesExternals && args.configureLoader, () => [
+						path.join(basePath, args.configureLoader)
+					])
+				],
 				...includeWhen(args.withTests, () => {
 					return {
 						'../_build/tests/unit/all': [ path.join(basePath, 'tests/unit/all.ts') ],
@@ -143,6 +127,12 @@ function webpackConfig(args: Partial<BuildArgs>) {
 						'../_build/src/main': [
 							path.join(basePath, 'src/main.css'),
 							path.join(basePath, 'src/main.ts')
+						],
+						'../_build/src/configureLoader': [
+							path.join(__dirname, 'configureLoader.js'),
+							...includeWhen(includesExternals && args.configureLoader, () => [
+								path.join(basePath, args.configureLoader)
+							])
 						]
 					};
 				})
@@ -190,17 +180,14 @@ function webpackConfig(args: Partial<BuildArgs>) {
 				ignoredModules,
 				mapAppModules: args.withTests
 			}),
-			...includeWhen(args.element, () => {
-				return [ new webpack.optimize.CommonsChunkPlugin({
+			...includeWhen(args.element, () => [ new webpack.optimize.CommonsChunkPlugin({
 					name: 'widget-core',
 					filename: 'widget-core.js'
-				}) ];
-			}, () => {
-				return [ new webpack.optimize.CommonsChunkPlugin({
+			}) ]),
+			...includeWhen(!args.element && !args.withTests, () => [ new webpack.optimize.CommonsChunkPlugin({
 					name: 'src/shared',
 					minChunks: 2
-				}) ];
-			}),
+			}) ]),
 			...includeWhen(!args.watch && !args.withTests, (args) => {
 				return [ new webpack.optimize.UglifyJsPlugin({
 					sourceMap: true,
@@ -220,10 +207,9 @@ function webpackConfig(args: Partial<BuildArgs>) {
 					inject: true,
 					chunks: [
 						...includeWhen(!args.element, () => [ 'src/shared' ]),
-						...includeWhen(includesExternals, () => [ 'src/loaders' ]),
-						'src/main'
+						...includeWhen(!includesExternals, () => [ 'src/main' ])
 					],
-					chunksSortMode: orderByList([ 'src/shared', 'src/loaders', 'src/main' ]),
+					chunksSortMode: orderByList([ 'src/shared', 'src/main' ]),
 					template: 'src/index.html'
 				});
 			}),
@@ -254,21 +240,32 @@ function webpackConfig(args: Partial<BuildArgs>) {
 					]),
 					new HtmlWebpackPlugin ({
 						inject: true,
-						chunks: [ '../_build/src/main' ],
+						chunks: [
+							...includeWhen(!includesExternals, () => [
+								'../_build/src/main'
+							])
+						],
 						template: 'src/index.html',
 						filename: '../_build/src/index.html'
 					})
 				];
 			}),
-			...includeWhen(includesExternals, () => [ new ExternalLoaderPlugin({
-				externals: (args.externals && args.externals.reduce((prev, next) => prev.concat(next.deps), [] as ExternalDep[])),
-				loaderMap
-			}) ])
+			...includeWhen(includesExternals, () => [
+				new ExternalLoaderPlugin({
+					loaderFile: path.join(__dirname, 'loadMain.js'),
+					externals: args.externals,
+					outputPath: args.externalsOutputPath,
+					pathPrefix: args.withTests ? '../_build/src' : ''
+				}),
+				new HtmlWebpackIncludeAssetsPlugin({
+					assets: [ 'main.css' ],
+					append: false
+				})
+			])
+
 		],
 		output: {
-			...includeWhen(!includesExternals, () => ({
-				libraryTarget: 'umd'
-			})),
+			libraryTarget: 'umd',
 			path: includeWhen(args.element, args => {
 				return path.resolve(`./dist/${args.elementPrefix}`);
 			}, () => {

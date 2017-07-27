@@ -1,9 +1,8 @@
 import './main';
 import './webpack.config';
-import './registerLoader';
+import './configureLoader';
 import './plugins/CoreLoadPlugin';
 import './plugins/ExternalLoaderPlugin';
-import './plugins/ExternalLoaderUmdTemplatePlugin';
 import './plugins/I18nPlugin';
 import './plugins/InjectModulesPlugin';
 import './plugins/util/i18n';

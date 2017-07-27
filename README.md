@@ -91,58 +91,58 @@ node_modules/.bin/webpack --config=config/build-webpack/webpack.config.js
 
 ### Interop with external libraries
 
-External libraries that can not be loaded normally via webpack can be included in a Dojo 2 application by providing a custom loader, and some
+External libraries that can not be loaded normally via webpack can be included in a Dojo 2 providing an implementation of `require` or `define`, and some
 configuration in the project's `.dojorc` file.
 `.dojorc` is a JSON file that contains configuration for Dojo 2 CLI tasks. Configuration for the `dojo build` task can be provided under the
 `build-webpack` property.
-External dependencies can be specified via a property called `externals` within the `build-webpack` config.
-`externals` is an array. Each entry is an object that defines an external loader and any dependencies that should be loaded by that loader. Each entry has three properties:
-* `type`: This is the unique key under which the loader will be registered.
-* `loader`: This is the path to the file that registers the loader.
-* `deps`: This is an array that defines what dependencies should be loaded with this loader, and configures the build to copy the appropriate files
- from `node_modules` into the built application. Each entry in the `deps` array can either be a string or an object. Each string value in the array should be the 'name' of a package or module that should be loaded with this loader. The `name` property of an object in this array serves the same purpose. In addition to `name`, each object must have a `from` property, and can optionally specify a `to` property. `from` is the path, relative to `node_modules`, from which this dependency should be copied. If `to` is not specified, then the dependency will be copied to `externals/${from}`. If `to` is specified then it will be copied to `externals/${to}`.
+Configuration for external dependencies can be provided via two properties within the `build-webpack` config: `externals` and `externalsOutputPath`.
 
-#### Defining a Loader
+`externals` is an array that defines which modules should be loaded via the external loader, and what files should be included in the build. Each entry can be one of two types:
+* A string. In this case the entry simply indicates that this path, and any children of this path, should be loaded via the external loader
+* An object that provides additional configuration for dependencies that need to be copied into the built application. This object has the following properties:
 
-The file specified by the `loader` property should use the `@dojo/cli-build-webpack/registerLoader` module to register a loader.
-The default export of `registerLoader` is a function that takes a string and a callback function. The string is the unique key that identifies the
-loader, and should match the value of the `type` property in the entry in `externals` that describes the loader and its dependencies.
-The provided callback function will be called with one argument, a function called `loadScript`, and should return a promise that resolves to a "load
-function".
-The load function takes an array of module IDs and returns a promise that resolves to an array of modules corresponding to the module IDs.
-The `loadScript` function passed to the callback can be used to load external scripts needed to prepare the loader, and returns a promise that resolves
-when the script has been loaded.
-The path provided to `loadScript` will be relative to `src` in the built project. To load a Dojo 1 loader that had been copied to
-`externals/dojo/dojo.js`, for example, you could call `loadScript('../externals/dojo/dojo.js')`. The code below provides a simple example of using the `
-registerLoader` function to register a loader for Dojo 1 modules. It assumes that the Dojo loader is at the above mentioned path, and that the actual
-modules that will be loaded are located at `externals/third-party`
+ | Property | Type | optional | Description |
+ | -------- | ---- | -------- | ----------- |
+ | `from` | `string` | false  | A path relative to `node_modules` that tells the loader where it can find this dependency in order to copy it into the built application |
+ | `to` | `string` | true | A path that replaces `from` as the location to copy this dependency to. Dependencies will be copied to `${externalsOutputPath}/${to}` or `${externalsOutputPath}/${from}` if `to` is not provided. |
+ | `name` | `string` | true | Indicates that this path, and any children of this path, should be loaded via the external loader |
+ | `inject` | `string | string[] | boolean` | true | This property indicates that this dependency defines, or includes, scripts or stylesheets that should be loaded on the page. If `inject` is set to `true`, then the file at the location specified by `to` or `from` will be loaded on the page. If this dependency is a folder, and then `inject` can be set to a string or array of strings to define one or more files to inject. Each path in `inject` should be relative to `${externalsOutputPath}/${to}` or `${externalsOutputPath}/${from}` depending on whether `to` was provided. |
+
+ `externalsOutputPath` defined the location in the built application, relative to the root, where external dependencies should be placed. This defaults to `'externals'`
+
+
+#### Configuring a Loader
+
+In some cases an external loader may need additional configuration specific to your application. Or you may need to preload certain modules before
+loading the main application. `@dojo/cli-build-webpack/configureLoader` provides the ability to do so. `configureLoader`'s default export is a function
+ by the same name, that takes a callback where any necessary configuration can be performed. The callback should return a promise, and if a callback
+ is registered the main application bundle will not run until after the promise resolves.
+The file that configures the loader, if one is needed, can be specified with the `configureLoader` property of the `build-webpack` configuration. Below is an example using the Dojo 1 loader, which configures the loader with the location of some packages, and preloads a layer file before the main app code runs.
 
 ```typescript
-import registerLoader from '@dojo/cli-build-webpack/registerLoader';
-import Promise from '@dojo/shim/Promise';
+import configureLoader from '@dojo/cli-build-webpack/configureLoader';
+import '@dojo/shim/Promise';
 
-registerLoader('dojo1', (loadScript): any => {
-	return loadScript('../externals/dojo/dojo.js').then(() => {
-		const require: {
-		    (...args: any[]) => void;
-		    on(event: string, callback: Function): { remove: Function };
-        } = (<any> window).require;
-		return (moduleIds: string[]): Promise<any[]> => new Promise((resolve, reject) => {
-		    const handle = require.on('error', (error: any) => {
-		        reject(error);
-		    });
-			require({
-				baseUrl: 'externals',
-				packages: [
-					{ location: 'third-party', name: 'third-party' },
-					{ location: 'dojo', name: 'dojo' }
-				]
-			}, moduleIds, function () {
-			    handle.remove();
-				resolve(Array.from(arguments));
-			});
-		});
-	});
+configureLoader(() => {
+    const require: {
+        (...args: any[]) => void;
+        on(event: string, callback: Function): { remove: Function };
+    } = (<any> window).require;
+    return new Promise((resolve, reject) => {
+        const handle = require.on('error', (error: any) => {
+            reject(error);
+        });
+        require({
+            baseUrl: 'externals',
+            packages: [
+                { location: 'third-party', name: 'third-party' },
+                { location: 'dojo', name: 'dojo' }
+            ]
+        }, [ 'third-party/layer-file' ], function () {
+            handle.remove();
+            resolve();
+        });
+    });
 });
 ```
 

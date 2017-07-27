@@ -1,6 +1,6 @@
 import Compiler = require('webpack/lib/Compiler');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
-import ExternalLoaderUmdTemplatePlugin from './ExternalLoaderUmdTemplatePlugin';
+const HtmlWebpackIncludeAssetsPlugin = require('html-webpack-include-assets-plugin');
 
 export type ExternalDescriptor = {
 	name?: string
@@ -14,6 +14,12 @@ export type ExternalDescriptor = {
 	 * This can be used to specify the location, relative to the externals folder, where the dependency should be copied.
 	 */
 	to?: string;
+
+	/**
+	 * Whether to load this script, or script(s) within this dependency. If true, `to` or `from` should point to a
+	 * file to load on the page. If this is a string, it should point to the file to load.
+	 */
+	inject?: boolean | string | string[];
 };
 
 /**
@@ -23,38 +29,79 @@ export type ExternalDep = string | ExternalDescriptor;
 
 export default class ExternalDojoLoaderPlugin {
 	private _externals: ExternalDep[];
-	public name: string | string[] | { root?: string, amd?: string, commonjs?: string };
-	private loaderMap: Map<string, string>;
-	private namedDefine: boolean;
+	private _outputPath: string;
+	private _loaderFile?: string;
+	private _pathPrefix: string;
 
 	constructor(options: {
-		namedDefine?: boolean,
-		name?: any,
-		externals?: ExternalDep[],
-		loaderMap?: Map<string, string>;
-	} = {}) {
-		const { externals, name, loaderMap } = options;
-		this.loaderMap = loaderMap || new Map<string, string>();
-		this._externals = externals || [];
-		this.name = name;
-		this.namedDefine = Boolean(options.namedDefine);
+		externals: ExternalDep[],
+		outputPath?: string;
+		pathPrefix?: string;
+		loaderFile?: string;
+		loadForTests?: string[];
+	}) {
+		const { externals, outputPath, loaderFile, pathPrefix } = options;
+		this._externals = externals;
+		this._outputPath = outputPath || 'externals';
+		this._loaderFile = loaderFile;
+		this._pathPrefix = pathPrefix ? `${pathPrefix}/` : '';
 	}
 
 	apply(compiler: Compiler) {
-		compiler.apply(new CopyWebpackPlugin(this._externals.reduce(
-			(config, external) => typeof external === 'string' ? config : config.concat([ {
-				from: `node_modules/${external.from}`,
-				to: `externals/${external.to || external.from}`
+		const toInject = this._externals.reduce((assets, external) => {
+			if (typeof external === 'string') {
+				return assets;
+			}
 
-			} ]),
-			[] as { from: string, to: string }[]
-		)));
-		compiler.plugin('this-compilation', (compilation) => {
-			compilation.apply(new ExternalLoaderUmdTemplatePlugin({
-				loaderMap: this.loaderMap,
-				name: this.name,
-				namedDefine: this.namedDefine
-			}));
-		});
+			const { inject, to, from } = external;
+			const base = to || from;
+
+			if (!inject) {
+				return assets;
+			}
+
+			if (Array.isArray(inject)) {
+				return assets.concat(inject.map(path => `${this._outputPath}/${base}/${path}`));
+			}
+
+			const location = (typeof inject === 'string' && `${base}/${inject}`) || to || from;
+
+			return assets.concat(`${this._outputPath}/${location}`);
+		}, [] as string[]);
+
+		compiler.apply(new CopyWebpackPlugin(
+			this._externals.reduce((config, external) => typeof external === 'string' ? config : config.concat([ {
+				from: `node_modules/${external.from}`,
+				to: `${this._pathPrefix}${this._outputPath}/${external.to || external.from}`
+
+			} ]), [] as { from: string, to: string, transform?: Function }[]).concat(
+				this._loaderFile ? {
+					from: this._loaderFile,
+					to: `${this._pathPrefix}loadMain.js`,
+					transform: (content: any) => {
+						const source = content.toString();
+						if (this._pathPrefix) {
+							return source.replace(/\.[/]src/g, `./`);
+						}
+						else {
+							return source;
+						}
+					}
+				} : []
+			)
+		));
+		compiler.apply(
+			new HtmlWebpackIncludeAssetsPlugin({
+				assets: toInject.concat(this._loaderFile ? `loadMain.js` : []),
+				append: true,
+				files: 'index.html'
+			})
+		);
+		compiler.apply(
+			new HtmlWebpackIncludeAssetsPlugin({
+			assets: toInject.map(path => '../_build/src/' + path).concat(this._loaderFile ? `../_build/src/loadMain.js` : []),
+			append: true,
+			files: '../_build/src/index.html'
+		}));
 	}
 }
