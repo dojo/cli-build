@@ -1,6 +1,5 @@
 import './main';
 import './webpack.config';
-import './configureLoader';
 import './plugins/CoreLoadPlugin';
 import './plugins/ExternalLoaderPlugin';
 import './plugins/I18nPlugin';

@@ -95,7 +95,7 @@ External libraries that can not be loaded normally via webpack can be included i
 configuration in the project's `.dojorc` file.
 `.dojorc` is a JSON file that contains configuration for Dojo 2 CLI tasks. Configuration for the `dojo build` task can be provided under the
 `build-webpack` property.
-Configuration for external dependencies can be provided via two properties within the `build-webpack` config: `externals` and `externalsOutputPath`.
+Configuration for external dependencies can be provided via three properties within the `build-webpack` config: `externals`, `externalsOutputPath` and `loaderConfigurere`.
 
 `externals` is an array that defines which modules should be loaded via the external loader, and what files should be included in the build. Each entry can be one of two types:
 * A string. In this case the entry simply indicates that this path, and any children of this path, should be loaded via the external loader
@@ -108,41 +108,17 @@ Configuration for external dependencies can be provided via two properties withi
  | `name` | `string` | true | Indicates that this path, and any children of this path, should be loaded via the external loader |
  | `inject` | `string | string[] | boolean` | true | This property indicates that this dependency defines, or includes, scripts or stylesheets that should be loaded on the page. If `inject` is set to `true`, then the file at the location specified by `to` or `from` will be loaded on the page. If this dependency is a folder, and then `inject` can be set to a string or array of strings to define one or more files to inject. Each path in `inject` should be relative to `${externalsOutputPath}/${to}` or `${externalsOutputPath}/${from}` depending on whether `to` was provided. |
 
- `externalsOutputPath` defined the location in the built application, relative to the root, where external dependencies should be placed. This defaults to `'externals'`
+ `externalsOutputPath` is an optional configuration property that defines the location in the built application, relative to the root, where external dependencies should be placed. This defaults to `'externals'`
 
+ `loaderConfigurer` is an optional property that points to a script that will be injected before the main bundle to perform any additional application specifiec configuration of the loader before the main app bundle runs. Below is a simple example of a `loaderConfigurer` script that configures a Dojo 1 loader.
 
-#### Configuring a Loader
-
-In some cases an external loader may need additional configuration specific to your application. Or you may need to preload certain modules before
-loading the main application. `@dojo/cli-build-webpack/configureLoader` provides the ability to do so. `configureLoader`'s default export is a function
- by the same name, that takes a callback where any necessary configuration can be performed. The callback should return a promise, and if a callback
- is registered the main application bundle will not run until after the promise resolves.
-The file that configures the loader, if one is needed, can be specified with the `configureLoader` property of the `build-webpack` configuration. Below is an example using the Dojo 1 loader, which configures the loader with the location of some packages, and preloads a layer file before the main app code runs.
-
-```typescript
-import configureLoader from '@dojo/cli-build-webpack/configureLoader';
-import '@dojo/shim/Promise';
-
-configureLoader(() => {
-    const require: {
-        (...args: any[]) => void;
-        on(event: string, callback: Function): { remove: Function };
-    } = (<any> window).require;
-    return new Promise((resolve, reject) => {
-        const handle = require.on('error', (error: any) => {
-            reject(error);
-        });
-        require({
-            baseUrl: 'externals',
-            packages: [
-                { location: 'third-party', name: 'third-party' },
-                { location: 'dojo', name: 'dojo' }
-            ]
-        }, [ 'third-party/layer-file' ], function () {
-            handle.remove();
-            resolve();
-        });
-    });
+```javascript
+require({
+    baseUrl: 'externals',
+    packages: [
+        { location: 'third-party', name: 'third-party' },
+        { location: 'dojo', name: 'dojo' }
+    ]
 });
 ```
 

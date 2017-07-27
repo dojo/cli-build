@@ -9,7 +9,7 @@
 		"outDir": "_build/",
 		"removeComments": false,
 		"sourceMap": true,
-		"target": "es5",
+		"target": "es6",
 		"moduleResolution": "node",
 		"types": [ "intern" ],
 		"lib": [

@@ -20,6 +20,11 @@ export type ExternalDescriptor = {
 	 * file to load on the page. If this is a string, it should point to the file to load.
 	 */
 	inject?: boolean | string | string[];
+
+	/**
+	 * Optional type to indicate how this external should be loaded
+	 */
+	type?: string;
 };
 
 /**
@@ -30,24 +35,29 @@ export type ExternalDep = string | ExternalDescriptor;
 export default class ExternalDojoLoaderPlugin {
 	private _externals: ExternalDep[];
 	private _outputPath: string;
-	private _loaderFile?: string;
 	private _pathPrefix: string;
+	private _loaderConfigurer?: string;
+	private _hash: boolean;
 
 	constructor(options: {
 		externals: ExternalDep[],
 		outputPath?: string;
 		pathPrefix?: string;
-		loaderFile?: string;
-		loadForTests?: string[];
+		loaderConfigurer?: string;
+		hash?: boolean
+
 	}) {
-		const { externals, outputPath, loaderFile, pathPrefix } = options;
+		const { externals, outputPath, pathPrefix, loaderConfigurer, hash } = options;
 		this._externals = externals;
 		this._outputPath = outputPath || 'externals';
-		this._loaderFile = loaderFile;
 		this._pathPrefix = pathPrefix ? `${pathPrefix}/` : '';
+		this._loaderConfigurer = loaderConfigurer;
+		this._hash = Boolean(hash);
 	}
 
 	apply(compiler: Compiler) {
+		const prefixPath = (path: string) => `${this._pathPrefix}${this._outputPath}/${path}`;
+
 		const toInject = this._externals.reduce((assets, external) => {
 			if (typeof external === 'string') {
 				return assets;
@@ -61,47 +71,29 @@ export default class ExternalDojoLoaderPlugin {
 			}
 
 			if (Array.isArray(inject)) {
-				return assets.concat(inject.map(path => `${this._outputPath}/${base}/${path}`));
+				return assets.concat(inject.map(path => prefixPath(`${base}/${path}`)));
 			}
 
 			const location = (typeof inject === 'string' && `${base}/${inject}`) || to || from;
 
-			return assets.concat(`${this._outputPath}/${location}`);
-		}, [] as string[]);
+			return assets.concat(prefixPath(location));
+		}, [] as string[]).concat(this._loaderConfigurer ? `${this._outputPath}/${this._loaderConfigurer}` : []);
 
 		compiler.apply(new CopyWebpackPlugin(
 			this._externals.reduce((config, external) => typeof external === 'string' ? config : config.concat([ {
-				from: `node_modules/${external.from}`,
-				to: `${this._pathPrefix}${this._outputPath}/${external.to || external.from}`
+					from: `node_modules/${external.from}`,
+					to: `${this._pathPrefix}${this._outputPath}/${external.to || external.from}`
 
-			} ]), [] as { from: string, to: string, transform?: Function }[]).concat(
-				this._loaderFile ? {
-					from: this._loaderFile,
-					to: `${this._pathPrefix}loadMain.js`,
-					transform: (content: any) => {
-						const source = content.toString();
-						if (this._pathPrefix) {
-							return source.replace(/\.[/]src/g, `./`);
-						}
-						else {
-							return source;
-						}
-					}
-				} : []
-			)
+				} ]), [] as { from: string, to: string, transform?: Function }[])
+				.concat(this._loaderConfigurer ? { from: this._loaderConfigurer, to: `${this._outputPath}/${this._loaderConfigurer}` } : [])
 		));
 		compiler.apply(
 			new HtmlWebpackIncludeAssetsPlugin({
-				assets: toInject.concat(this._loaderFile ? `loadMain.js` : []),
-				append: true,
-				files: 'index.html'
+				assets: toInject,
+				append: false,
+				files: `${this._pathPrefix}index.html`,
+				hash: this._hash
 			})
 		);
-		compiler.apply(
-			new HtmlWebpackIncludeAssetsPlugin({
-			assets: toInject.map(path => '../_build/src/' + path).concat(this._loaderFile ? `../_build/src/loadMain.js` : []),
-			append: true,
-			files: '../_build/src/index.html'
-		}));
 	}
 }

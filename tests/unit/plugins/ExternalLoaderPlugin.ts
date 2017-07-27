@@ -47,41 +47,26 @@ describe('ExternalLoaderPlugin', () => {
 			'OUTPUT_PATH/abc', 'OUTPUT_PATH/def', 'OUTPUT_PATH/def/main', 'OUTPUT_PATH/abc/one', 'OUTPUT_PATH/abc/two',
 			'OUTPUT_PATH/abc/three', 'OUTPUT_PATH/abc/four'
 		];
-		const expectedAssetsTest = [
-			'../_build/src/OUTPUT_PATH/abc', '../_build/src/OUTPUT_PATH/def', '../_build/src/OUTPUT_PATH/def/main',
-			'../_build/src/OUTPUT_PATH/abc/one', '../_build/src/OUTPUT_PATH/abc/two',
-			'../_build/src/OUTPUT_PATH/abc/three', '../_build/src/OUTPUT_PATH/abc/four'
-		];
 
-		function test(outputPath: string, loaderFile?: string) {
+		function test(outputPath: string, loaderConfigurer?: string) {
 			const expectedCopy = expectedCopyArgs.map(({ from, to }) => ({ from, to: to.replace('OUTPUT_PATH', outputPath) }));
-			const loaderCopy = { from: loaderFile || '', to: 'loadMain.js' };
+			const loaderCopy = { from: loaderConfigurer || '', to: `${outputPath}/${loaderConfigurer}` };
 			const expectedAssetInclude = {
 				assets: expectedAssets.map(asset => asset.replace('OUTPUT_PATH', outputPath)),
-				append: true,
+				append: false,
+				hash: false,
 				files: 'index.html'
 			};
-			const expectedAssetsIncludeTest = {
-				assets: expectedAssetsTest.map(asset => asset.replace('OUTPUT_PATH', outputPath)),
-				append: true,
-				files: '../_build/src/index.html'
-			};
-			if (loaderFile) {
+
+			if (loaderConfigurer) {
 				expectedCopy.push(loaderCopy);
-				expectedAssetInclude.assets.push('loadMain.js');
-				expectedAssetsIncludeTest.assets.push('../_build/src/loadMain.js');
+				expectedAssetInclude.assets.push(`${outputPath}/${loaderConfigurer}`);
 			}
-			assert.equal(compiler.applied.length, 3);
+			assert.equal(compiler.applied.length, 2);
 			const copyArgs = copyMock.args[0][0];
 			const assetIncludeArgs = assetsMock.args[0][0];
-			const assetIncludeArgsTest = assetsMock.args[1][0];
-			if (loaderFile) {
-				(<any> loaderCopy).transform = copyArgs[copyArgs.length - 1].transform;
-				assert.equal((<any> loaderCopy).transform('./src'), './src');
-			}
 			assert.deepEqual(copyArgs, expectedCopy);
 			assert.deepEqual(assetIncludeArgs, expectedAssetInclude);
-			assert.deepEqual(assetIncludeArgsTest, expectedAssetsIncludeTest);
 
 			copyMock.reset();
 			assetsMock.reset();
@@ -93,32 +78,38 @@ describe('ExternalLoaderPlugin', () => {
 		test('externals');
 
 		const outputPath = 'output-path';
-		const loaderFile = 'loader-file.js';
-		plugin = new Plugin({ externals, outputPath, loaderFile });
+		const loaderConfigurer = 'path/loader-file.js';
+		plugin = new Plugin({ externals, outputPath, loaderConfigurer });
 		plugin.apply(compiler);
-		test(outputPath, loaderFile);
+		test(outputPath, loaderConfigurer);
 	});
 
 	it('should allow a prefix to be specified for copied file paths', () => {
 		const copyMock: SinonSpy = mockModule.getMock('copy-webpack-plugin').ctor;
+		const assetsMock: SinonSpy = mockModule.getMock('html-webpack-include-assets-plugin').ctor;
 
 		const compiler = new Compiler();
 		const externals = [
-			{ from: 'abc', to: 'def' }
+			{ from: 'abc', to: 'def', inject: true }
 		];
-		const loaderFile = 'loader';
-		let plugin = new Plugin({ externals, loaderFile, pathPrefix: 'prefix' });
+		let plugin = new Plugin({ externals, pathPrefix: 'prefix' });
 
 		const expectedCopyArgs = [
-			{ from: 'node_modules/abc', to: 'prefix/externals/def' },
-			{ from: loaderFile, to: 'prefix/loadMain.js' }
+			{ from: 'node_modules/abc', to: 'prefix/externals/def' }
 		];
 
+		const expectedAssetIncludeArgs = {
+			assets: [ 'prefix/externals/def' ],
+			append: false,
+			hash: false,
+			files: 'prefix/index.html'
+		};
+
 		plugin.apply(compiler);
-		assert.equal(compiler.applied.length, 3);
+		assert.equal(compiler.applied.length, 2);
 		const copyArgs = copyMock.args[0][0];
-		(<any> expectedCopyArgs[1]).transform = copyArgs[1].transform;
-		assert.equal((<any> expectedCopyArgs[1]).transform('./src'), './');
+		const assetIncludeArgs = assetsMock.args[0][0];
 		assert.deepEqual(copyArgs, expectedCopyArgs);
+		assert.deepEqual(assetIncludeArgs, expectedAssetIncludeArgs);
 	});
 });

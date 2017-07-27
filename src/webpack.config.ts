@@ -7,8 +7,8 @@ import Set from '@dojo/shim/Set';
 const IgnorePlugin = require('webpack/lib/IgnorePlugin');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
-const HtmlWebpackIncludeAssetsPlugin = require('html-webpack-include-assets-plugin');
 const ExtractTextPlugin = require('extract-text-webpack-plugin');
+const AutoRequireWebpackPlugin = require('auto-require-webpack-plugin');
 const OptimizeCssAssetsPlugin = require('optimize-css-assets-webpack-plugin');
 const BundleAnalyzerPlugin = require('webpack-bundle-analyzer-sunburst').BundleAnalyzerPlugin;
 const postcssImport = require('postcss-import');
@@ -91,13 +91,18 @@ function webpackConfig(args: Partial<BuildArgs>) {
 		externals: [
 			function (context, request, callback) {
 				const { externals = [] } = args;
-				function isRequestFor(external?: string | { name?: string; optional?: boolean }) {
-					const name = external && (typeof external === 'string' ? external : external.name);
-					return Boolean(name && new RegExp(`^${name}[!\/]`).test(request));
+				function findExternalType(externals: (string | { name?: string; type?: string; })[]): string | void {
+					for (let external of externals) {
+						const name = external && (typeof external === 'string' ? external : external.name);
+						if (name && new RegExp(`^${name}[!\/]`).test(request)) {
+							return (typeof external === 'string' ? '' : external.type) || 'amd';
+						}
+					}
 				}
 
-				if (externals.some(isRequestFor) || isRequestFor('intern')) {
-					return callback(null, 'amd ' + request);
+				const type = findExternalType(externals.concat([ 'intern' ]));
+				if (type) {
+					return callback(null, `${type} ${request}`);
 				}
 
 				callback();
@@ -114,14 +119,6 @@ function webpackConfig(args: Partial<BuildArgs>) {
 					path.join(basePath, 'src/main.css'),
 					path.join(basePath, 'src/main.ts')
 				],
-				...includeWhen(includesExternals, () => ({
-					'src/configureLoader': [
-						path.join(__dirname, 'configureLoader.js'),
-						...includeWhen(args.configureLoader, () => [
-							path.join(basePath, args.configureLoader)
-						])
-					]
-				})),
 				...includeWhen(args.withTests, () => {
 					return {
 						'../_build/tests/unit/all': [ path.join(basePath, 'tests/unit/all.ts') ],
@@ -129,20 +126,13 @@ function webpackConfig(args: Partial<BuildArgs>) {
 						'../_build/src/main': [
 							path.join(basePath, 'src/main.css'),
 							path.join(basePath, 'src/main.ts')
-						],
-						...includeWhen(includesExternals, () => ({
-							'../_build/src/configureLoader': [
-								path.join(__dirname, 'configureLoader.js'),
-								...includeWhen(includesExternals && args.configureLoader, () => [
-									path.join(basePath, args.configureLoader)
-								])
-							]
-						}))
+						]
 					};
 				})
 			};
 		}),
 		plugins: [
+			new AutoRequireWebpackPlugin(/src[/]main/),
 			new webpack.BannerPlugin(readFileSync(require.resolve(`${packagePath}/banner.md`), 'utf8')),
 			new IgnorePlugin(/request\/providers\/node/),
 			new NormalModuleReplacementPlugin(/\.m.css$/, result => {
@@ -188,10 +178,6 @@ function webpackConfig(args: Partial<BuildArgs>) {
 					name: 'widget-core',
 					filename: 'widget-core.js'
 			}) ]),
-			...includeWhen(!args.element && !args.withTests, () => [ new webpack.optimize.CommonsChunkPlugin({
-					name: 'src/shared',
-					minChunks: 2
-			}) ]),
 			...includeWhen(!args.watch && !args.withTests, (args) => {
 				return [ new webpack.optimize.UglifyJsPlugin({
 					sourceMap: true,
@@ -210,10 +196,9 @@ function webpackConfig(args: Partial<BuildArgs>) {
 				return new HtmlWebpackPlugin({
 					inject: true,
 					chunks: [
-						...includeWhen(!args.element, () => [ 'src/shared' ]),
-						...includeWhen(!includesExternals, () => [ 'src/main' ])
+						'src/main'
 					],
-					chunksSortMode: orderByList([ 'src/shared', 'src/main' ]),
+					chunksSortMode: orderByList([ 'src/main' ]),
 					template: 'src/index.html'
 				});
 			}),
@@ -244,11 +229,7 @@ function webpackConfig(args: Partial<BuildArgs>) {
 					]),
 					new HtmlWebpackPlugin ({
 						inject: true,
-						chunks: [
-							...includeWhen(!includesExternals, () => [
-								'../_build/src/main'
-							])
-						],
+						chunks: [ '../_build/src/main' ],
 						template: 'src/index.html',
 						filename: '../_build/src/index.html'
 					})
@@ -256,20 +237,18 @@ function webpackConfig(args: Partial<BuildArgs>) {
 			}),
 			...includeWhen(includesExternals, () => [
 				new ExternalLoaderPlugin({
-					loaderFile: path.join(__dirname, 'loadMain.js'),
 					externals: args.externals,
 					outputPath: args.externalsOutputPath,
-					pathPrefix: args.withTests ? '../_build/src' : ''
-				}),
-				new HtmlWebpackIncludeAssetsPlugin({
-					assets: [ 'main.css' ],
-					append: false
+					pathPrefix: args.withTests ? '../_build/src' : '',
+					loaderConfigurer: args.loaderConfigurer
 				})
 			])
 
 		],
 		output: {
 			libraryTarget: 'umd',
+			library: '[name]',
+			umdNamedDefine: true,
 			path: includeWhen(args.element, args => {
 				return path.resolve(`./dist/${args.elementPrefix}`);
 			}, () => {
