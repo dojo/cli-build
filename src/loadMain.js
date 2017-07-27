@@ -23,12 +23,12 @@ function load(script, callback) {
 			handle.remove();
 			callback();
 		});
-		require([].concat(script), function () {
+		require([ script ], function () {
 			handle.remove();
 			callback();
 		});
 	}
-	else if (typeof script === 'string') {
+	else {
 		var scriptTag = globalObject.document.createElement('script');
 		scriptTag.addEventListener('load', function () {
 			callback();
@@ -39,15 +39,6 @@ function load(script, callback) {
 		scriptTag.type = 'text/javascript';
 		scriptTag.src = scriptTag;
 		document.body.appendChild(scriptTag);
-	}
-	else if (script.length) {
-		var next = script.shift();
-		load(next, function () {
-			load(script, callback);
-		});
-	}
-	else {
-		callback();
 	}
 }
 
