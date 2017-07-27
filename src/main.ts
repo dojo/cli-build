@@ -107,7 +107,7 @@ function watch(config: webpack.Config, options: WebpackOptions, args: BuildArgs)
 	const compiler = webpack(config);
 	const server = new WebpackDevServer(compiler, options);
 
-	return new Promise((resolve, reject) => {
+	return new Promise<void>((resolve, reject) => {
 		const port = args.port || 9999;
 		server.listen(port, '127.0.0.1', (err: Error) => {
 			console.log(`Starting server on http://localhost:${port}`);
@@ -121,7 +121,7 @@ function watch(config: webpack.Config, options: WebpackOptions, args: BuildArgs)
 
 function compile(config: webpack.Config, options: WebpackOptions): Promise<void> {
 	const compiler = webpack(config);
-	return new Promise((resolve, reject) => {
+	return new Promise<void>((resolve, reject) => {
 		compiler.run((err, stats) => {
 			if (err) {
 				reject(err);
