@@ -20,13 +20,15 @@ export type ExternalDescriptor = {
 	to?: string;
 
 	/**
-	 * Whether to load this script, or script(s) within this dependency. If true, `to` or `from` should point to a
-	 * file to load on the page. If this is a string, it should point to the file to load.
+	 * If this is a boolean, it indicates whether to inject this dependency into the application. If inject is set to true, 
+	 * this	dependency should be a script or stylesheet. If this dependency is a directory and contains one or more stylesheets
+	 * or scripts that  should be injected into the application inject can be set to a string or array of strings that point to
+	 * the resource(s) to be injected. Only scripts and stylehseets can be injected.
 	 */
 	inject?: boolean | string | string[];
 
 	/**
-	 * Optional type to indicate how this external should be loaded
+	 * Optional property to indicate how this external should be loaded
 	 */
 	type?: string;
 };
