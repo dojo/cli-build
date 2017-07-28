@@ -87,7 +87,7 @@ function webpackConfig(args: Partial<BuildArgs>) {
 					}
 				}
 
-				const type = findExternalType(externals.concat([ 'intern' ]));
+				const type = findExternalType(externals.concat('intern'));
 				if (type) {
 					return callback(null, `${type} ${request}`);
 				}
