@@ -222,7 +222,7 @@ function webpackConfig(args: Partial<BuildArgs>) {
 			}),
 			...includeWhen(includesExternals, () => [
 				new ExternalLoaderPlugin({
-					externals: externalDependencies,
+					dependencies: externalDependencies,
 					outputPath: args.externals && args.externals.outputPath,
 					pathPrefix: args.withTests ? '../_build/src' : ''
 				})

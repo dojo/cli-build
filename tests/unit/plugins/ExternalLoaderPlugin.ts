@@ -27,7 +27,7 @@ describe('ExternalLoaderPlugin', () => {
 		const assetsMock: SinonSpy = mockModule.getMock('html-webpack-include-assets-plugin').ctor;
 
 		const compiler = new Compiler();
-		const externals = [
+		const dependencies = [
 			'a',
 			{ from: 'abc', inject: true },
 			{ from: 'abc', to: 'def', inject: true },
@@ -69,12 +69,12 @@ describe('ExternalLoaderPlugin', () => {
 			compiler.applied = [];
 		}
 
-		let plugin = new Plugin({ externals });
+		let plugin = new Plugin({ dependencies });
 		plugin.apply(compiler);
 		test('externals');
 
 		const outputPath = 'output-path';
-		plugin = new Plugin({ externals, outputPath });
+		plugin = new Plugin({ dependencies, outputPath });
 		plugin.apply(compiler);
 		test(outputPath);
 	});
@@ -84,10 +84,10 @@ describe('ExternalLoaderPlugin', () => {
 		const assetsMock: SinonSpy = mockModule.getMock('html-webpack-include-assets-plugin').ctor;
 
 		const compiler = new Compiler();
-		const externals = [
+		const dependencies = [
 			{ from: 'abc', to: 'def', inject: true }
 		];
-		let plugin = new Plugin({ externals, pathPrefix: 'prefix' });
+		let plugin = new Plugin({ dependencies, pathPrefix: 'prefix' });
 
 		const expectedCopyArgs = [
 			{ from: 'abc', to: 'prefix/externals/def' }

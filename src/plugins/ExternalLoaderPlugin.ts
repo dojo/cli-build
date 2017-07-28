@@ -37,21 +37,37 @@ export type ExternalDescriptor = {
  */
 export type ExternalDep = string | ExternalDescriptor;
 
-export default class ExternalDojoLoaderPlugin {
-	private _externals: ExternalDep[];
+export interface ExternalLoaderOptions {
+	/**
+	 * The external dependencies
+	 */
+	dependencies: ExternalDep[];
+
+	/**
+	 * Whether to use the build's hash to cache bust injected dependencies.
+	 *
+	 */
+	hash?: boolean;
+
+	/**
+	 * Where to copy dependencies to; defaults to "externals"
+	 */
+	outputPath?: string;
+
+	/**
+	 * Used to modify where files are placed(e.g. an alternate location for testing)
+	 */
+	pathPrefix?: string;
+}
+
+export default class ExternalLoaderPlugin {
+	private _dependencies: ExternalDep[];
 	private _outputPath: string;
 	private _pathPrefix: string;
 	private _hash: boolean;
 
-	constructor(options: {
-		externals: ExternalDep[],
-		outputPath?: string;
-		pathPrefix?: string;
-		hash?: boolean
-
-	}) {
-		const { externals, outputPath, pathPrefix, hash } = options;
-		this._externals = externals;
+	constructor({ dependencies, outputPath, pathPrefix, hash }: ExternalLoaderOptions) {
+		this._dependencies = dependencies;
 		this._outputPath = outputPath || 'externals';
 		this._hash = Boolean(hash);
 		this._pathPrefix = pathPrefix ? `${pathPrefix}/` : '';
@@ -60,7 +76,7 @@ export default class ExternalDojoLoaderPlugin {
 	apply(compiler: Compiler) {
 		const prefixPath = (path: string) => `${this._pathPrefix}${this._outputPath}/${path}`;
 
-		const toInject = this._externals.reduce((assets, external) => {
+		const toInject = this._dependencies.reduce((assets, external) => {
 				if (typeof external === 'string') {
 					return assets;
 				}
@@ -77,15 +93,13 @@ export default class ExternalDojoLoaderPlugin {
 					return assets.concat(inject.map(path => prefixPath(`${base}/${path}`)));
 				}
 
-				const location = (typeof inject === 'string' && `${base}/${inject}`) || to || from;
-
-				return assets.concat(prefixPath(location));
+				return assets.concat(prefixPath(`${base}${typeof inject === 'string' ? `/${inject}` : ''}`));
 			}, [] as string[]);
 
 		compiler.apply(new CopyWebpackPlugin(
-			this._externals.reduce((config, external) => (typeof external === 'string' || !external.from) ? config : config.concat([ {
-				from: `${external.from}`,
-				to: `${this._pathPrefix}${this._outputPath}/${external.to || external.from}`
+			this._dependencies.reduce((config, dependency) => (typeof dependency === 'string' || !dependency.from) ? config : config.concat([ {
+				from: `${dependency.from}`,
+				to: prefixPath(dependency.to || dependency.from)
 
 			} ]), [] as { from: string, to: string, transform?: Function }[])
 		));
