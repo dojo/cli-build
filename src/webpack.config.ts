@@ -182,9 +182,7 @@ function webpackConfig(args: Partial<BuildArgs>) {
 			}, () => {
 				return new HtmlWebpackPlugin({
 					inject: true,
-					chunks: [
-						'src/main'
-					],
+					chunks: [ 'src/main' ],
 					template: 'src/index.html'
 				});
 			}),
