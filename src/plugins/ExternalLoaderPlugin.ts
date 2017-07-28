@@ -20,10 +20,10 @@ export type ExternalDescriptor = {
 	to?: string;
 
 	/**
-	 * If this is a boolean, it indicates whether to inject this dependency into the application. If inject is set to true, 
-	 * this	dependency should be a script or stylesheet. If this dependency is a directory and contains one or more stylesheets
-	 * or scripts that  should be injected into the application inject can be set to a string or array of strings that point to
-	 * the resource(s) to be injected. Only scripts and stylehseets can be injected.
+	 * If this is a boolean, it indicates whether to inject this dependency into the application. If inject is set to
+	 * true, this dependency should be a script or stylesheet. If this dependency is a directory and contains one or
+	 * more stylesheets or scripts that  should be injected into the application inject can be set to a string or array
+	 * of strings that point to the resource(s) to be injected. Only scripts and stylehseets can be injected.
 	 */
 	inject?: boolean | string | string[];
 
