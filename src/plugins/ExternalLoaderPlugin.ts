@@ -8,17 +8,6 @@ export type ExternalDescriptor = {
 	 * external loader.
 	 */
 	name?: string
-
-	/**
-	 * This is used to specify the location, relative to node_modules, from where the dependency should be copied.
-	 */
-	from: string;
-
-	/**
-	 * This can be used to specify the location, relative to the externals folder, where the dependency should be copied.
-	 */
-	to?: string;
-
 	/**
 	 * If this is a boolean, it indicates whether to inject this dependency into the application. If inject is set to
 	 * true, this dependency should be a script or stylesheet. If this dependency is a directory and contains one or
@@ -31,6 +20,16 @@ export type ExternalDescriptor = {
 	 * Optional property to indicate how this external should be loaded
 	 */
 	type?: string;
+
+	/**
+	 * This is used to specify the location, relative to the project root, from where the dependency should be copied.
+	 */
+	from?: string;
+
+	/**
+	 * This can be used to specify the location, relative to the externals folder, where the dependency should be copied.
+	 */
+	to?: string;
 };
 
 /**
@@ -42,21 +41,18 @@ export default class ExternalDojoLoaderPlugin {
 	private _externals: ExternalDep[];
 	private _outputPath: string;
 	private _pathPrefix: string;
-	private _loaderConfigurer?: string;
 	private _hash: boolean;
 
 	constructor(options: {
 		externals: ExternalDep[],
 		outputPath?: string;
 		pathPrefix?: string;
-		loaderConfigurer?: string;
 		hash?: boolean
 
 	}) {
-		const { externals, outputPath = 'externals', pathPrefix, loaderConfigurer, hash } = options;
+		const { externals, outputPath, pathPrefix, hash } = options;
 		this._externals = externals;
-		this._outputPath = outputPath;
-		this._loaderConfigurer = loaderConfigurer;
+		this._outputPath = outputPath || 'externals';
 		this._hash = Boolean(hash);
 		this._pathPrefix = pathPrefix ? `${pathPrefix}/` : '';
 	}
@@ -71,7 +67,7 @@ export default class ExternalDojoLoaderPlugin {
 
 				const { inject, to, from } = external;
 
-				if (!inject) {
+				if (!inject || !from) {
 					return assets;
 				}
 
@@ -84,18 +80,14 @@ export default class ExternalDojoLoaderPlugin {
 				const location = (typeof inject === 'string' && `${base}/${inject}`) || to || from;
 
 				return assets.concat(prefixPath(location));
-			}, [] as string[])
-			.concat(this._loaderConfigurer ? `${this._outputPath}/${this._loaderConfigurer}` : []);
+			}, [] as string[]);
 
 		compiler.apply(new CopyWebpackPlugin(
-			this._externals.reduce((config, external) => typeof external === 'string' ? config : config.concat([ {
-					from: `node_modules/${external.from}`,
-					to: `${this._pathPrefix}${this._outputPath}/${external.to || external.from}`
+			this._externals.reduce((config, external) => (typeof external === 'string' || !external.from) ? config : config.concat([ {
+				from: `${external.from}`,
+				to: `${this._pathPrefix}${this._outputPath}/${external.to || external.from}`
 
-				} ]), [] as { from: string, to: string, transform?: Function }[])
-				.concat(
-					this._loaderConfigurer ? { from: this._loaderConfigurer, to: `${this._outputPath}/${this._loaderConfigurer}` } : []
-				)
+			} ]), [] as { from: string, to: string, transform?: Function }[])
 		));
 		compiler.apply(
 			new HtmlWebpackIncludeAssetsPlugin({

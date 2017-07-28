@@ -33,14 +33,15 @@ describe('ExternalLoaderPlugin', () => {
 			{ from: 'abc', to: 'def', inject: true },
 			{ from: 'abc', to: 'def', inject: 'main' },
 			{ from: 'abc', inject: [ 'one', 'two', 'three', 'four' ]},
-			{ from: 'abc' }
+			{ from: 'abc' },
+			{ to: 'ignore', name: 'no-from' }
 		];
 		const expectedCopyArgs = [
-			{ from: 'node_modules/abc', to: 'OUTPUT_PATH/abc' },
-			{ from: 'node_modules/abc', to: 'OUTPUT_PATH/def' },
-			{ from: 'node_modules/abc', to: 'OUTPUT_PATH/def' },
-			{ from: 'node_modules/abc', to: 'OUTPUT_PATH/abc' },
-			{ from: 'node_modules/abc', to: 'OUTPUT_PATH/abc' }
+			{ from: 'abc', to: 'OUTPUT_PATH/abc' },
+			{ from: 'abc', to: 'OUTPUT_PATH/def' },
+			{ from: 'abc', to: 'OUTPUT_PATH/def' },
+			{ from: 'abc', to: 'OUTPUT_PATH/abc' },
+			{ from: 'abc', to: 'OUTPUT_PATH/abc' }
 		];
 
 		const expectedAssets = [
@@ -48,9 +49,8 @@ describe('ExternalLoaderPlugin', () => {
 			'OUTPUT_PATH/abc/three', 'OUTPUT_PATH/abc/four'
 		];
 
-		function test(outputPath: string, loaderConfigurer?: string) {
+		function test(outputPath: string) {
 			const expectedCopy = expectedCopyArgs.map(({ from, to }) => ({ from, to: to.replace('OUTPUT_PATH', outputPath) }));
-			const loaderCopy = { from: loaderConfigurer || '', to: `${outputPath}/${loaderConfigurer}` };
 			const expectedAssetInclude = {
 				assets: expectedAssets.map(asset => asset.replace('OUTPUT_PATH', outputPath)),
 				append: false,
@@ -58,10 +58,6 @@ describe('ExternalLoaderPlugin', () => {
 				files: 'index.html'
 			};
 
-			if (loaderConfigurer) {
-				expectedCopy.push(loaderCopy);
-				expectedAssetInclude.assets.push(`${outputPath}/${loaderConfigurer}`);
-			}
 			assert.equal(compiler.applied.length, 2);
 			const copyArgs = copyMock.args[0][0];
 			const assetIncludeArgs = assetsMock.args[0][0];
@@ -78,10 +74,9 @@ describe('ExternalLoaderPlugin', () => {
 		test('externals');
 
 		const outputPath = 'output-path';
-		const loaderConfigurer = 'path/loader-file.js';
-		plugin = new Plugin({ externals, outputPath, loaderConfigurer });
+		plugin = new Plugin({ externals, outputPath });
 		plugin.apply(compiler);
-		test(outputPath, loaderConfigurer);
+		test(outputPath);
 	});
 
 	it('should allow a prefix to be specified for copied file paths', () => {
@@ -95,7 +90,7 @@ describe('ExternalLoaderPlugin', () => {
 		let plugin = new Plugin({ externals, pathPrefix: 'prefix' });
 
 		const expectedCopyArgs = [
-			{ from: 'node_modules/abc', to: 'prefix/externals/def' }
+			{ from: 'abc', to: 'prefix/externals/def' }
 		];
 
 		const expectedAssetIncludeArgs = {

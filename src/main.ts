@@ -25,9 +25,7 @@ export interface BuildArgs extends Argv {
 	debug: boolean;
 	disableLazyWidgetDetection: boolean;
 	bundles: Bundles;
-	externals: ExternalDep[];
-	loaderConfigurer: string;
-	externalsOutputPath: string;
+	externals: { outputPath?: string; dependencies: ExternalDep[] };
 }
 
 interface ConfigFactory {

@@ -94,9 +94,13 @@ External libraries that can not be loaded normally via webpack can be included i
 configuration in the project's `.dojorc` file.
 `.dojorc` is a JSON file that contains configuration for Dojo 2 CLI tasks. Configuration for the `dojo build` task can be provided under the
 `build-webpack` property.
-Configuration for external dependencies can be provided via three properties within the `build-webpack` config: `externals`, `externalsOutputPath` and `loaderConfigurere`.
+Configuration for external dependencies can be provided under the `externals` property of the `build-webpack` config.
 
-`externals` is an array that defines which modules should be loaded via the external loader, and what files should be included in the build. Each entry can be one of two types:
+`externals` is an object, with two allowed properties.
+
+ `outputPath`: An optional property specifying an output path to which files should be copied.
+
+ `dependencies`: A required array that defines which modules should be loaded via the external loader, and what files should be included in the build. Each entry can be one of two types:
 * A string. In this case the entry simply indicates that this path, and any children of this path, should be loaded via the external loader
 * An object that provides additional configuration for dependencies that need to be copied into the built application. This object has the following properties:
 
@@ -107,18 +111,18 @@ Configuration for external dependencies can be provided via three properties wit
  | `name` | `string` | true | Indicates that this path, and any children of this path, should be loaded via the external loader |
  | `inject` | `string | string[] | boolean` | true | This property indicates that this dependency defines, or includes, scripts or stylesheets that should be loaded on the page. If `inject` is set to `true`, then the file at the location specified by `to` or `from` will be loaded on the page. If this dependency is a folder, and then `inject` can be set to a string or array of strings to define one or more files to inject. Each path in `inject` should be relative to `${externalsOutputPath}/${to}` or `${externalsOutputPath}/${from}` depending on whether `to` was provided. |
 
- `externalsOutputPath` is an optional configuration property that defines the location in the built application, relative to the root, where external dependencies should be placed. This defaults to `'externals'`
-
- `loaderConfigurer` is an optional property that points to a script that will be injected before the main bundle to perform any additional application specifiec configuration of the loader before the main app bundle runs. Below is a simple example of a `loaderConfigurer` script that configures a Dojo 1 loader.
-
-```javascript
-require({
-    baseUrl: 'externals',
-    packages: [
-        { location: 'third-party', name: 'third-party' },
-        { location: 'dojo', name: 'dojo' }
+ As an example the following config will inject `src/legacy/layer.js` into the application page, declare that modules `a`, `b`, and `c` are external
+ and should be delegated to the external layer, and then copies over the folder `node_modules/legacy-dep`, from which several files are injected. All of these files will be copied into the `externals` folder, which could be overridden by specifying the `outputPath` property in the `externals` config.
+ ```
+ "externals": {
+    "dependencies": [
+        "a",
+        "b",
+        "c",
+        { "from": "src/legacy/layer.js", "inject": true },
+        { "from": "node_modules/legacy-dep", "inject": [ "modulA/layer.js", "moduleA/layer.css", "moduleB/layer.js" ] }
     ]
-});
+ }
 ```
 
 Types for any dependencies included in `externals` can be installed in `node_modules/@types` just like any other dependency.

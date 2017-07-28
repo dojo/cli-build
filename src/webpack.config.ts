@@ -34,7 +34,8 @@ function webpackConfig(args: Partial<BuildArgs>) {
 
 	const cssLoader = ExtractTextPlugin.extract({ use: 'css-loader?sourceMap!resolve-url-loader' });
 	const localIdentName = (args.watch || args.withTests) ? '[name]__[local]__[hash:base64:5]' : '[hash:base64:8]';
-	const includesExternals = Boolean(args.externals && args.externals.length);
+	const externalDependencies = args.externals && args.externals.dependencies;
+	const includesExternals = Boolean(externalDependencies && externalDependencies.length);
 	const cssModuleLoader = ExtractTextPlugin.extract({
 		use: [
 			'css-module-decorator-loader',
@@ -76,7 +77,7 @@ function webpackConfig(args: Partial<BuildArgs>) {
 	const config: webpack.Config = {
 		externals: [
 			function (context, request, callback) {
-				const { externals = [] } = args;
+				const externals = externalDependencies || [];
 				function findExternalType(externals: (string | { name?: string; type?: string; })[]): string | void {
 					for (let external of externals) {
 						const name = external && (typeof external === 'string' ? external : external.name);
@@ -221,10 +222,9 @@ function webpackConfig(args: Partial<BuildArgs>) {
 			}),
 			...includeWhen(includesExternals, () => [
 				new ExternalLoaderPlugin({
-					externals: args.externals,
-					outputPath: args.externalsOutputPath,
-					pathPrefix: args.withTests ? '../_build/src' : '',
-					loaderConfigurer: args.loaderConfigurer
+					externals: externalDependencies,
+					outputPath: args.externals && args.externals.outputPath,
+					pathPrefix: args.withTests ? '../_build/src' : ''
 				})
 			])
 
