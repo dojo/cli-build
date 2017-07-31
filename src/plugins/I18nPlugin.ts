@@ -11,8 +11,8 @@ import NormalModule = require('webpack/lib/NormalModule');
 import NormalModuleReplacementPlugin = require('webpack/lib/NormalModuleReplacementPlugin');
 import Compiler = require('webpack/lib/Compiler');
 import InjectModulesPlugin from './InjectModulesPlugin';
-import getCldrUrls from './util/i18n';
-import { hasExtension, mergeUnique } from './util/main';
+import getCldrUrls from '../util/i18n';
+import { hasExtension, mergeUnique } from '../util/main';
 
 declare const require: Require;
 

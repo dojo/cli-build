@@ -7,6 +7,7 @@ import Promise from '@dojo/shim/Promise';
 const DtsCreator = require('typed-css-modules');
 const { getOptions } = require('loader-utils');
 const instances = require('ts-loader/dist/instances');
+import { isRelative } from '../../util/main';
 
 type TSLoaderInstances = {
 	files: {
@@ -27,8 +28,8 @@ type LoaderArgs = {
 	instanceName?: string;
 };
 
+const basePath = process.cwd();
 const creator: DtsCreatorInstance = new DtsCreator();
-
 const mTimeMap = new Map<string, Date>();
 
 function generateDTSFile(filePath: string): Promise<void> {
@@ -48,6 +49,10 @@ function getCssImport(node: Node): string | void {
 	if (node.kind === SyntaxKind.StringLiteral) {
 		const importPath = node.getText().replace(/\'|\"/g, '');
 		if (/.css$/.test(importPath)) {
+			if (!isRelative(importPath)) {
+				return importPath.charAt(0) === '/' ? importPath : resolve(basePath, 'node_modules', importPath);
+			}
+
 			const parentFileName = node.getSourceFile().fileName;
 			return resolve(dirname(parentFileName), importPath);
 		}
