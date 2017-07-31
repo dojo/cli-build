@@ -90,7 +90,7 @@ node_modules/.bin/webpack --config=config/build-webpack/webpack.config.js
 
 ### Interop with external libraries
 
-External libraries that can not be loaded normally via webpack can be included in a Dojo 2 providing an implementation of `require` or `define`, and some
+External libraries that cannot be loaded normally via webpack can be included in a Dojo 2 application by providing an implementation of `require` or `define`, and some
 configuration in the project's `.dojorc` file.
 `.dojorc` is a JSON file that contains configuration for Dojo 2 CLI tasks. Configuration for the `dojo build` task can be provided under the
 `build-webpack` property.
@@ -125,7 +125,7 @@ Configuration for external dependencies can be provided under the `externals` pr
  }
 ```
 
-Types for any dependencies included in `externals` can be installed in `node_modules/@types` just like any other dependency.
+Types for any dependencies included in `externals` can be installed in `node_modules/@types`, like any other dependency.
 
 ## How do I contribute?
 
