@@ -106,10 +106,10 @@ Configuration for external dependencies can be provided under the `externals` pr
 
  | Property | Type | optional | Description |
  | -------- | ---- | -------- | ----------- |
- | `from` | `string` | false  | A path relative to `node_modules` that tells the loader where it can find this dependency in order to copy it into the built application |
- | `to` | `string` | true | A path that replaces `from` as the location to copy this dependency to. Dependencies will be copied to `${externalsOutputPath}/${to}` or `${externalsOutputPath}/${from}` if `to` is not provided. |
- | `name` | `string` | true | Indicates that this path, and any children of this path, should be loaded via the external loader |
- | `inject` | `string | string[] | boolean` | true | This property indicates that this dependency defines, or includes, scripts or stylesheets that should be loaded on the page. If `inject` is set to `true`, then the file at the location specified by `to` or `from` will be loaded on the page. If this dependency is a folder, and then `inject` can be set to a string or array of strings to define one or more files to inject. Each path in `inject` should be relative to `${externalsOutputPath}/${to}` or `${externalsOutputPath}/${from}` depending on whether `to` was provided. |
+ | `from` | `string` | `false`  | A path relative to `node_modules` that tells the loader where it can find this dependency in order to copy it into the built application |
+ | `to` | `string` | `true` | A path that replaces `from` as the location to copy this dependency to. Dependencies will be copied to `${externalsOutputPath}/${to}` or `${externalsOutputPath}/${from}` if `to` is not provided. |
+ | `name` | `string` | `true` | Indicates that this path, and any children of this path, should be loaded via the external loader |
+ | `inject` | `string` | `string[] | boolean` | `true` | This property indicates that this dependency defines, or includes, scripts or stylesheets that should be loaded on the page. If `inject` is set to `true`, then the file at the location specified by `to` or `from` will be loaded on the page. If this dependency is a folder, and then `inject` can be set to a string or array of strings to define one or more files to inject. Each path in `inject` should be relative to `${externalsOutputPath}/${to}` or `${externalsOutputPath}/${from}` depending on whether `to` was provided. |
 
  As an example the following config will inject `src/legacy/layer.js` into the application page, declare that modules `a`, `b`, and `c` are external
  and should be delegated to the external layer, and then copies over the folder `node_modules/legacy-dep`, from which several files are injected. All of these files will be copied into the `externals` folder, which could be overridden by specifying the `outputPath` property in the `externals` config.
