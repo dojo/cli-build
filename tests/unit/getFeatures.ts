@@ -14,7 +14,7 @@ registerSuite({
 		assert.deepEqual(getFeatures({ features: 'ie11' }), {
 			'arraybuffer': true,
 			'blob': true,
-			'dom-mutationobserver': true,
+			'dom-mutationobserver': false,
 			'es-observable': false,
 			'es2017-object': false,
 			'es2017-string': false,
@@ -52,6 +52,7 @@ registerSuite({
 		assert.deepEqual(getFeatures({ features: [ 'ie11', 'node' ] }), {
 			arraybuffer: true,
 			blob: true,
+			'dom-mutationobserver': false,
 			'es2017-object': false,
 			'es2017-string': false,
 			'es-observable': false,
