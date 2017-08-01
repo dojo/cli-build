@@ -47,7 +47,7 @@ export default function getFeatures(args: Partial<BuildArgs>): FeatureMap {
 		return {};
 	}
 
-	// Reduce the array of loaded features to the largest set of features where the values don't
+	// Reduce the array of loaded features to the largest set of features where the values do not
 	// conflict with each other.  Once a value conflicts, it is removed from the feature map.
 	const seenFeatures = new Set<string>();
 	return (features as FeatureMap[]).reduce((previous, current) => {

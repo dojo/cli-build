@@ -1,7 +1,7 @@
 import { Node } from 'estree';
 
 export type EnterFunction = (this: { skip(): void; }, node: Node, parent: Node | null, prop: string | undefined, index: number | undefined) => void;
-export type LeaveFunction = (node: Node, parent: Node | null, prop: string | undefined, index: number | undefined) => void;
+export type LeaveFunction = (this: null, node: Node, parent: Node | null, prop: string | undefined, index: number | undefined) => void;
 
 export interface WalkOptions {
 	enter?: EnterFunction;
@@ -46,14 +46,14 @@ function visit(node: Node | null, parent: Node | null, enter?: EnterFunction, le
 	});
 
 	if (leave) {
-		leave(node, parent, prop, index);
+		leave.call(null, node, parent, prop, index);
 	}
 }
 
 /**
  * Walk a estree AST tree
  * @param node The root estree Node to start walking
- * @param param1 An object with an `enter` and `leave` properties
+ * @param param1 An object with `enter` and `leave` properties
  */
 export default function walk(node: Node, { enter, leave }: WalkOptions) {
 	visit(node, null, enter, leave);

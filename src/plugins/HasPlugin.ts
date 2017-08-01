@@ -23,7 +23,7 @@ export default class HasPlugin {
 		const features = this._features;
 		const dynamicFlags = new Set<string>();
 
-		// setup the dependencies for the subtitution
+		// setup the dependencies for the substitution
 		compiler.plugin('compilation', (compilation) => {
 			compilation.dependencyFactories.set(ConstDependency, new NullFactory());
 			compilation.dependencyTemplates.set(ConstDependency, new ConstDependency.Template());
@@ -43,7 +43,7 @@ export default class HasPlugin {
 		compiler.plugin('compilation', (compilation, data) => {
 			// and we want to hook the parser
 			data.normalModuleFactory.plugin('parser', (parser) => {
-				// we need direct access to the AST to properly figure out the has subtitution
+				// we need direct access to the AST to properly figure out the has substitution
 				parser.plugin('program', (ast: Program) => {
 					// some guards to help ensure we are only deaing with modules we care about
 					if (parser.state && parser.state.current && parser.state.current instanceof NormalModule) {
