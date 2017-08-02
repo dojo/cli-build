@@ -5,11 +5,13 @@ import { existsSync, readFileSync } from 'fs';
 import { BuildArgs } from './main';
 import Set from '@dojo/shim/Set';
 const IgnorePlugin = require('webpack/lib/IgnorePlugin');
+const DefinePlugin = require('webpack/lib/DefinePlugin');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const ExtractTextPlugin = require('extract-text-webpack-plugin');
 const OptimizeCssAssetsPlugin = require('optimize-css-assets-webpack-plugin');
 const BundleAnalyzerPlugin = require('webpack-bundle-analyzer-sunburst').BundleAnalyzerPlugin;
+const SWPrecacheWebpackPlugin = require('sw-precache-webpack-plugin');
 const postcssImport = require('postcss-import');
 const postcssCssNext = require('postcss-cssnext');
 
@@ -32,6 +34,7 @@ function webpackConfig(args: Partial<BuildArgs>) {
 
 	const cssLoader = ExtractTextPlugin.extract({ use: 'css-loader?sourceMap' });
 	const localIdentName = (args.watch || args.withTests) ? '[name]__[local]__[hash:base64:5]' : '[hash:base64:8]';
+	const includeServiceWorker = Boolean(!args.withTests && !args.watch && args.serviceWorker);
 	const cssModuleLoader = ExtractTextPlugin.extract({
 		use: [
 			'css-module-decorator-loader',
@@ -103,6 +106,10 @@ function webpackConfig(args: Partial<BuildArgs>) {
 			};
 		}),
 		plugins: [
+			...includeWhen(includeServiceWorker, () => [ new SWPrecacheWebpackPlugin({
+				minify: true,
+				staticFileGlobsIgnorePatterns: [ /\.map$/ ]
+			}) ]),
 			new webpack.BannerPlugin(readFileSync(require.resolve(`${packagePath}/banner.md`), 'utf8')),
 			new IgnorePlugin(/request\/providers\/node/),
 			new NormalModuleReplacementPlugin(/\.m.css$/, result => {
@@ -115,6 +122,9 @@ function webpackConfig(args: Partial<BuildArgs>) {
 					replacedModules.add(requestFileName);
 					result.request = result.request.replace(/\.m\.css$/, '.m.css.js');
 				}
+			}),
+			new DefinePlugin({
+				'process.env.DOJO.SERVICE_WORKERS': JSON.stringify(includeServiceWorker)
 			}),
 			new webpack.ContextReplacementPlugin(/dojo-app[\\\/]lib/, { test: () => false }),
 			includeWhen(args.element, args => {

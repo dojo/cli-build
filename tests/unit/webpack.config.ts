@@ -20,10 +20,12 @@ function start(cli = true) {
 		'extract-text-webpack-plugin',
 		'html-webpack-plugin',
 		'optimize-css-assets-webpack-plugin',
+		'sw-precache-webpack-plugin',
 		'postcss-cssnext',
 		'postcss-import',
 		'webpack-bundle-analyzer-sunburst',
 		'webpack/lib/IgnorePlugin',
+		'webpack/lib/DefinePlugin',
 		'webpack'
 	]);
 	mockModule.start();
