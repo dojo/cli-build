@@ -98,10 +98,22 @@ declare module 'webpack/lib/webpack' {
 			test?: Condition;
 		}
 
+		interface Node {
+			console?: boolean;
+			global?: boolean;
+			process?: boolean;
+			__filename?: boolean | 'empty' | 'mock' | undefined;
+			__dirname?: boolean | 'empty' | 'mock' | undefined;
+			Buffer?: boolean;
+			setImmediate?: boolean;
+			[moduleName: string]: boolean | 'empty' | 'mock' | undefined;
+		}
+
 		interface Config {
 			entry: string | string[] | { [key: string]: string | string[] };
 			output: Output;
 			module: Module;
+			node: Node;
 			resolve?: Resolve;
 			resolveLoader?: {
 				modules?: string[];
