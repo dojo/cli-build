@@ -99,13 +99,13 @@ declare module 'webpack/lib/webpack' {
 		}
 
 		interface Node {
-			console?: boolean;
+			console?: boolean | 'mock';
 			global?: boolean;
 			process?: boolean;
-			__filename?: boolean | 'empty' | 'mock' | undefined;
-			__dirname?: boolean | 'empty' | 'mock' | undefined;
-			Buffer?: boolean;
-			setImmediate?: boolean;
+			__filename?: boolean | 'mock';
+			__dirname?: boolean | 'mock';
+			Buffer?: boolean | 'mock';
+			setImmediate?: boolean | 'mock' | 'empty';
 			[moduleName: string]: boolean | 'empty' | 'mock' | undefined;
 		}
 
@@ -113,7 +113,7 @@ declare module 'webpack/lib/webpack' {
 			entry: string | string[] | { [key: string]: string | string[] };
 			output: Output;
 			module: Module;
-			node: Node;
+			node?: Node | false;
 			resolve?: Resolve;
 			resolveLoader?: {
 				modules?: string[];
