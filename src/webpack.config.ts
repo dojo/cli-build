@@ -4,8 +4,8 @@ import * as path from 'path';
 import { existsSync, readFileSync } from 'fs';
 import { BuildArgs } from './main';
 import Set from '@dojo/shim/Set';
+import StaticOptmizePlugin from '@dojo/static-optimize-plugin/StaticOptimizePlugin';
 import GetFeaturesType from './getFeatures';
-import HasPluginType from './plugins/HasPlugin';
 const IgnorePlugin = require('webpack/lib/IgnorePlugin');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
@@ -168,7 +168,7 @@ function webpackConfig(args: Partial<BuildArgs>) {
 				ignoredModules,
 				mapAppModules: args.withTests
 			}),
-			new HasPlugin(hasFlags),
+			new StaticOptmizePlugin(hasFlags),
 			...includeWhen(args.element, () => {
 				return [ new webpack.optimize.CommonsChunkPlugin({
 					name: 'widget-core',
