@@ -1,13 +1,22 @@
 import { Command, EjectOutput, Helper, OptionsHelper } from '@dojo/interfaces/cli';
-import * as fs from 'fs';
-import * as path from 'path';
 import { underline } from 'chalk';
-import webpack = require('webpack');
+import * as fs from 'fs';
 import * as net from 'net';
+import * as path from 'path';
 import { ExternalDep } from './plugins/ExternalLoaderPlugin';
+import webpack = require('webpack');
+
 const WebpackDevServer: any = require('webpack-dev-server');
 const config: ConfigFactory = require('./webpack.config');
 const pkgDir = require('pkg-dir');
+
+const portRangeDelimeter = ':';
+const portListDelimeter = ',';
+const defaultPortRange = '9999:9990';
+
+function portStringToInt(portString: string) {
+	return parseInt(portString, 10);
+}
 
 export interface Bundles {
 	[key: string]: string[];
@@ -124,24 +133,26 @@ async function watch(config: webpack.Config, options: WebpackOptions, args: Buil
 	})(config.entry);
 
 	const compiler = webpack(config);
-	const portRange = String(args.port || '9999:9990');
+	const portRange = String(args.port || defaultPortRange);
 	let ports: number[] = [];
 	let serverPort: number | undefined;
 
-	if (portRange.indexOf(':') >= 0) {
-		let [low, high] = portRange.split(':').map(p => parseInt(p, 10));
+	if (portRange.indexOf(portRangeDelimeter) >= 0) {
+		let [ low, high ] = portRange.split(portRangeDelimeter).map(portStringToInt);
 
 		if (high < low) {
-			[low, high] = [high, low];
+			[ low, high ] = [ high, low ];
 		}
 
 		for (let port = high; port >= low; port--) {
 			ports.push(port);
 		}
-	} else if (portRange.indexOf(',') >= 0) {
-		ports = portRange.split(',').map(p => parseInt(p, 10));
-	} else {
-		ports = [parseInt(portRange, 10)];
+	}
+	else if (portRange.indexOf(portListDelimeter) >= 0) {
+		ports = portRange.split(portListDelimeter).map(portStringToInt);
+	}
+	else {
+		ports.push(portStringToInt(portRange));
 	}
 
 	for (let i = 0; i < ports.length; i++) {

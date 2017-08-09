@@ -66,7 +66,7 @@ describe('main', () => {
 				},
 				listen() {
 					if (inUse) {
-						callbacks['error']({code: errorCode});
+						callbacks['error']({code: errorCode, message: 'test error'});
 					} else {
 						callbacks['listening']();
 					}
@@ -88,7 +88,7 @@ describe('main', () => {
 				},
 				listen(port: number) {
 					if (ports.find(p => p === port)) {
-						callbacks['error']({code: 'EADDRINUSE'});
+						callbacks['error']({code: 'EADDRINUSE', message: 'test error'});
 					} else {
 						callbacks['listening']();
 					}
@@ -204,7 +204,7 @@ describe('main', () => {
 		return moduleUnderTest.run(getMockConfiguration(), { watch: true }).then(
 			throwImmediately,
 			(e: Error) => {
-				assert.isTrue(e.message.indexOf('Unexpected error') >= 0);
+				assert.strictEqual(e.message, 'Unexpected error test error');
 			}
 		);
 	});
