@@ -100,7 +100,8 @@ async function isPortAvailable(port: number): Promise<boolean> {
 		server.once('error', function (err: any) {
 			if (err.code === 'EADDRINUSE') {
 				resolve(false);
-			} else {
+			}
+			else {
 				reject(new Error(`Unexpected error ${err.message}`));
 			}
 		});
