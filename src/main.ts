@@ -1,4 +1,4 @@
-import { Command, EjectOutput, Helper, OptionsHelper } from '@dojo/cli/interfaces';
+import { Command, EjectOutput, Helper, OptionsHelper } from '@dojo/interfaces/cli';
 import { Argv } from 'yargs';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -14,7 +14,6 @@ export interface Bundles {
 }
 
 export interface BuildArgs extends Argv {
-	locale: string;
 	messageBundles: string | string[];
 	supportedLocales: string | string[];
 	watch: boolean;
@@ -26,6 +25,7 @@ export interface BuildArgs extends Argv {
 	disableLazyWidgetDetection: boolean;
 	bundles: Bundles;
 	externals: { outputPath?: string; dependencies: ExternalDep[] };
+	[index: string]: any;
 }
 
 interface ConfigFactory {
@@ -41,7 +41,7 @@ interface WebpackOptions {
 }
 
 function getConfigArgs(args: BuildArgs): Partial<BuildArgs> {
-	const { locale, messageBundles, supportedLocales, watch } = args;
+	const { messageBundles, supportedLocales, watch } = args;
 	const options: Partial<BuildArgs> = Object.keys(args).reduce((options: Partial<BuildArgs>, key: string) => {
 		if (key !== 'messageBundles' && key !== 'supportedLocales') {
 			options[key] = args[key];
