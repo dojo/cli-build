@@ -1,5 +1,4 @@
 import { Command, EjectOutput, Helper, OptionsHelper } from '@dojo/interfaces/cli';
-import { Argv } from 'yargs';
 import * as fs from 'fs';
 import * as path from 'path';
 import { underline } from 'chalk';
@@ -13,7 +12,7 @@ export interface Bundles {
 	[key: string]: string[];
 }
 
-export interface BuildArgs extends Argv {
+export interface BuildArgs {
 	messageBundles: string | string[];
 	supportedLocales: string | string[];
 	watch: boolean;
@@ -154,7 +153,7 @@ function buildNpmDependencies(): any {
 	}
 }
 
-const command: Command = {
+const command: Command<BuildArgs> = {
 	description: 'create a build of your application',
 	register(options: OptionsHelper): void {
 		options('w', {
