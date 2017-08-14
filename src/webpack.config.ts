@@ -18,7 +18,6 @@ const isCLI = process.env.DOJO_CLI;
 const packagePath = isCLI ? '.' : '@dojo/cli-build-webpack';
 const CoreLoadPlugin = require(`${packagePath}/plugins/CoreLoadPlugin`).default;
 const ExternalLoaderPlugin = require(`${packagePath}/plugins/ExternalLoaderPlugin`).default;
-const HasPlugin: typeof HasPluginType = require(`${packagePath}/plugins/HasPlugin`).default;
 const I18nPlugin = require(`${packagePath}/plugins/I18nPlugin`).default;
 const IgnoreUnmodifiedPlugin = require(`${packagePath}/plugins/IgnoreUnmodifiedPlugin`).default;
 const getFeatures: typeof GetFeaturesType = require(`${packagePath}/getFeatures`).default;
@@ -173,8 +172,8 @@ function webpackConfig(args: Partial<BuildArgs>) {
 				return [ new webpack.optimize.CommonsChunkPlugin({
 					name: 'widget-core',
 					filename: 'widget-core.js'
-				})
-			]),
+				}) ];
+			}),
 			...includeWhen(!args.watch && !args.withTests, () => {
 				return [ new webpack.optimize.UglifyJsPlugin({
 					sourceMap: true,
