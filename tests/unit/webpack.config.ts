@@ -14,6 +14,13 @@ let mockModule: MockModule;
 let config: Config;
 
 function start(cli = true) {
+	const mockPackageJson = {
+		name: resolve(basePath, 'package.json'),
+		mock: {
+			name: '@namespace/package'
+		}
+	};
+
 	mockModule = new MockModule('../../src/webpack.config');
 	mockModule.dependencies([
 		'./plugins/CoreLoadPlugin',
@@ -27,7 +34,8 @@ function start(cli = true) {
 		'postcss-import',
 		'webpack-bundle-analyzer-sunburst',
 		'webpack/lib/IgnorePlugin',
-		'webpack'
+		'webpack',
+		mockPackageJson
 	]);
 	mockModule.start();
 
@@ -63,7 +71,7 @@ describe('webpack.config.ts', () => {
 		});
 
 		it('set the jsonFunction from the package name', () => {
-			assert.strictEqual(config.output.jsonpFunction, 'dojoWebpackJsonp_dojo_cli_build_webpack');
+			assert.strictEqual(config.output.jsonpFunction, 'dojoWebpackJsonp_namespace_package');
 		});
 	}
 
