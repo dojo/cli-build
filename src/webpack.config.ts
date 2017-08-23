@@ -34,7 +34,7 @@ type IncludeCallback = (args: BuildArgs) => any;
 function getJsonpFunction(name?: string) {
 	let jsonpFunction = 'dojoWebpackJsonp';
 	if (name) {
-		jsonpFunction += '_' + name.replace(/[^a-z0-9_]/g, ' ').trim().replace(/\s/g, '_');
+		jsonpFunction += '_' + name.replace(/[^a-z0-9_]/g, ' ').trim().replace(/\s+/g, '_');
 	}
 	return jsonpFunction;
 }

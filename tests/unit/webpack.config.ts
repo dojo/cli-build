@@ -17,7 +17,7 @@ function start(cli = true) {
 	const mockPackageJson = {
 		name: resolve(basePath, 'package.json'),
 		mock: {
-			name: '@namespace/package'
+			name: '@namespace/complex$-package-name'
 		}
 	};
 
@@ -71,7 +71,7 @@ describe('webpack.config.ts', () => {
 		});
 
 		it('set the jsonFunction from the package name', () => {
-			assert.strictEqual(config.output.jsonpFunction, 'dojoWebpackJsonp_namespace_package');
+			assert.strictEqual(config.output.jsonpFunction, 'dojoWebpackJsonp_namespace_complex_package_name');
 		});
 	}
 
