@@ -16,6 +16,7 @@ const configString = readFileSync(configPath);
 const dirname = resolve(basePath, '_build/src');
 let mockModule: MockModule;
 let config: Config;
+let allConfigs: Config[];
 
 function start(cli = true, args: Partial<BuildArgs> = {}) {
 	const mockPackageJson = {
@@ -57,7 +58,8 @@ function start(cli = true, args: Partial<BuildArgs> = {}) {
 
 	const js = configString.toString('utf8').replace(/\$\{packagePath\}/g, dirname.replace(/\\/g, '/').replace(/^[cC]:/, ''));
 	runInContext(js, context);
-	config = cli ? context.module.exports(args) : context.module.exports;
+	allConfigs = cli ? context.module.exports(args) : context.module.exports;
+	config = allConfigs[0];
 }
 
 function getUMDCompatLoader(args = {}) {
@@ -194,6 +196,25 @@ describe('webpack.config.ts', () => {
 			assert.isDefined(loader);
 			assert.isUndefined((<any> loader.options).emitErrors);
 			assert.isUndefined((<any> loader.options).failOnHint);
+		});
+	});
+
+	describe('with tests', () => {
+		beforeEach(() => {
+			start(true, {
+				withTests: true
+			});
+		});
+
+		runTests();
+
+		it('should create two build configurations', () => {
+			assert.lengthOf(allConfigs, 2, 'should have created two build configurations');
+		});
+
+		it('should have a web target, and a node target', () => {
+			assert.strictEqual(allConfigs[0].target, 'web');
+			assert.strictEqual(allConfigs[1].target, 'node');
 		});
 	});
 });
