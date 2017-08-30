@@ -23,6 +23,9 @@ const IgnoreUnmodifiedPlugin = require(`${packagePath}/plugins/IgnoreUnmodifiedP
 const getFeatures: typeof GetFeaturesType = require(`${packagePath}/getFeatures`).default;
 const basePath = process.cwd();
 
+const packageJsonPath = path.join(basePath, 'package.json');
+const packageJson = existsSync(packageJsonPath) ? require(packageJsonPath) : undefined;
+
 let tslintExists = false;
 try {
 	require(path.join(basePath, 'tslint'));
@@ -31,19 +34,27 @@ try {
 
 type IncludeCallback = (args: BuildArgs) => any;
 
+function getJsonpFunction(name?: string) {
+	let jsonpFunction = 'dojoWebpackJsonp';
+	if (name) {
+		jsonpFunction += '_' + name.replace(/[^a-z0-9_]/g, ' ').trim().replace(/\s+/g, '_');
+	}
+	return jsonpFunction;
+}
+
 function webpackConfig(args: Partial<BuildArgs>) {
 	args = args || {};
 
 	const hasFlags = getFeatures(args);
 
-	const cssLoader = ExtractTextPlugin.extract({ use: 'css-loader?sourceMap!resolve-url-loader' });
+	const cssLoader = ExtractTextPlugin.extract({ use: 'css-loader?sourceMap' });
 	const localIdentName = (args.watch || args.withTests) ? '[name]__[local]__[hash:base64:5]' : '[hash:base64:8]';
 	const externalDependencies = args.externals && args.externals.dependencies;
 	const includesExternals = Boolean(externalDependencies && externalDependencies.length);
 	const cssModuleLoader = ExtractTextPlugin.extract({
 		use: [
 			'css-module-decorator-loader',
-			`css-loader?modules&sourceMap&importLoaders=1&localIdentName=${localIdentName}!resolve-url-loader`,
+			`css-loader?modules&sourceMap&importLoaders=1&localIdentName=${localIdentName}`,
 			{
 				loader: 'postcss-loader?sourceMap',
 				options: {
@@ -70,6 +81,14 @@ function webpackConfig(args: Partial<BuildArgs>) {
 			});
 		});
 	}
+
+	const outputConfig: webpack.Output = {
+		chunkFilename: '[name].js',
+		filename: '[name].js',
+		jsonpFunction: getJsonpFunction(packageJson && packageJson.name),
+		libraryTarget: 'umd',
+		path: path.resolve('./dist')
+	};
 
 	const config: webpack.Config = {
 		externals: [
@@ -236,18 +255,17 @@ function webpackConfig(args: Partial<BuildArgs>) {
 			])
 
 		],
-		output: {
-			libraryTarget: 'umd',
-			library: '[name]',
-			umdNamedDefine: true,
-			path: includeWhen(args.element, args => {
-				return path.resolve(`./dist/${args.elementPrefix}`);
-			}, () => {
-				return path.resolve('./dist');
-			}),
-			filename: '[name].js',
-			chunkFilename: '[name].js'
-		},
+		output: includeWhen(args.element, args => {
+			return Object.assign(outputConfig, {
+				libraryTarget: 'jsonp',
+				path: path.resolve(`./dist/${args.elementPrefix}`)
+			});
+		}, () => {
+			return Object.assign(outputConfig, {
+				library: '[name]',
+				umdNamedDefine: true
+			});
+		}),
 		devtool: 'source-map',
 		resolve: {
 			modules: [
