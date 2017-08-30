@@ -13,6 +13,7 @@ export interface Bundles {
 }
 
 export interface BuildArgs {
+	[index: string]: any;
 	messageBundles: string | string[];
 	supportedLocales: string | string[];
 	watch: boolean;
@@ -24,7 +25,6 @@ export interface BuildArgs {
 	disableLazyWidgetDetection: boolean;
 	bundles: Bundles;
 	externals: { outputPath?: string; dependencies: ExternalDep[] };
-	[index: string]: any;
 	features: string | string[];
 }
 
