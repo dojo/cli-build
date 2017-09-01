@@ -35,7 +35,7 @@ export interface BuildArgs {
 	disableLazyWidgetDetection: boolean;
 	bundles: Bundles;
 	externals: { outputPath?: string; dependencies: ExternalDep[] };
-	features: string | string[];
+	features: string| string[];
 }
 
 interface ConfigFactory {
@@ -54,7 +54,7 @@ function getConfigArgs(args: BuildArgs): Partial<BuildArgs> {
 	const { messageBundles, supportedLocales, watch } = args;
 	const options: Partial<BuildArgs> = Object.keys(args).reduce((options: Partial<BuildArgs>, key: string) => {
 		if (key !== 'messageBundles' && key !== 'supportedLocales') {
-			options[key] = args[key];
+			options[ key ] = args[ key ];
 		}
 		return options;
 	}, Object.create(null));
@@ -73,7 +73,8 @@ function getConfigArgs(args: BuildArgs): Partial<BuildArgs> {
 
 		if (matches && matches[ 1 ]) {
 			options.elementPrefix = matches[ 1 ].replace(/[A-Z][a-z]/g, '-\$&').replace(/^-+/g, '').toLowerCase();
-		} else {
+		}
+		else {
 			console.error(`"${args.element}" does not follow the pattern "createXYZElement". Use --elementPrefix to name element.`);
 			process.exit();
 		}
@@ -85,9 +86,9 @@ function getConfigArgs(args: BuildArgs): Partial<BuildArgs> {
 function mergeConfigArgs(...sources: BuildArgs[]): BuildArgs {
 	return sources.reduce((args: BuildArgs, source: BuildArgs) => {
 		Object.keys(source).forEach((key: string) => {
-			const value = source[key];
+			const value = source[ key ];
 			if (typeof value !== 'undefined') {
-				args[key] = source[key];
+				args[ key ] = source[ key ];
 			}
 		});
 		return args;
@@ -122,9 +123,9 @@ async function watch(config: webpack.Config, options: WebpackOptions, args: Buil
 	config.entry = (function (entry) {
 		if (typeof entry === 'object' && !Array.isArray(entry)) {
 			Object.keys(entry).forEach((key) => {
-				const value = entry[key];
+				const value = entry[ key ];
 				if (typeof value === 'string') {
-					entry[key] = [ 'webpack-dev-server/client?', value ];
+					entry[ key ] = [ 'webpack-dev-server/client?', value ];
 				}
 				else {
 					value.unshift('webpack-dev-server/client?');
@@ -196,6 +197,14 @@ function compile(config: webpack.Config, options: WebpackOptions): Promise<void>
 				}
 
 				console.log(stats.toString(options.stats));
+
+				if (stats.compilation && stats.compilation.errors && stats.compilation.errors.length > 0) {
+					reject({
+						exitCode: 1,
+						message: ''
+					});
+					return;
+				}
 			}
 			resolve();
 		});

@@ -1,9 +1,9 @@
+import * as fs from 'fs';
 import { afterEach, beforeEach, describe, it } from 'intern!bdd';
 import * as assert from 'intern/chai!assert';
+import * as sinon from 'sinon';
 import MockModule from '../support/MockModule';
 import { throwImmediately } from '../support/util';
-import * as sinon from 'sinon';
-import * as fs from 'fs';
 
 describe('main', () => {
 
@@ -20,7 +20,7 @@ describe('main', () => {
 			configuration: {
 				get() {
 					if (config) {
-						return config['build-webpack'];
+						return config[ 'build-webpack' ];
 					}
 				}
 			}
@@ -108,31 +108,31 @@ describe('main', () => {
 		);
 		assert.deepEqual(
 			options.secondCall.args,
-			[ 'p', { alias: 'port', describe: 'port to serve on when using --watch. Can be a single port (9999), a range (9999:9990) or a list (9999,9997)', type: 'string' }]
+			[ 'p', { alias: 'port', describe: 'port to serve on when using --watch. Can be a single port (9999), a range (9999:9990) or a list (9999,9997)', type: 'string' } ]
 		);
 		assert.deepEqual(
 			options.thirdCall.args,
-			[ 't', { alias: 'with-tests', describe: 'build tests as well as sources' }]
+			[ 't', { alias: 'with-tests', describe: 'build tests as well as sources' } ]
 		);
 		assert.deepEqual(
-			options.args[3],
-			[ 'locale', { describe: 'The default locale for the application', type: 'string' }]
+			options.args[ 3 ],
+			[ 'locale', { describe: 'The default locale for the application', type: 'string' } ]
 		);
 		assert.deepEqual(
-			options.args[4],
-			[ 'supportedLocales', { describe: 'Any additional locales supported by the application', type: 'array' }]
+			options.args[ 4 ],
+			[ 'supportedLocales', { describe: 'Any additional locales supported by the application', type: 'array' } ]
 		);
 		assert.deepEqual(
-			options.args[5],
-			[ 'messageBundles', { describe: 'Any message bundles to include in the build', type: 'array' }]
+			options.args[ 5 ],
+			[ 'messageBundles', { describe: 'Any message bundles to include in the build', type: 'array' } ]
 		);
 		assert.deepEqual(
-			options.args[6],
-			[ 'element', { describe: 'Path to a custom element descriptor factory', type: 'string' }]
+			options.args[ 6 ],
+			[ 'element', { describe: 'Path to a custom element descriptor factory', type: 'string' } ]
 		);
 		assert.deepEqual(
-			options.args[7],
-			[ 'elementPrefix', { describe: 'Output file for custom element', type: 'string' }]
+			options.args[ 7 ],
+			[ 'elementPrefix', { describe: 'Output file for custom element', type: 'string' } ]
 		);
 
 		assert.deepEqual(
@@ -145,6 +145,24 @@ describe('main', () => {
 		const run = sandbox.stub().yields(false, 'some stats');
 		mockWebpack.returns({ run });
 		return moduleUnderTest.run(getMockConfiguration(), {}).then(() => {
+			assert.isTrue(run.calledOnce);
+			assert.isTrue((<sinon.SinonStub> console.log).calledWith('some stats'));
+		});
+	});
+
+	it('should run compile and log results on failure, but reject the promise', () => {
+		const run = sandbox.stub().yields(false, {
+			toString() {
+				return 'some stats';
+			},
+			compilation: {
+				errors: [ 'some error' ]
+			}
+		});
+		mockWebpack.returns({ run });
+		return moduleUnderTest.run(getMockConfiguration(), {}).then(() => {
+			throw new Error('shouldnt have succeeded');
+		}, () => {
 			assert.isTrue(run.calledOnce);
 			assert.isTrue((<sinon.SinonStub> console.log).calledWith('some stats'));
 		});
@@ -181,7 +199,7 @@ describe('main', () => {
 			assert.isTrue(mockWebpackDevServer.listen.calledOnce);
 			assert.isTrue((<sinon.SinonStub> console.log).firstCall.calledWith('Starting server on http://localhost:9999'));
 			assert.equal(mockWebpackConfig.devtool, 'inline-source-map');
-			assert.equal(mockWebpackConfig.entry['src/main'][0], 'webpack-dev-server/client?');
+			assert.equal(mockWebpackConfig.entry[ 'src/main' ][ 0 ], 'webpack-dev-server/client?');
 		});
 	});
 
