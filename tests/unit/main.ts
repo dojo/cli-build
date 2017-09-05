@@ -20,7 +20,7 @@ describe('main', () => {
 			configuration: {
 				get() {
 					if (config) {
-						return config[ 'build-webpack' ];
+						return config['build-webpack'];
 					}
 				}
 			}
@@ -199,7 +199,7 @@ describe('main', () => {
 			assert.isTrue(mockWebpackDevServer.listen.calledOnce);
 			assert.isTrue((<sinon.SinonStub> console.log).firstCall.calledWith('Starting server on http://localhost:9999'));
 			assert.equal(mockWebpackConfig.devtool, 'inline-source-map');
-			assert.equal(mockWebpackConfig.entry[ 'src/main' ][ 0 ], 'webpack-dev-server/client?');
+			assert.equal(mockWebpackConfig.entry[ 'src/main' ][0], 'webpack-dev-server/client?');
 		});
 	});
 
