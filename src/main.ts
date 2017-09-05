@@ -36,6 +36,7 @@ export interface BuildArgs {
 	bundles: Bundles;
 	externals: { outputPath?: string; dependencies: ExternalDep[] };
 	features: string | string[];
+	force: boolean;
 }
 
 interface ConfigFactory {
@@ -182,7 +183,7 @@ async function watch(config: webpack.Config, options: WebpackOptions, args: Buil
 	});
 }
 
-function compile(config: webpack.Config, options: WebpackOptions): Promise<void> {
+function compile(config: webpack.Config, options: WebpackOptions, args: BuildArgs): Promise<void> {
 	const compiler = webpack(config);
 	return new Promise<void>((resolve, reject) => {
 		compiler.run((err, stats) => {
@@ -198,10 +199,10 @@ function compile(config: webpack.Config, options: WebpackOptions): Promise<void>
 
 				console.log(stats.toString(options.stats));
 
-				if (stats.compilation && stats.compilation.errors && stats.compilation.errors.length > 0) {
+				if (stats.compilation && stats.compilation.errors && stats.compilation.errors.length > 0 && !args.force) {
 					reject({
 						exitCode: 1,
-						message: ''
+						message: 'The build failed with errors. Use the --force to overcome this obstacle.'
 					});
 					return;
 				}
@@ -288,6 +289,12 @@ const command: Command<BuildArgs> = {
 			describe: 'Features sets to optimize the build with\n\nValid values are: android, chrome, edge, firefox, ie11, ios, node, node8, safari',
 			type: 'array'
 		});
+
+		options('force', {
+			describe: 'Ignore build errors and use a successful return code',
+			default: false,
+			type: 'boolean'
+		});
 	},
 	run(helper: Helper, args: BuildArgs): Promise<void> {
 		const dojoRc = helper.configuration.get() || Object.create(null);
@@ -304,7 +311,7 @@ const command: Command<BuildArgs> = {
 			return watch(config(configArgs), options, args) as Promise<void>;
 		}
 		else {
-			return compile(config(configArgs), options) as Promise<void>;
+			return compile(config(configArgs), options, args) as Promise<void>;
 		}
 	},
 	eject(helper: Helper) {
