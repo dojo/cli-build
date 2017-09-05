@@ -115,28 +115,28 @@ describe('main', () => {
 			[ 't', { alias: 'with-tests', describe: 'build tests as well as sources' } ]
 		);
 		assert.deepEqual(
-			options.args[ 3 ],
+			options.args[3],
 			[ 'locale', { describe: 'The default locale for the application', type: 'string' } ]
 		);
 		assert.deepEqual(
-			options.args[ 4 ],
+			options.args[4],
 			[ 'supportedLocales', { describe: 'Any additional locales supported by the application', type: 'array' } ]
 		);
 		assert.deepEqual(
-			options.args[ 5 ],
+			options.args[5],
 			[ 'messageBundles', { describe: 'Any message bundles to include in the build', type: 'array' } ]
 		);
 		assert.deepEqual(
-			options.args[ 6 ],
+			options.args[6],
 			[ 'element', { describe: 'Path to a custom element descriptor factory', type: 'string' } ]
 		);
 		assert.deepEqual(
-			options.args[ 7 ],
+			options.args[7],
 			[ 'elementPrefix', { describe: 'Output file for custom element', type: 'string' } ]
 		);
 
 		assert.deepEqual(
-			options.args[ 8 ],
+			options.args[8],
 			[ 'debug', { describe: 'Generate package information useful for debugging', type: 'boolean' } ]
 		);
 	});
@@ -199,7 +199,7 @@ describe('main', () => {
 			assert.isTrue(mockWebpackDevServer.listen.calledOnce);
 			assert.isTrue((<sinon.SinonStub> console.log).firstCall.calledWith('Starting server on http://localhost:9999'));
 			assert.equal(mockWebpackConfig.devtool, 'inline-source-map');
-			assert.equal(mockWebpackConfig.entry[ 'src/main' ][0], 'webpack-dev-server/client?');
+			assert.equal(mockWebpackConfig.entry['src/main'][0], 'webpack-dev-server/client?');
 		});
 	});
 
