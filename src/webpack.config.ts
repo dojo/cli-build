@@ -115,10 +115,12 @@ function webpackConfig(args: Partial<BuildArgs>) {
 		});
 	}
 
+	const jsonpFunctionName = getJsonpFunction(packageJson && packageJson.name);
+
 	const outputConfig: webpack.Output = {
 		chunkFilename: '[name].js',
 		filename: '[name].js',
-		jsonpFunction: getJsonpFunction(packageJson && packageJson.name),
+		jsonpFunction: jsonpFunctionName,
 		libraryTarget: 'umd',
 		path: path.resolve('./dist')
 	};
@@ -179,6 +181,16 @@ function webpackConfig(args: Partial<BuildArgs>) {
 		plugins: [
 			new AutoRequireWebpackPlugin(/src\/main/),
 			new webpack.BannerPlugin(readFileSync(require.resolve(`${packagePath}/banner.md`), 'utf8')),
+			/**
+			 * We're using the banner plugin here to fix a bug with the webpack jsonp function. When the function is used
+			 * in the test bundle, the variable is not scoped at all, so it has, in our case, a function scope in node.
+			 * This little hack makes sure the function is defined by grabbing it from the window scope (jsdom).
+			 */
+			new webpack.BannerPlugin(<any> {
+				banner: `var ${jsonpFunctionName} = ${jsonpFunctionName} || window["${jsonpFunctionName}"];`,
+				raw: true,
+				test: /tests\/unit\/all\.*/
+			}),
 			new IgnorePlugin(/request\/providers\/node/),
 			new NormalModuleReplacementPlugin(/\.m.css$/, result => {
 				const requestFileName = path.resolve(result.context, result.request);
