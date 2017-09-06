@@ -1,7 +1,8 @@
-import { afterEach, beforeEach, describe, it } from 'intern!bdd';
-import * as assert from 'intern/chai!assert';
 import * as sinon from 'sinon';
 import MockModule from '../../support/MockModule';
+
+const { afterEach, beforeEach, describe, it } = intern.getInterface('bdd');
+const { assert } = intern.getPlugin('chai');
 
 function getSourceMap() {
 	return {
