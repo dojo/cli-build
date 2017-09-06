@@ -16,7 +16,6 @@ const configString = readFileSync(configPath);
 const dirname = resolve(basePath, '_build/src');
 let mockModule: MockModule;
 let config: Config;
-let allConfigs: Config[];
 
 function start(cli = true, args: Partial<BuildArgs> = {}) {
 	const mockPackageJson = {
@@ -58,8 +57,7 @@ function start(cli = true, args: Partial<BuildArgs> = {}) {
 
 	const js = configString.toString('utf8').replace(/\$\{packagePath\}/g, dirname.replace(/\\/g, '/').replace(/^[cC]:/, ''));
 	runInContext(js, context);
-	allConfigs = cli ? context.module.exports(args) : context.module.exports;
-	config = allConfigs[0];
+	config = cli ? context.module.exports(args) : context.module.exports;
 }
 
 function getUMDCompatLoader(args = {}) {
