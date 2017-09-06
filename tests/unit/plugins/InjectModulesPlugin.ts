@@ -451,16 +451,23 @@ describe('inject-modules', () => {
 		beforeEach(() => {
 			mockModule = new MockModule('../../src/plugins/InjectModulesPlugin');
 			mockModule.dependencies([
-				'webpack/lib/NormalModule',
-				'webpack/lib/Chunk',
-				'webpack/lib/Compiler',
-				'webpack/lib/Compilation'
-			], {
-				'webpack/lib/NormalModule': '../support/webpack/NormalModule',
-				'webpack/lib/Chunk': '../support/webpack/Chunk',
-				'webpack/lib/Compiler': '../support/webpack/Compiler',
-				'webpack/lib/Compilation': '../support/webpack/Compilation'
-			});
+				{
+					name: 'webpack/lib/NormalModule',
+					mock: require('../../support/webpack/NormalModule')
+				},
+				{
+					name: 'webpack/lib/Chunk',
+					mock: require('../../support/webpack/Chunk')
+				},
+				{
+					name: 'webpack/lib/Compiler',
+					mock: require('../../support/webpack/Compiler')
+				},
+				{
+					name: 'webpack/lib/Compilation',
+					mock: require('../../support/webpack/Compilation')
+				}
+			]);
 		});
 
 		afterEach(() => {

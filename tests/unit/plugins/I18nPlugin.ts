@@ -1,14 +1,14 @@
 import { Program } from 'estree';
+import { beforeEach } from 'intern/lib/interfaces/tdd';
 import { sep as separator } from 'path';
-import NormalModuleReplacementPlugin = require('webpack/lib/NormalModuleReplacementPlugin');
-import Compilation = require('../../support/webpack/Compilation');
-import Compiler = require('../../support/webpack/Compiler');
-import MockPlugin from '../../support/MockPlugin';
-import { fetchCldrData } from '../../support/util';
 import I18nPlugin from '../../../src/plugins/I18nPlugin';
 import { hasExtension } from '../../../src/plugins/util/main';
 import MockModule from '../../support/MockModule';
-import { beforeEach } from 'intern/lib/interfaces/tdd';
+import MockPlugin from '../../support/MockPlugin';
+import { fetchCldrData } from '../../support/util';
+import NormalModuleReplacementPlugin = require('webpack/lib/NormalModuleReplacementPlugin');
+import Compilation = require('../../support/webpack/Compilation');
+import Compiler = require('../../support/webpack/Compiler');
 
 const { assert } = intern.getPlugin('chai');
 const { afterEach, describe, it } = intern.getInterface('bdd');
@@ -262,10 +262,12 @@ describe('i18n', () => {
 
 		beforeEach(() => {
 			mockModule = new MockModule('../../src/plugins/I18nPlugin');
-			mockModule.dependencies(['./InjectModulesPlugin'], {
-				'./InjectModulesPlugin': './MockPlugin'
-			});
-			mockModule.getMock('./InjectModulesPlugin').default = require('../../support/MockPlugin').default;
+			mockModule.dependencies([
+				{
+					name: './InjectModulesPlugin',
+					mock: require('../../support/MockPlugin')
+				}
+			]);
 		});
 
 		afterEach(() => {
