@@ -287,14 +287,14 @@ function webpackConfig(args: Partial<BuildArgs>) {
 					]),
 					new HtmlWebpackPlugin ({
 						inject: true,
-						chunks: [ 'src', `../_build/src/main` ],
+						chunks: [ 'src', '../_build/src/main' ],
 						template: 'src/index.html',
-						filename: `../_build/src/index.html`
+						filename: '../_build/src/index.html'
 					}),
 					new webpack.optimize.CommonsChunkPlugin({
 						name: 'src',
-						filename: `../_build/src/src.js`,
-						chunks: [`../_build/src/main`, '../_build/tests/unit/all'],
+						filename: '../_build/src/src.js',
+						chunks: ['../_build/src/main', '../_build/tests/unit/all'],
 						minChunks: (module: any) => {
 							if (module.resource && !(/^.*\.(ts)$/).test(module.resource)) {
 								return false;
@@ -308,7 +308,7 @@ function webpackConfig(args: Partial<BuildArgs>) {
 				new ExternalLoaderPlugin({
 					dependencies: externalDependencies,
 					outputPath: args.externals && args.externals.outputPath,
-					pathPrefix: args.withTests ? `../_build/src` : ''
+					pathPrefix: args.withTests ? '../_build/src' : ''
 				})
 			])
 
