@@ -1,8 +1,8 @@
 import webpack = require('webpack');
 import NormalModuleReplacementPlugin = require('webpack/lib/NormalModuleReplacementPlugin');
-import Set from '@dojo/shim/Set';
-import { existsSync, readFileSync } from 'fs';
 import * as path from 'path';
+import { existsSync, readFileSync } from 'fs';
+import Set from '@dojo/shim/Set';
 import StaticOptmizePlugin from '@dojo/static-optimize-plugin/StaticOptimizePlugin';
 import GetFeaturesType from './getFeatures';
 import { BuildArgs } from './main';
@@ -151,15 +151,18 @@ function webpackConfig(args: Partial<BuildArgs>) {
 			};
 		}, args => {
 			return {
-				'src/main': [
-					path.join(basePath, 'src/main.css'),
-					path.join(basePath, 'src/main.ts')
-				],
 				...includeWhen(args.withTests, () => {
 					return {
-						'../_build/tests/unit/all': [ path.join(basePath, 'tests/unit/all.ts') ],
-						'../_build/tests/functional/all': [ path.join(basePath, 'tests/functional/all.ts') ],
-						'../_build/src/main': [
+						[`../_build/tests/unit/all`]: [ path.join(basePath, 'tests/unit/all.ts') ],
+						[`../_build/tests/functional/all`]: [ path.join(basePath, 'tests/functional/all.ts') ],
+						[`../_build/src/main`]: [
+							path.join(basePath, 'src/main.css'),
+							path.join(basePath, 'src/main.ts')
+						]
+					};
+				}, () => {
+					return {
+						'src/main': [
 							path.join(basePath, 'src/main.css'),
 							path.join(basePath, 'src/main.ts')
 						]
@@ -197,7 +200,7 @@ function webpackConfig(args: Partial<BuildArgs>) {
 			}, () => {
 				return new ExtractTextPlugin({ filename: 'main.css', allChunks: true });
 			}),
-			...includeWhen(!args.watch && !args.withTests, (args) => {
+			...includeWhen(!args.watch && !args.withTests, () => {
 				return [ new OptimizeCssAssetsPlugin({
 					cssProcessorOptions: {
 						map: { inline: false }
@@ -219,12 +222,11 @@ function webpackConfig(args: Partial<BuildArgs>) {
 				ignoredModules,
 				mapAppModules: args.withTests
 			}),
-			new StaticOptmizePlugin(hasFlags),
-			...includeWhen(args.element, () => {
-				return [ new webpack.optimize.CommonsChunkPlugin({
+			new StaticOptmizePlugin(hasFlags), ...includeWhen(args.element, () => {
+				return [new webpack.optimize.CommonsChunkPlugin({
 					name: 'widget-core',
 					filename: 'widget-core.js'
-				}) ];
+				})];
 			}),
 			...includeWhen(!args.watch && !args.withTests, () => {
 				return [ new webpack.optimize.UglifyJsPlugin({
@@ -273,17 +275,28 @@ function webpackConfig(args: Partial<BuildArgs>) {
 					]),
 					new HtmlWebpackPlugin ({
 						inject: true,
-						chunks: [ '../_build/src/main' ],
+						chunks: [ 'src', `../_build/src/main` ],
 						template: 'src/index.html',
-						filename: '../_build/src/index.html'
-					})
-				];
+						filename: `../_build/src/index.html`
+					}),
+					new webpack.optimize.CommonsChunkPlugin({
+						name: 'src',
+						filename: `../_build/src/src.js`,
+						chunks: [`../_build/src/main`, '../_build/tests/unit/all'],
+						minChunks: (module: any) => {
+							if (module.resource && !(/^.*\.(ts)$/).test(module.resource)) {
+								return false;
+							}
+
+							return module.context && module.context.indexOf('src/') !== -1;
+						}
+					})];
 			}),
 			...includeWhen(includesExternals, () => [
 				new ExternalLoaderPlugin({
 					dependencies: externalDependencies,
 					outputPath: args.externals && args.externals.outputPath,
-					pathPrefix: args.withTests ? '../_build/src' : ''
+					pathPrefix: args.withTests ? `../_build/src` : ''
 				})
 			])
 
