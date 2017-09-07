@@ -137,8 +137,8 @@ describe('webpack.config.ts', () => {
 			start(true, {});
 			const loader = getTslintLoader();
 			assert.isDefined(loader);
-			assert.strictEqual((<any> loader.options).emitErrors, true);
-			assert.strictEqual((<any> loader.options).failOnHint, true);
+			assert.isTrue((<any> loader.options).emitErrors);
+			assert.isTrue((<any> loader.options).failOnHint);
 		});
 
 		it('will not cause build errors on linting warnings if watching', () => {
