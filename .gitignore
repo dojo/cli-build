@@ -11,3 +11,6 @@
 .tscache
 coverage-unmapped.json
 npm-debug.log
+coverage-final.lcov
+/coverage
+
