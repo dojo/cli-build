@@ -91,4 +91,13 @@ describe('istanbul-loader', () => {
 			assert.deepEqual(sourceMap.sources, [ 'myFile.ts', 'myFile2.ts' ]);
 		});
 	});
+
+	it('exports the loader in the index file', () => {
+		mockModule = new MockModule('../../src/loaders/istanbul-loader/index');
+		mockModule.dependencies([
+			'./loader'
+		]);
+
+		assert.isDefined(mockModule.getModuleUnderTest());
+	});
 });

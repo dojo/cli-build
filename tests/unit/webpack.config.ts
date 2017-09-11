@@ -6,6 +6,7 @@ import MockModule from '../support/MockModule';
 import { BuildArgs } from '../../src/main';
 
 const webpackConfig = require('../../src/webpack.config');
+const { createInstrumenter } = require('istanbul-lib-instrument');
 
 const { assert } = intern.getPlugin('chai');
 const { afterEach, beforeEach, describe, it } = intern.getInterface('bdd');
@@ -55,9 +56,21 @@ function start(cli = true, args: Partial<BuildArgs> = {}) {
 		__dirname: dirname
 	});
 
+	const instrumenter = createInstrumenter({
+		esModules: true
+	});
+
 	const js = configString.toString('utf8').replace(/\$\{packagePath\}/g, dirname.replace(/\\/g, '/').replace(/^[cC]:/, ''));
-	runInContext(js, context);
+
+	const instrumentedJs = instrumenter.instrumentSync(js, configPath, '');
+
+	runInContext(instrumentedJs, context);
 	config = cli ? context.module.exports(args) : context.module.exports;
+	intern.emit('coverage', {
+		coverage: (<any> context)['__coverage__'],
+		source: '',
+		sessionId: intern.config.sessionId
+	});
 }
 
 function getUMDCompatLoader(args = {}) {
