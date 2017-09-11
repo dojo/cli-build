@@ -196,23 +196,4 @@ describe('webpack.config.ts', () => {
 			assert.isUndefined((<any> loader.options).failOnHint);
 		});
 	});
-
-	describe('with tests', () => {
-		beforeEach(() => {
-			start(true, {
-				withTests: true
-			});
-		});
-
-		runTests();
-
-		it('should create two build configurations', () => {
-			assert.lengthOf(allConfigs, 2, 'should have created two build configurations');
-		});
-
-		it('should have a web target, and a node target', () => {
-			assert.strictEqual(allConfigs[0].target, 'web');
-			assert.strictEqual(allConfigs[1].target, 'node');
-		});
-	});
 });
