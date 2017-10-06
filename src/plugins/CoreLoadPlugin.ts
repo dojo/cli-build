@@ -57,7 +57,7 @@ function isContextual(module: NormalModule, issuers: string[]): boolean {
  * @return The normalized file path.
  */
 function normalizeFilePath(path: string): string {
-	return path.replace(/\\/g, '/').replace(/^[cC]:/, '');
+	return path.replace(/\\/g, '/').replace(/^[a-z]:/i, '');
 }
 
 /**
