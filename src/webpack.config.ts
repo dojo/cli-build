@@ -72,7 +72,7 @@ function getUMDCompatLoader(options: UMDCompatOptions) {
 }
 
 interface BuildConfigOptions {
-    target?: 'web' | 'node';
+	target?: 'web' | 'node';
 }
 
 function webpackConfig(args: Partial<BuildArgs>) {
