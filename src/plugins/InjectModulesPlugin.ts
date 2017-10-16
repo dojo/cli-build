@@ -4,7 +4,7 @@ import NormalModuleFactory = require('webpack/lib/NormalModuleFactory');
 import Chunk = require('webpack/lib/Chunk');
 import Compiler = require('webpack/lib/Compiler');
 import Compilation = require('webpack/lib/Compilation');
-import { getBasePath, isRelative } from './util/main';
+import { getBasePath, isRelative } from '../util/main';
 import Map from '@dojo/shim/Map';
 import '@dojo/shim/Promise';
 const basePath = path.join(process.cwd(), 'node_modules');

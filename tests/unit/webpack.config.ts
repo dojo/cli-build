@@ -36,6 +36,7 @@ function start(cli = true, args: Partial<BuildArgs> = {}) {
 		'optimize-css-assets-webpack-plugin',
 		'postcss-cssnext',
 		'postcss-import',
+		'./util/main',
 		'webpack-bundle-analyzer-sunburst',
 		'webpack/lib/IgnorePlugin',
 		'webpack',
@@ -133,13 +134,13 @@ describe('webpack.config.ts', () => {
 		it('if bundle name passed, will include module in that bundle', () => {
 			const { options: { imports } } = getUMDCompatLoader({
 				bundles: {
-					'my-bundle': [ 'src/widgets/TestModule' ]
+					'my-bundle': [ `src${sep}widgets${sep}TestModule` ]
 				}
 			});
 			const result = imports('./TestModule', `src/widgets`);
 			assert.equal(
 				result,
-				'promise-loader?global,my-bundle!./TestModule'
+				`promise-loader?global,my-bundle!./TestModule`
 			);
 		});
 	});

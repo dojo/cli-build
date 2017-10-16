@@ -1,6 +1,6 @@
 import { Require } from '@dojo/interfaces/loader';
 import { resolve, sep } from 'path';
-import getCldrUrls, { getLoadCallUrls, getLoadImports } from '../../../../src/plugins/util/i18n';
+import getCldrUrls, { getLoadCallUrls, getLoadImports } from '../../../src/util/i18n';
 import { Program } from 'estree';
 
 const { assert } = intern.getPlugin('chai');
@@ -10,10 +10,10 @@ declare const require: Require;
 
 function loadAst(complete = true) {
 	const file = complete ? 'complete' : 'relative';
-	return require(`../../../support/mocks/ast/cldr-${file}.json`) as Program;
+	return require(`../../support/mocks/ast/cldr-${file}.json`) as Program;
 }
 
-describe('plugins/util/i18n', () => {
+describe('util/i18n', () => {
 	describe('getLoadImports', () => {
 		it('should return an array of variable names for `cldr/load` imports', () => {
 			assert.sameMembers(getLoadImports(loadAst()), [ 'load' ]);

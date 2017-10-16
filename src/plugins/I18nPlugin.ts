@@ -10,8 +10,8 @@ import NormalModule = require('webpack/lib/NormalModule');
 import NormalModuleReplacementPlugin = require('webpack/lib/NormalModuleReplacementPlugin');
 import Compiler = require('webpack/lib/Compiler');
 import InjectModulesPlugin from './InjectModulesPlugin';
-import getCldrUrls from './util/i18n';
-import { createFilePathRegExp, hasExtension, mergeUnique, resolveMid } from './util/main';
+import getCldrUrls from '../util/i18n';
+import { createFilePathRegExp, hasExtension, mergeUnique, resolveMid } from '../util/main';
 
 const cldrLoadWebpackPattern = createFilePathRegExp('cldr/load(/webpack|\\.js)');
 

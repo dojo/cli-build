@@ -1,7 +1,7 @@
 import * as path from 'path';
-import { createFilePathRegExp, getBasePath, resolveMid } from './util/main';
+import { createFilePathRegExp, getBasePath, resolveMid } from '../util/main';
 import { CallExpression, Node, Program } from 'estree';
-import { getNextItem } from './util/parser';
+import { getNextItem } from '../util/parser';
 import Set from '@dojo/shim/Set';
 import ConcatSource = require('webpack-sources/lib/ConcatSource');
 import NormalModuleReplacementPlugin = require('webpack/lib/NormalModuleReplacementPlugin');

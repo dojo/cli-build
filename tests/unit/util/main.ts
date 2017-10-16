@@ -1,10 +1,10 @@
 import { sep } from 'path';
-import { createFilePathRegExp, getBasePath, hasExtension, isRelative, mergeUnique } from '../../../../src/plugins/util/main';
+import { createFilePathRegExp, getBasePath, hasExtension, isRelative, mergeUnique } from '../../../src/util/main';
 
 const { assert } = intern.getPlugin('chai');
 const { describe, it } = intern.getInterface('bdd');
 
-describe('plugins/util/main', () => {
+describe('util/main', () => {
 	describe('createFilePathRegExp', () => {
 		it('should create a regular expression that can match either file separator', () => {
 			assert.instanceOf(createFilePathRegExp('/module'), RegExp);
@@ -13,7 +13,6 @@ describe('plugins/util/main', () => {
 			assert.strictEqual(createFilePathRegExp('\\./parent/module\\.ts').toString(), '/\\.(\\\\|\\/)parent(\\\\|\\/)module\\.ts/');
 		});
 	});
-
 	describe('getBasePath', () => {
 		it('should strip the module name and return the parent path', () => {
 			assert.strictEqual(getBasePath('/module'), sep);

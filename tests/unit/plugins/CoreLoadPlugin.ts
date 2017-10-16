@@ -1,6 +1,6 @@
 import * as path from 'path';
 import LoadPlugin from '../../../src/plugins/CoreLoadPlugin';
-import { hasExtension, resolveMid } from '../../../src/plugins/util/main';
+import { hasExtension, resolveMid } from '../../../src/util/main';
 import ConcatSource = require('webpack-sources/lib/ConcatSource');
 import NormalModuleReplacementPlugin = require('webpack/lib/NormalModuleReplacementPlugin');
 import Compilation = require('../../support/webpack/Compilation');

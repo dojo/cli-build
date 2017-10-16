@@ -2,7 +2,7 @@ import { Program } from 'estree';
 import { beforeEach } from 'intern/lib/interfaces/tdd';
 import { sep as separator } from 'path';
 import I18nPlugin from '../../../src/plugins/I18nPlugin';
-import { hasExtension, resolveMid } from '../../../src/plugins/util/main';
+import { hasExtension, resolveMid } from '../../../src/util/main';
 import MockModule from '../../support/MockModule';
 import MockPlugin from '../../support/MockPlugin';
 import { fetchCldrData } from '../../support/util';
