@@ -360,8 +360,7 @@ function webpackConfig(args: Partial<BuildArgs>) {
 					{
 						loader: '@dojo/webpack-contrib/static-build-loader',
 						options: {
-							features: args.features,
-							isRunningInNode: isCLI
+							features: args.features
 						}
 					},
 					getUMDCompatLoader({ bundles: args.bundles }),
