@@ -358,7 +358,7 @@ function webpackConfig(args: Partial<BuildArgs>) {
 				{ test: /src[\\\/].*\.m\.css?$/, enforce: 'pre', loader: 'css-module-dts-loader?type=css' },
 				{ test: /src[\\\/].*\.ts(x)?$/, use: [
 					{
-						loader: '@dojo/webpack-contrib/static-build',
+						loader: '@dojo/webpack-contrib/static-build-loader',
 						options: {
 							features: args.features,
 							isRunningInNode: isCLI
