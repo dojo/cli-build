@@ -20,7 +20,7 @@ describe('istanbul-loader', () => {
 
 	beforeEach(() => {
 		sandbox = sinon.sandbox.create();
-		mockModule = new MockModule('../../src/loaders/istanbul-loader/loader');
+		mockModule = new MockModule('../../../src/loaders/istanbul-loader/loader', require);
 		mockModule.dependencies([
 			'istanbul-lib-instrument'
 		]);
@@ -93,7 +93,7 @@ describe('istanbul-loader', () => {
 	});
 
 	it('exports the loader in the index file', () => {
-		mockModule = new MockModule('../../src/loaders/istanbul-loader/index');
+		mockModule = new MockModule('../../../src/loaders/istanbul-loader/index', require);
 		mockModule.dependencies([
 			'./loader'
 		]);
