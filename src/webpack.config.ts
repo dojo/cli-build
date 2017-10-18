@@ -2,10 +2,10 @@ import webpack = require('webpack');
 import NormalModuleReplacementPlugin = require('webpack/lib/NormalModuleReplacementPlugin');
 import * as path from 'path';
 import { existsSync, readFileSync } from 'fs';
-import Set from '@dojo/shim/Set';
 import ExternalLoaderPlugin from '@dojo/webpack-contrib/external-loader-plugin/ExternalLoaderPlugin';
 import { BuildArgs } from './main';
 
+import { isRelative } from './plugins/util/main';
 const IgnorePlugin = require('webpack/lib/IgnorePlugin');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
@@ -81,7 +81,7 @@ function webpackConfig(args: Partial<BuildArgs>) {
 	const includesExternals = Boolean(externalDependencies.length);
 	const cssModuleLoader = ExtractTextPlugin.extract({
 		use: [
-			'@dojo/webpack-contrib/css-module-decorator-loader',
+			'css-module-decorator-loader',
 			`css-loader?modules&sourceMap&importLoaders=1&localIdentName=${localIdentName}`,
 			{
 				loader: 'postcss-loader?sourceMap',
@@ -93,8 +93,6 @@ function webpackConfig(args: Partial<BuildArgs>) {
 			}
 		]
 	});
-
-	const replacedModules = new Set<string>();
 
 	function includeWhen(predicate: any, callback: IncludeCallback, elseCallback: IncludeCallback | null = null) {
 		return predicate ? callback(args as any) : (elseCallback ? elseCallback(args as any) : []);
@@ -187,14 +185,15 @@ function webpackConfig(args: Partial<BuildArgs>) {
 				test: /tests\/unit\/all\.*/
 			}),
 			new IgnorePlugin(/request\/providers\/node/),
-			new NormalModuleReplacementPlugin(/\.m.css$/, result => {
-				const requestFileName = path.resolve(result.context, result.request);
+			new NormalModuleReplacementPlugin(/\.m\.css$/, result => {
+				if (path.isAbsolute(result.request)) {
+					return;
+				}
+				const requestFileName = isRelative(result.request) ?
+					path.resolve(result.context, result.request) : path.resolve(basePath, 'node_modules', result.request);
 				const jsFileName = requestFileName + '.js';
 
-				if (replacedModules.has(requestFileName)) {
-					replacedModules.delete(requestFileName);
-				} else if (existsSync(jsFileName)) {
-					replacedModules.add(requestFileName);
+				if (existsSync(jsFileName)) {
 					result.request = result.request.replace(/\.m\.css$/, '.m.css.js');
 				}
 			}),
@@ -381,7 +380,7 @@ function webpackConfig(args: Partial<BuildArgs>) {
 				{ test: /.*\.(gif|png|jpe?g|svg|eot|ttf|woff|woff2)$/i, loader: 'file-loader?hash=sha512&digest=hex&name=[hash:base64:8].[ext]' },
 				{ test: /\.css$/, exclude: /src[\\\/].*/, loader: cssLoader },
 				{ test: /src[\\\/].*\.css?$/, loader: cssModuleLoader },
-				{ test: /\.m\.css.js$/, exclude: /src[\\\/].*/, use: ['json-css-module-loader'] },
+				{ test: /\.m\.css\.js$/, exclude: /src[\\\/].*/, use: ['json-css-module-loader'] },
 				...includeWhen(args.withTests, () => {
 					return [
 						{ test: /tests[\\\/].*\.ts?$/, use: [
