@@ -3,6 +3,7 @@ import NormalModuleReplacementPlugin = require('webpack/lib/NormalModuleReplacem
 import * as path from 'path';
 import { existsSync, readFileSync } from 'fs';
 import Set from '@dojo/shim/Set';
+import ExternalLoaderPlugin from '@dojo/webpack-contrib/ExternalLoaderPlugin';
 import { BuildArgs } from './main';
 
 const IgnorePlugin = require('webpack/lib/IgnorePlugin');
@@ -16,7 +17,6 @@ const BundleAnalyzerPlugin = require('webpack-bundle-analyzer-sunburst').BundleA
 const isCLI = process.env.DOJO_CLI;
 const packagePath = isCLI ? '.' : '@dojo/cli-build-webpack';
 const CoreLoadPlugin = require(`${packagePath}/plugins/CoreLoadPlugin`).default;
-const ExternalLoaderPlugin = require(`${packagePath}/plugins/ExternalLoaderPlugin`).default;
 const I18nPlugin = require(`${packagePath}/plugins/I18nPlugin`).default;
 const IgnoreUnmodifiedPlugin = require(`${packagePath}/plugins/IgnoreUnmodifiedPlugin`).default;
 const basePath = process.cwd();
@@ -77,7 +77,7 @@ function webpackConfig(args: Partial<BuildArgs>) {
 
 	const cssLoader = ExtractTextPlugin.extract({ use: 'css-loader?sourceMap' });
 	const localIdentName = (args.watch || args.withTests) ? '[name]__[local]__[hash:base64:5]' : '[hash:base64:8]';
-	const externalDependencies = args.externals && args.externals.dependencies;
+	const externalDependencies = (args.externals && args.externals.dependencies) || [];
 	const includesExternals = Boolean(externalDependencies && externalDependencies.length);
 	const cssModuleLoader = ExtractTextPlugin.extract({
 		use: [
