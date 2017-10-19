@@ -81,7 +81,7 @@ function webpackConfig(args: Partial<BuildArgs>) {
 	const includesExternals = Boolean(externalDependencies.length);
 	const cssModuleLoader = ExtractTextPlugin.extract({
 		use: [
-			'css-module-decorator-loader',
+			'@dojo/webpack-contrib/css-module-decorator-loader',
 			`css-loader?modules&sourceMap&importLoaders=1&localIdentName=${localIdentName}`,
 			{
 				loader: 'postcss-loader?sourceMap',
