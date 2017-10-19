@@ -185,18 +185,6 @@ function webpackConfig(args: Partial<BuildArgs>) {
 				test: /tests\/unit\/all\.*/
 			}),
 			new IgnorePlugin(/request\/providers\/node/),
-			new NormalModuleReplacementPlugin(/\.m\.css$/, result => {
-				if (path.isAbsolute(result.request)) {
-					return;
-				}
-				const requestFileName = isRelative(result.request) ?
-					path.resolve(result.context, result.request) : path.resolve(basePath, 'node_modules', result.request);
-				const jsFileName = requestFileName + '.js';
-
-				if (existsSync(jsFileName)) {
-					result.request = result.request.replace(/\.m\.css$/, '.m.css.js');
-				}
-			}),
 			new webpack.ContextReplacementPlugin(/dojo-app[\\\/]lib/, { test: () => false }),
 			...includeWhen(args.watch, () => {
 				return [ new IgnoreUnmodifiedPlugin() ];
