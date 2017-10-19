@@ -3,7 +3,7 @@ import NormalModuleReplacementPlugin = require('webpack/lib/NormalModuleReplacem
 import * as path from 'path';
 import { existsSync, readFileSync } from 'fs';
 import Set from '@dojo/shim/Set';
-import ExternalLoaderPlugin from '@dojo/webpack-contrib/ExternalLoaderPlugin';
+import ExternalLoaderPlugin from '@dojo/webpack-contrib/external-loader-plugin/ExternalLoaderPlugin';
 import { BuildArgs } from './main';
 
 const IgnorePlugin = require('webpack/lib/IgnorePlugin');
