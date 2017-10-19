@@ -193,6 +193,9 @@ function compile(config: webpack.Config, options: WebpackOptions, args: BuildArg
 			}
 
 			if (stats) {
+				if (stats.hasErrors && stats.hasErrors()) {
+					reject(new Error('Build error occurred.'));
+				}
 				if (config.profile) {
 					fs.writeFileSync('dist/profile.json', JSON.stringify(stats.toJson()));
 				}

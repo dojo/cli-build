@@ -173,6 +173,21 @@ describe('main', () => {
 		);
 	});
 
+	it('should run compile and reject when hasErrors() returns true', () => {
+		const stats = {
+			hasErrors: sandbox.stub().returns(true)
+		}
+		const run = sandbox.stub().yields(null, stats);
+		mockWebpack.returns({ run });
+		return moduleUnderTest.run(getMockConfiguration(), {}).then(
+			throwImmediately,
+			(e: Error) => {
+				assert.isTrue(run.calledOnce);
+				assert.strictEqual(e.message, 'Build error occurred.');
+			}
+		);
+	});
+
 	it('should run watch, setting appropriate webpack options', () => {
 		const mockWebpackDevServer = mockModule.getMock('webpack-dev-server');
 		mockWebpackDevServer.listen = sandbox.stub().yields();
