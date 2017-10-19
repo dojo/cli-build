@@ -228,12 +228,11 @@ function webpackConfig(args: Partial<BuildArgs>) {
 				ignoredModules,
 				mapAppModules: args.withTests
 			}),
-
-			...includeWhen(args.element, () => {
-				return [ new webpack.optimize.CommonsChunkPlugin({
+			 ...includeWhen(args.element, () => {
+				return [new webpack.optimize.CommonsChunkPlugin({
 					name: 'widget-core',
 					filename: 'widget-core.js'
-				})];
+				}) ];
 			}),
 			...includeWhen(!args.watch && !args.withTests, () => {
 				return [ new webpack.optimize.UglifyJsPlugin({
@@ -278,7 +277,7 @@ function webpackConfig(args: Partial<BuildArgs>) {
 			...includeWhen(args.withTests, () => {
 				return [
 					new CopyWebpackPlugin([
-						{context: 'tests', from: '**/*', ignore: '*.ts', to: '../_build/tests' }
+						{ context: 'tests', from: '**/*', ignore: '*.ts', to: '../_build/tests' }
 					]),
 					new HtmlWebpackPlugin ({
 						inject: true,
@@ -289,7 +288,7 @@ function webpackConfig(args: Partial<BuildArgs>) {
 					new webpack.optimize.CommonsChunkPlugin({
 						name: 'src',
 						filename: '../_build/src/src.js',
-						chunks: ['../_build/src/main', '../_build/tests/unit/all'],
+						chunks: [ '../_build/src/main', '../_build/tests/unit/all' ],
 						minChunks: (module: any) => {
 							if (module.resource && !(/^.*\.(ts)$/).test(module.resource)) {
 								return false;
@@ -297,7 +296,8 @@ function webpackConfig(args: Partial<BuildArgs>) {
 
 							return module.context && module.context.indexOf('src/') !== -1;
 						}
-					})];
+					})
+				];
 			}),
 			...includeWhen(includesExternals, () => [
 				new ExternalLoaderPlugin({
@@ -306,7 +306,6 @@ function webpackConfig(args: Partial<BuildArgs>) {
 					pathPrefix: args.withTests ? '../_build/src' : ''
 				})
 			])
-
 		],
 		output: includeWhen(args.element, args => {
 			return Object.assign(outputConfig, {
@@ -325,32 +324,32 @@ function webpackConfig(args: Partial<BuildArgs>) {
 				basePath,
 				path.join(basePath, 'node_modules')
 			],
-			extensions: ['.ts', '.tsx', '.js']
+			extensions: [ '.ts', '.tsx', '.js' ]
 		},
-			resolveLoader: {
-				modules: [
-					path.join(isCLI ? __dirname : 'node_modules/@dojo/cli-build-webpack', 'loaders'),
-					path.join(__dirname, 'node_modules'),
-					'node_modules' ]
-			},
-			module: {
-				rules: [
-					...includeWhen(tslintExists, () => {
-						return [
-							{
-								test: /\.ts$/,
-								enforce: 'pre',
-								loader: 'tslint-loader',
-								options: {
-									tsConfigFile: path.join(basePath, 'tslint.json'),
-								...includeWhen(!args.watch && !args.withTests, () => {
-									return {
-										emitErrors: true,
-										failOnHint: true
-									};
-								})}
+		resolveLoader: {
+			modules: [
+				path.join(isCLI ? __dirname : 'node_modules/@dojo/cli-build-webpack', 'loaders'),
+				path.join(__dirname, 'node_modules'),
+				'node_modules'
+			]
+		},
+		module: {
+			rules: [
+				...includeWhen(tslintExists, () => {
+					return [ {
+						test: /\.ts$/,
+						enforce: 'pre',
+						loader: 'tslint-loader',
+						options: {
+							tsConfigFile: path.join(basePath, 'tslint.json'),
+							...includeWhen(!args.watch && !args.withTests, () => {
+								return {
+									emitErrors: true,
+									failOnHint: true
+								};
+							})
 						}
-					];
+					} ];
 				}),
 				{ test: /@dojo\/.*\.js$/, enforce: 'pre', loader: 'source-map-loader-cli', options: { includeModulePaths: true } },
 				{ test: /src[\\\/].*\.ts?$/, enforce: 'pre', loader: '@dojo/webpack-contrib/css-module-dts-loader?type=ts&instanceName=0_dojo' },
@@ -388,25 +387,26 @@ function webpackConfig(args: Partial<BuildArgs>) {
 							{
 								loader: 'ts-loader',
 								options: {
-									instance: 'dojo'}
+									instance: 'dojo'
 								}
-							] },
-							{
-								test: /src\/.*\.ts$/,
-								use: {
-									loader: 'istanbul-loader'
-								},
-								enforce: 'post'
 							}
-						];
-					}),
-					...includeWhen(args.element, args => {
-						return [
-							{ test: /custom-element\.js/, loader: `imports-loader?widgetFactory=${args.element}` }
-						];
-					}),
-					...includeWhen(args.bundles && Object.keys(args.bundles).length, () => {
-						const loaders: any[] = [];
+						]},
+						{
+							test: /src\/.*\.ts$/,
+							use: {
+								loader: 'istanbul-loader'
+							},
+							enforce: 'post'
+						}
+					];
+				}),
+				...includeWhen(args.element, args => {
+					return [
+						{ test: /custom-element\.js/, loader: `imports-loader?widgetFactory=${args.element}` }
+					];
+				}),
+				...includeWhen(args.bundles && Object.keys(args.bundles).length, () => {
+					const loaders: any[] = [];
 
 					Object.keys(args.bundles).forEach(bundleName => {
 						(args.bundles || {})[ bundleName ].forEach(fileName => {
