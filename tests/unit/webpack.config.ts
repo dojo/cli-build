@@ -215,4 +215,28 @@ describe('webpack.config.ts', () => {
 			assert.isUndefined((<any> loader.options).failOnHint);
 		});
 	});
+
+	describe('external loader plugin', () => {
+		it('will pass external dependencies output path options to plugin', () => {
+			start(true, { externals: { dependencies: [ 'one' ], outputPath: 'foo' } });
+			const plugin = mockModule.getMock('@dojo/webpack-contrib/external-loader-plugin/ExternalLoaderPlugin').default;
+			assert.isTrue(plugin.calledOnce, 'Should have instantiated external loader plugin');
+			assert.deepEqual(plugin.firstCall.args, [ {
+				dependencies: [ 'one' ],
+				outputPath: 'foo',
+				pathPrefix: ''
+			} ]);
+		});
+
+		it('will point external loader plugin to _build dir if building tests', () => {
+			start(true, { externals: { dependencies: [ 'one' ], outputPath: 'foo' }, withTests: true });
+			const plugin = mockModule.getMock('@dojo/webpack-contrib/external-loader-plugin/ExternalLoaderPlugin').default;
+			assert.isTrue(plugin.calledOnce, 'Should have instantiated external loader plugin');
+			assert.deepEqual(plugin.firstCall.args, [ {
+				dependencies: [ 'one' ],
+				outputPath: 'foo',
+				pathPrefix: '../_build/src'
+			} ]);
+		});
+	});
 });
