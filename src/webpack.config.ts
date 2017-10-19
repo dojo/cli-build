@@ -1,8 +1,8 @@
 import webpack = require('webpack');
-import NormalModuleReplacementPlugin = require('webpack/lib/NormalModuleReplacementPlugin');
 import * as path from 'path';
 import { existsSync, readFileSync } from 'fs';
 import ExternalLoaderPlugin from '@dojo/webpack-contrib/external-loader-plugin/ExternalLoaderPlugin';
+import CssModulePlugin from '@dojo/webpack-contrib/css-module-plugin/CssModulePlugin';
 import { BuildArgs } from './main';
 
 const IgnorePlugin = require('webpack/lib/IgnorePlugin');
@@ -183,6 +183,7 @@ function webpackConfig(args: Partial<BuildArgs>) {
 				raw: true,
 				test: /tests\/unit\/all\.*/
 			}),
+			new CssModulePlugin(basePath),
 			new IgnorePlugin(/request\/providers\/node/),
 			new webpack.ContextReplacementPlugin(/dojo-app[\\\/]lib/, { test: () => false }),
 			...includeWhen(args.watch, () => {
