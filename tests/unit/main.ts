@@ -1,3 +1,4 @@
+import * as path;
 import * as fs from 'fs';
 import * as sinon from 'sinon';
 import MockModule from '../support/MockModule';
@@ -100,6 +101,9 @@ describe('main', () => {
 		};
 	}
 
+	it('should fail on windows', () => {
+		assert.equal(path.join('a', 'b'), 'a/b');
+	});
 	it('should register supported arguments', () => {
 		const options = sandbox.stub();
 		moduleUnderTest.register(options);
