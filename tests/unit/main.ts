@@ -100,6 +100,10 @@ describe('main', () => {
 		};
 	}
 
+	it('fails', () => {
+		assert.isTrue(false, 'Fails');
+	});
+
 	it('should register supported arguments', () => {
 		const options = sandbox.stub();
 		moduleUnderTest.register(options);
