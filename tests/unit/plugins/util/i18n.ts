@@ -27,6 +27,25 @@ describe('plugins/util/i18n', () => {
 		it('should parse sequence expressions', () => {
 			assert.sameMembers(getLoadImports(loadAst(Asts.Sequence)), [ 'load' ]);
 		});
+
+		it('should return an empty object when a sequence expression contains no call expressions', () => {
+			const ast = {
+				body: [
+					{
+						type: 'VariableDeclaration',
+						declarations: [
+							{
+								init: {
+									type: 'SequenceExpression',
+									expressions: []
+								}
+							}
+						]
+					}
+				]
+			};
+			assert.lengthOf(getLoadImports(ast as any), 0);
+		});
 	});
 
 	describe('getLoadCallUrls', () => {
