@@ -37,7 +37,7 @@ function getCallExpressionData(expression?: any): { callee?: Identifier, args?: 
 		return {};
 	}
 
-	const { callee, 'arguments': args } = expression;
+	const { callee, arguments: args } = expression;
 	return { callee, args };
 }
 
