@@ -9,7 +9,7 @@ import { extractArrayValues, getNextItem, isShadowing } from './parser';
  * Determines whether the provided expression is a CallExpression.
  */
 function isCallExpression(expression: any): expression is CallExpression {
-	return expression.type === 'CallExpression';
+	return expression && expression.type === 'CallExpression';
 }
 
 /**
@@ -17,7 +17,7 @@ function isCallExpression(expression: any): expression is CallExpression {
  * Determines whether the provided expression is a SequenceExpression.
  */
 function isSequenceExpression(expression: any): expression is SequenceExpression {
-	return expression.type === 'SequenceExpression';
+	return expression && expression.type === 'SequenceExpression';
 }
 
 /**
