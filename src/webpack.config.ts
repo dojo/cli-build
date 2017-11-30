@@ -345,6 +345,9 @@ function webpackConfig(args: Partial<BuildArgs>) {
 				{ test: /@dojo\/.*\.js$/, enforce: 'pre', loader: 'source-map-loader-cli', options: { includeModulePaths: true } },
 				{ test: /src[\\\/].*\.ts?$/, enforce: 'pre', loader: '@dojo/webpack-contrib/css-module-dts-loader?type=ts&instanceName=0_dojo' },
 				{ test: /src[\\\/].*\.m\.css?$/, enforce: 'pre', loader: '@dojo/webpack-contrib/css-module-dts-loader?type=css' },
+				{ test: /\.js(x)?$/, loader: '@dojo/webpack-contrib/static-build-loader', options: {
+					features: args.features
+				}},
 				{ test: /src[\\\/].*\.ts(x)?$/, use: [
 					{
 						loader: '@dojo/webpack-contrib/static-build-loader',
