@@ -240,12 +240,13 @@ function webpackConfig(args: Partial<BuildArgs>) {
 				});
 			}),
 			...includeWhen(args.locale, args => {
-				const { cldrPaths, locale, supportedLocales = [] } = args;
+				const { cldrPaths, element, locale, supportedLocales = [] } = args;
 				return [
 					new I18nPlugin({
 						cldrPaths,
 						defaultLocale: locale,
-						supportedLocales: Array.isArray(supportedLocales) ? supportedLocales : [ supportedLocales ]
+						supportedLocales: Array.isArray(supportedLocales) ? supportedLocales : [ supportedLocales ],
+						target: element || path.join(basePath, 'src/main.ts')
 					})
 				];
 			}),
