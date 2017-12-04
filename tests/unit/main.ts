@@ -469,6 +469,19 @@ describe('main', () => {
 				}), JSON.stringify(mockWebpackConfigModule.args));
 			});
 		});
+
+		it('should error if the element prefix cannot be determined', () => {
+			const exitMock = sandbox.stub(process, 'exit');
+
+			return moduleUnderTest.run(getMockConfiguration(), {
+				'element': '/path/to/'
+			}).then(() => {
+				assert.isTrue(exitMock.called);
+				assert.isTrue((<sinon.SinonStub> console.error).calledWith('Element prefix could not be determined from element name: "/path/to/". Use --elementPrefix to name element.'));
+
+				exitMock.restore();
+			});
+		});
 	});
 
 	describe('eject', () => {

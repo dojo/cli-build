@@ -83,6 +83,10 @@ function getConfigArgs(args: BuildArgs): Partial<BuildArgs> {
 			if (matches && matches[1]) {
 				options.elementPrefix = matches[1].replace(/[A-Z][a-z]/g, '-\$&').replace(/^-+/g, '').toLowerCase();
 			}
+			else {
+				console.error(`Element prefix could not be determined from element name: "${args.element}". Use --elementPrefix to name element.`);
+				process.exit();
+			}
 		}
 	}
 
