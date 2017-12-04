@@ -71,6 +71,10 @@ interface BuildConfigOptions {
 	target?: 'web' | 'node';
 }
 
+function isElementDef(element: string | { element: string; prefix: string }): element is { element: string; prefix: string } {
+	return typeof element !== 'string';
+}
+
 function webpackConfig(args: Partial<BuildArgs>) {
 	args = args || {};
 
@@ -92,6 +96,7 @@ function webpackConfig(args: Partial<BuildArgs>) {
 			}
 		]
 	});
+	const elementDefs = (args.elements && args.elements.filter(isElementDef) || []);
 
 	function includeWhen(predicate: any, callback: IncludeCallback, elseCallback: IncludeCallback | null = null) {
 		return predicate ? callback(args as any) : (elseCallback ? elseCallback(args as any) : []);
@@ -138,12 +143,12 @@ function webpackConfig(args: Partial<BuildArgs>) {
 				callback();
 			}
 		],
-		entry: includeWhen(args.element, args => {
-			return {
-				[args.elementPrefix]: `${__dirname}/templates/custom-element.js`,
-				'widget-core': '@dojo/widget-core'
-			};
-		}, args => {
+		entry: includeWhen(elementDefs.length, args => elementDefs.reduce((prev: { [ index: string ]: string }, next) => {
+			prev[next.prefix] = `${__dirname}/templates/custom-element.js`;
+			prev[`../dist/${next.prefix}/widget-core`] = '@dojo/widget-core';
+
+			return prev;
+		}, {}), args => {
 			return {
 				...includeWhen(args.withTests, () => {
 					return {

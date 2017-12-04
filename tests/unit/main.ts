@@ -414,27 +414,42 @@ describe('main', () => {
 			});
 		});
 
-		it('should set the element prefix if it matches the pattern', () => {
+		it('should set the element prefix based on the filename', () => {
 			return moduleUnderTest.run(getMockConfiguration(), {
-				'element': '/path/to/createTestElement.ts'
+				'element': '/path/to/TestWidget.ts'
 			}).then(() => {
 				assert.isTrue(mockWebpackConfigModule.calledWith({
-					element: '/path/to/createTestElement.ts',
-					elementPrefix: 'test'
+					elements: [ { element: '/path/to/TestWidget.ts', prefix: 'test-widget' } ]
 				}), JSON.stringify(mockWebpackConfigModule.args));
 			});
 		});
 
-		it('should error if the element prefix does not match the pattern', () => {
-			const exitMock = sandbox.stub(process, 'exit');
-
+		it('should allow the prefix to be specified', () => {
 			return moduleUnderTest.run(getMockConfiguration(), {
-				'element': '/path/to/myelement.ts'
+				'element': '/path/to/TestWidget.ts',
+				'elementPrefix': 'my-widget'
 			}).then(() => {
-				assert.isTrue(exitMock.called);
-				assert.isTrue((<sinon.SinonStub> console.error).calledWith('"/path/to/myelement.ts" does not follow the pattern "createXYZElement". Use --elementPrefix to name element.'));
+				assert.isTrue(mockWebpackConfigModule.calledWith({
+					elements: [ { element: '/path/to/TestWidget.ts', prefix: 'my-widget' } ]
+				}), JSON.stringify(mockWebpackConfigModule.args));
+			});
+		});
 
-				exitMock.restore();
+		it('should accept an array of elements in .dojorc', () => {
+			return moduleUnderTest.run(getMockConfiguration({
+				'build-webpack': {
+					elements: [
+						{ element: 'path/to/TestWidget.ts', prefix: 'my-widget' },
+						{ element: 'path/to/OtherTestWidget.ts' }
+					]
+				}
+			}), {}).then(() => {
+				assert.isTrue(mockWebpackConfigModule.calledWith({
+					elements: [
+						{ element: 'path/to/TestWidget.ts', prefix: 'my-widget' },
+						{ element: 'path/to/OtherTestWidget.ts', prefix: 'other-test-widget' }
+					]
+				}), JSON.stringify(mockWebpackConfigModule.args));
 			});
 		});
 	});

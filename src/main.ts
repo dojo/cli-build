@@ -28,6 +28,7 @@ export interface BuildArgs {
 	supportedLocales: string | string[];
 	watch: boolean;
 	port: string;
+	elements: (string | { element: string; prefix: string } )[];
 	element: string;
 	elementPrefix: string;
 	withTests: boolean;
@@ -54,7 +55,7 @@ interface WebpackOptions {
 function getConfigArgs(args: BuildArgs): Partial<BuildArgs> {
 	const { messageBundles, supportedLocales, watch } = args;
 	const options: Partial<BuildArgs> = Object.keys(args).reduce((options: Partial<BuildArgs>, key: string) => {
-		if (key !== 'messageBundles' && key !== 'supportedLocales') {
+		if (key !== 'messageBundles' && key !== 'supportedLocales' && key !== 'element' && key !== 'elementPrefix') {
 			options[key] = args[key];
 		}
 		return options;
@@ -68,18 +69,27 @@ function getConfigArgs(args: BuildArgs): Partial<BuildArgs> {
 		options.supportedLocales = Array.isArray(supportedLocales) ? supportedLocales : [ supportedLocales ];
 	}
 
-	if (args.element && !args.elementPrefix) {
-		const factoryPattern = /create(.*?)Element.*?\.ts$/;
-		const matches = args.element.match(factoryPattern);
+	const filePattern = /([^\^/]*)\.ts$/;
+	function getPrefix(element: string | { element: string; prefix: string }) {
+		const elementName = typeof element === 'string' ? element : element.element;
+		let prefix = typeof element === 'string' ? '' : element.prefix;
 
-		if (matches && matches[ 1 ]) {
-			options.elementPrefix = matches[ 1 ].replace(/[A-Z][a-z]/g, '-\$&').replace(/^-+/g, '').toLowerCase();
+		if (!prefix) {
+			const matches = elementName.match(filePattern);
+
+			if (matches && matches[1]) {
+				prefix = matches[1].replace(/[A-Z][a-z]/g, '-\$&').replace(/^-+/g, '').toLowerCase();
+			}
 		}
-		else {
-			console.error(`"${args.element}" does not follow the pattern "createXYZElement". Use --elementPrefix to name element.`);
-			process.exit();
-		}
+
+		return { element: elementName, prefix };
 	}
+
+	options.elements = args.elements || [];
+	if (args.element) {
+		options.elements.push({ element: args.element, prefix: args.elementPrefix });
+	}
+	options.elements = options.elements.map(getPrefix);
 
 	return options;
 }
