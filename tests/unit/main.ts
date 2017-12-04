@@ -419,7 +419,41 @@ describe('main', () => {
 				'element': '/path/to/TestWidget.ts'
 			}).then(() => {
 				assert.isTrue(mockWebpackConfigModule.calledWith({
-					elements: [ { element: '/path/to/TestWidget.ts', prefix: 'test-widget' } ]
+					element: '/path/to/TestWidget.ts',
+					elementPrefix: 'test-widget'
+				}), JSON.stringify(mockWebpackConfigModule.args));
+			});
+		});
+
+		it('should handle a filename without an extension', () => {
+			return moduleUnderTest.run(getMockConfiguration(), {
+				'element': '/path/to/TestWidget'
+			}).then(() => {
+				assert.isTrue(mockWebpackConfigModule.calledWith({
+					element: '/path/to/TestWidget',
+					elementPrefix: 'test-widget'
+				}), JSON.stringify(mockWebpackConfigModule.args));
+			});
+		});
+
+		it('should support createXElement filename format', () => {
+			return moduleUnderTest.run(getMockConfiguration(), {
+				'element': '/path/to/createTestElement.ts'
+			}).then(() => {
+				assert.isTrue(mockWebpackConfigModule.calledWith({
+					element: '/path/to/createTestElement.ts',
+					elementPrefix: 'test'
+				}), JSON.stringify(mockWebpackConfigModule.args));
+			});
+		});
+
+		it('should support createXElement filename format without an extension', () => {
+			return moduleUnderTest.run(getMockConfiguration(), {
+				'element': '/path/to/createTestElement'
+			}).then(() => {
+				assert.isTrue(mockWebpackConfigModule.calledWith({
+					element: '/path/to/createTestElement',
+					elementPrefix: 'test'
 				}), JSON.stringify(mockWebpackConfigModule.args));
 			});
 		});
@@ -430,25 +464,8 @@ describe('main', () => {
 				'elementPrefix': 'my-widget'
 			}).then(() => {
 				assert.isTrue(mockWebpackConfigModule.calledWith({
-					elements: [ { element: '/path/to/TestWidget.ts', prefix: 'my-widget' } ]
-				}), JSON.stringify(mockWebpackConfigModule.args));
-			});
-		});
-
-		it('should accept an array of elements in .dojorc', () => {
-			return moduleUnderTest.run(getMockConfiguration({
-				'build-webpack': {
-					elements: [
-						{ element: 'path/to/TestWidget.ts', prefix: 'my-widget' },
-						{ element: 'path/to/OtherTestWidget.ts' }
-					]
-				}
-			}), {}).then(() => {
-				assert.isTrue(mockWebpackConfigModule.calledWith({
-					elements: [
-						{ element: 'path/to/TestWidget.ts', prefix: 'my-widget' },
-						{ element: 'path/to/OtherTestWidget.ts', prefix: 'other-test-widget' }
-					]
+					element: '/path/to/TestWidget.ts',
+					elementPrefix: 'my-widget'
 				}), JSON.stringify(mockWebpackConfigModule.args));
 			});
 		});
