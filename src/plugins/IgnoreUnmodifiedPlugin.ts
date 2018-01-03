@@ -22,7 +22,7 @@ export class IgnoreUnmodifiedPlugin {
 				set(_watcher) {
 					watcher = _watcher;
 					const onChange = watcher._onChange;
-					watcher._onChange = function (item: string, mtime: number) {
+					watcher._onChange = function(item: string, mtime: number) {
 						if (!(item in mtimes) || mtimes[item] !== mtime) {
 							mtimes[item] = mtime - FS_ACCURACY;
 							return onChange.apply(watcher, arguments);

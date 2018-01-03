@@ -14,10 +14,7 @@ let mockModule: MockModule;
 
 function start() {
 	mockModule = new MockModule('../../src/postcss.config', require);
-	mockModule.dependencies([
-		'postcss-cssnext',
-		'postcss-import'
-	]);
+	mockModule.dependencies(['postcss-cssnext', 'postcss-import']);
 	mockModule.start();
 
 	const exports = {};
@@ -27,7 +24,7 @@ function start() {
 		process: {
 			cwd: () => process.cwd()
 		},
-		require: (<any> require),
+		require: <any>require,
 		__dirname: dirname
 	});
 
@@ -52,13 +49,15 @@ describe('postcss.config.ts', () => {
 
 		it('should load postcss-cssnext', () => {
 			const mock = mockModule.getMock('postcss-cssnext');
-			assert.isTrue(mock.ctor.firstCall.calledWith({
-				features: {
-					autoprefixer: {
-						browsers: [ 'last 2 versions', 'ie >= 10' ]
+			assert.isTrue(
+				mock.ctor.firstCall.calledWith({
+					features: {
+						autoprefixer: {
+							browsers: ['last 2 versions', 'ie >= 10']
+						}
 					}
-				}
-			}));
+				})
+			);
 		});
 	});
 });

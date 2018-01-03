@@ -4,7 +4,7 @@ module.exports = {
 		require('postcss-cssnext')({
 			features: {
 				autoprefixer: {
-					browsers: [ 'last 2 versions', 'ie >= 10' ]
+					browsers: ['last 2 versions', 'ie >= 10']
 				}
 			}
 		})
