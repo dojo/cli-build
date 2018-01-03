@@ -6,7 +6,7 @@ const { assert } = intern.getPlugin('chai');
 
 function getSourceMap() {
 	return {
-		sources: [ 'some/path!myFile.ts', 'myFile2.ts' ]
+		sources: ['some/path!myFile.ts', 'myFile2.ts']
 	};
 }
 
@@ -21,9 +21,7 @@ describe('istanbul-loader', () => {
 	beforeEach(() => {
 		sandbox = sinon.sandbox.create();
 		mockModule = new MockModule('../../../src/loaders/istanbul-loader/loader', require);
-		mockModule.dependencies([
-			'istanbul-lib-instrument'
-		]);
+		mockModule.dependencies(['istanbul-lib-instrument']);
 		mockIstanbul = mockModule.getMock('istanbul-lib-instrument');
 		instrumentMock = sandbox.stub().callsArg(2);
 		sourceMapMock = sandbox.stub().returns({});
@@ -41,11 +39,15 @@ describe('istanbul-loader', () => {
 
 	it('should call istanbul to instrument files', () => {
 		return new Promise((resolve, reject) => {
-			loaderUnderTest.call({
-				async() {
-					return () => resolve();
-				}
-			}, 'content', getSourceMap());
+			loaderUnderTest.call(
+				{
+					async() {
+						return () => resolve();
+					}
+				},
+				'content',
+				getSourceMap()
+			);
 		}).then(() => {
 			assert.isTrue(instrumentMock.calledOnce);
 		});
@@ -53,11 +55,15 @@ describe('istanbul-loader', () => {
 
 	it('handles no source map', () => {
 		return new Promise((resolve, reject) => {
-			loaderUnderTest.call({
-				async() {
-					return () => resolve();
-				}
-			}, 'content', null);
+			loaderUnderTest.call(
+				{
+					async() {
+						return () => resolve();
+					}
+				},
+				'content',
+				null
+			);
 		}).then(() => {
 			assert.isTrue(instrumentMock.calledOnce);
 		});
@@ -65,11 +71,15 @@ describe('istanbul-loader', () => {
 
 	it('handles a source map with no sources', () => {
 		return new Promise((resolve, reject) => {
-			loaderUnderTest.call({
-				async() {
-					return () => resolve();
-				}
-			}, 'content', {});
+			loaderUnderTest.call(
+				{
+					async() {
+						return () => resolve();
+					}
+				},
+				'content',
+				{}
+			);
 		}).then(() => {
 			assert.isTrue(instrumentMock.calledOnce);
 		});
@@ -82,21 +92,23 @@ describe('istanbul-loader', () => {
 		sourceMapMock.returns(sourceMap);
 
 		return new Promise((resolve, reject) => {
-			loaderUnderTest.call({
-				async() {
-					return () => resolve();
-				}
-			}, 'content', sourceMap);
+			loaderUnderTest.call(
+				{
+					async() {
+						return () => resolve();
+					}
+				},
+				'content',
+				sourceMap
+			);
 		}).then(() => {
-			assert.deepEqual(sourceMap.sources, [ 'myFile.ts', 'myFile2.ts' ]);
+			assert.deepEqual(sourceMap.sources, ['myFile.ts', 'myFile2.ts']);
 		});
 	});
 
 	it('exports the loader in the index file', () => {
 		mockModule = new MockModule('../../../src/loaders/istanbul-loader/index', require);
-		mockModule.dependencies([
-			'./loader'
-		]);
+		mockModule.dependencies(['./loader']);
 
 		assert.isDefined(mockModule.getModuleUnderTest());
 	});

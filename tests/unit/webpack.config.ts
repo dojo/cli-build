@@ -56,7 +56,9 @@ function start(cli = true, args: Partial<BuildArgs> = {}) {
 		__dirname: dirname
 	});
 
-	let js = configString.toString('utf8').replace(/\$\{packagePath\}/g, dirname.replace(/\\/g, '/').replace(/^[cC]:/, ''));
+	let js = configString
+		.toString('utf8')
+		.replace(/\$\{packagePath\}/g, dirname.replace(/\\/g, '/').replace(/^[cC]:/, ''));
 
 	const shouldInstrument = intern.shouldInstrumentFile(resolve(basePath, 'src/webpack.config.js'));
 
@@ -73,7 +75,7 @@ function start(cli = true, args: Partial<BuildArgs> = {}) {
 
 	if (shouldInstrument) {
 		intern.emit('coverage', {
-			coverage: (<any> context)['__coverage__'],
+			coverage: (<any>context)['__coverage__'],
 			source: '',
 			sessionId: intern.config.sessionId
 		});
@@ -84,12 +86,14 @@ function getUMDCompatLoader(args = {}) {
 	start(true, args);
 	return config.module.rules.reduce((value: any, rule: any) => {
 		const loaders = rule.use || [];
-		return loaders.reduce((result: any, loader: any) => {
-			if (loader.loader === 'umd-compat-loader') {
-				return loader;
-			}
-			return result;
-		}, null) || value;
+		return (
+			loaders.reduce((result: any, loader: any) => {
+				if (loader.loader === 'umd-compat-loader') {
+					return loader;
+				}
+				return result;
+			}, null) || value
+		);
 	}, null);
 }
 
@@ -109,9 +113,11 @@ describe('webpack.config.ts', () => {
 
 		it('should remove previous build artifacts', () => {
 			const cleanPlugin = mockModule.getMock('clean-webpack-plugin');
-			assert.isTrue(cleanPlugin.ctor.calledWith([ '_build', 'dist' ], {
-				root: process.cwd()
-			}));
+			assert.isTrue(
+				cleanPlugin.ctor.calledWith(['_build', 'dist'], {
+					root: process.cwd()
+				})
+			);
 		});
 	}
 
@@ -151,23 +157,17 @@ describe('webpack.config.ts', () => {
 		it('can replace a require with promise-loader', () => {
 			const { options: { imports } } = getUMDCompatLoader({});
 			const result = imports('./TestModule', 'src/widgets');
-			assert.equal(
-				result,
-				`promise-loader?global,src${sep}widgets${sep}TestModule!./TestModule`
-			);
+			assert.equal(result, `promise-loader?global,src${sep}widgets${sep}TestModule!./TestModule`);
 		});
 
 		it('if bundle name passed, will include module in that bundle', () => {
 			const { options: { imports } } = getUMDCompatLoader({
 				bundles: {
-					'my-bundle': [ 'src/widgets/TestModule' ]
+					'my-bundle': ['src/widgets/TestModule']
 				}
 			});
 			const result = imports('./TestModule', `src/widgets`);
-			assert.equal(
-				result,
-				'promise-loader?global,my-bundle!./TestModule'
-			);
+			assert.equal(result, 'promise-loader?global,my-bundle!./TestModule');
 		});
 	});
 
@@ -203,48 +203,54 @@ describe('webpack.config.ts', () => {
 			start(true, {});
 			const loader = getTslintLoader();
 			assert.isDefined(loader);
-			assert.isTrue((<any> loader.options).emitErrors);
-			assert.isTrue((<any> loader.options).failOnHint);
+			assert.isTrue((<any>loader.options).emitErrors);
+			assert.isTrue((<any>loader.options).failOnHint);
 		});
 
 		it('will not cause build errors on linting warnings if watching', () => {
 			start(true, { watch: true });
 			const loader = getTslintLoader();
 			assert.isDefined(loader);
-			assert.isUndefined((<any> loader.options).emitErrors);
-			assert.isUndefined((<any> loader.options).failOnHint);
+			assert.isUndefined((<any>loader.options).emitErrors);
+			assert.isUndefined((<any>loader.options).failOnHint);
 		});
 
 		it('will not cause build errors on linting warnings if testing', () => {
 			start(true, { withTests: true });
 			const loader = getTslintLoader();
 			assert.isDefined(loader);
-			assert.isUndefined((<any> loader.options).emitErrors);
-			assert.isUndefined((<any> loader.options).failOnHint);
+			assert.isUndefined((<any>loader.options).emitErrors);
+			assert.isUndefined((<any>loader.options).failOnHint);
 		});
 	});
 
 	describe('external loader plugin', () => {
 		it('will pass external dependencies output path options to plugin', () => {
-			start(true, { externals: { dependencies: [ 'one' ], outputPath: 'foo' } });
-			const plugin = mockModule.getMock('@dojo/webpack-contrib/external-loader-plugin/ExternalLoaderPlugin').default;
+			start(true, { externals: { dependencies: ['one'], outputPath: 'foo' } });
+			const plugin = mockModule.getMock('@dojo/webpack-contrib/external-loader-plugin/ExternalLoaderPlugin')
+				.default;
 			assert.isTrue(plugin.calledOnce, 'Should have instantiated external loader plugin');
-			assert.deepEqual(plugin.firstCall.args, [ {
-				dependencies: [ 'one' ],
-				outputPath: 'foo',
-				pathPrefix: ''
-			} ]);
+			assert.deepEqual(plugin.firstCall.args, [
+				{
+					dependencies: ['one'],
+					outputPath: 'foo',
+					pathPrefix: ''
+				}
+			]);
 		});
 
 		it('will point external loader plugin to _build dir if building tests', () => {
-			start(true, { externals: { dependencies: [ 'one' ], outputPath: 'foo' }, withTests: true });
-			const plugin = mockModule.getMock('@dojo/webpack-contrib/external-loader-plugin/ExternalLoaderPlugin').default;
+			start(true, { externals: { dependencies: ['one'], outputPath: 'foo' }, withTests: true });
+			const plugin = mockModule.getMock('@dojo/webpack-contrib/external-loader-plugin/ExternalLoaderPlugin')
+				.default;
 			assert.isTrue(plugin.calledOnce, 'Should have instantiated external loader plugin');
-			assert.deepEqual(plugin.firstCall.args, [ {
-				dependencies: [ 'one' ],
-				outputPath: 'foo',
-				pathPrefix: '../_build/src'
-			} ]);
+			assert.deepEqual(plugin.firstCall.args, [
+				{
+					dependencies: ['one'],
+					outputPath: 'foo',
+					pathPrefix: '../_build/src'
+				}
+			]);
 		});
 	});
 
@@ -252,6 +258,6 @@ describe('webpack.config.ts', () => {
 		start(true, {});
 		const plugin = mockModule.getMock('@dojo/webpack-contrib/css-module-plugin/CssModulePlugin').default;
 		assert.isTrue(plugin.calledOnce, 'Should have instantiated css module plugin');
-		assert.deepEqual(plugin.firstCall.args, [ process.cwd() ], 'Should have passed the base path');
+		assert.deepEqual(plugin.firstCall.args, [process.cwd()], 'Should have passed the base path');
 	});
 });

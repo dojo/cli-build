@@ -46,8 +46,8 @@ interface ConfigFactory {
 interface WebpackOptions {
 	compress: boolean;
 	stats: {
-		colors: boolean
-		chunks: boolean
+		colors: boolean;
+		chunks: boolean;
 	};
 }
 
@@ -60,17 +60,25 @@ function getConfigArgs(args: BuildArgs): Partial<BuildArgs> {
 		const matchesFactoryPattern = elementFileName.match(factoryPattern);
 
 		if (matchesFactoryPattern && matchesFactoryPattern[1]) {
-			options.elementPrefix = matchesFactoryPattern[1].replace(/[A-Z][a-z]/g, '-\$&').replace(/^-+/g, '').toLowerCase();
-		}
-		else {
+			options.elementPrefix = matchesFactoryPattern[1]
+				.replace(/[A-Z][a-z]/g, '-$&')
+				.replace(/^-+/g, '')
+				.toLowerCase();
+		} else {
 			const filePattern = /([^\^/]*)$/;
 			const matches = elementFileName.match(filePattern);
 
 			if (matches && matches[1]) {
-				options.elementPrefix = matches[1].replace(/[A-Z][a-z]/g, '-\$&').replace(/^-+/g, '').toLowerCase();
-			}
-			else {
-				console.error(`Element prefix could not be determined from element name: "${args.element}". Use --elementPrefix to name element.`);
+				options.elementPrefix = matches[1]
+					.replace(/[A-Z][a-z]/g, '-$&')
+					.replace(/^-+/g, '')
+					.toLowerCase();
+			} else {
+				console.error(
+					`Element prefix could not be determined from element name: "${
+						args.element
+					}". Use --elementPrefix to name element.`
+				);
 				process.exit();
 			}
 		}
@@ -95,16 +103,15 @@ async function isPortAvailable(port: number): Promise<boolean> {
 	const server = net.createServer();
 
 	return new Promise<boolean>((resolve, reject) => {
-		server.once('error', function (err: any) {
+		server.once('error', function(err: any) {
 			if (err.code === 'EADDRINUSE') {
 				resolve(false);
-			}
-			else {
+			} else {
 				reject(new Error(`Unexpected error ${err.message}`));
 			}
 		});
 
-		server.once('listening', function () {
+		server.once('listening', function() {
 			server.close();
 			resolve(true);
 		});
@@ -116,14 +123,13 @@ async function isPortAvailable(port: number): Promise<boolean> {
 async function watch(config: webpack.Config, options: WebpackOptions, args: BuildArgs): Promise<void> {
 	config.devtool = 'inline-source-map';
 
-	config.entry = (function (entry) {
+	config.entry = (function(entry) {
 		if (typeof entry === 'object' && !Array.isArray(entry)) {
 			Object.keys(entry).forEach((key) => {
 				const value = entry[key];
 				if (typeof value === 'string') {
-					entry[key] = [ 'webpack-dev-server/client?', value ];
-				}
-				else {
+					entry[key] = ['webpack-dev-server/client?', value];
+				} else {
 					value.unshift('webpack-dev-server/client?');
 				}
 			});
@@ -137,20 +143,18 @@ async function watch(config: webpack.Config, options: WebpackOptions, args: Buil
 	let serverPort: number | undefined;
 
 	if (portRange.indexOf(portRangeDelimeter) >= 0) {
-		let [ low, high ] = portRange.split(portRangeDelimeter).map(portStringToInt);
+		let [low, high] = portRange.split(portRangeDelimeter).map(portStringToInt);
 
 		if (high < low) {
-			[ low, high ] = [ high, low ];
+			[low, high] = [high, low];
 		}
 
 		for (let port = high; port >= low; port--) {
 			ports.push(port);
 		}
-	}
-	else if (portRange.indexOf(portListDelimeter) >= 0) {
+	} else if (portRange.indexOf(portListDelimeter) >= 0) {
 		ports = portRange.split(portListDelimeter).map(portStringToInt);
-	}
-	else {
+	} else {
 		ports.push(portStringToInt(portRange));
 	}
 
@@ -162,7 +166,13 @@ async function watch(config: webpack.Config, options: WebpackOptions, args: Buil
 	}
 
 	if (!serverPort) {
-		return Promise.reject(new Error(`Cannot start a build server because the port is in use, tried ${ports.join(', ')}. Do you already have a build server running?`));
+		return Promise.reject(
+			new Error(
+				`Cannot start a build server because the port is in use, tried ${ports.join(
+					', '
+				)}. Do you already have a build server running?`
+			)
+		);
 	}
 
 	const server = new WebpackDevServer(compiler, options);
@@ -194,7 +204,12 @@ function compile(config: webpack.Config, options: WebpackOptions, args: BuildArg
 
 				console.log(stats.toString(options.stats));
 
-				if (stats.compilation && stats.compilation.errors && stats.compilation.errors.length > 0 && !args.force) {
+				if (
+					stats.compilation &&
+					stats.compilation.errors &&
+					stats.compilation.errors.length > 0 &&
+					!args.force
+				) {
 					reject({
 						exitCode: 1,
 						message: 'The build failed with errors. Use the --force to overcome this obstacle.'
@@ -211,14 +226,13 @@ function buildNpmDependencies(): any {
 	try {
 		const packagePath = pkgDir.sync(__dirname);
 		const packageJsonFilePath = path.join(packagePath, 'package.json');
-		const packageJson = <any> require(packageJsonFilePath);
+		const packageJson = <any>require(packageJsonFilePath);
 
 		return {
 			[packageJson.name]: packageJson.version,
 			...packageJson.dependencies
 		};
-	}
-	catch (e) {
+	} catch (e) {
 		throw new Error('Failed reading dependencies from package.json - ' + e.message);
 	}
 }
@@ -235,7 +249,8 @@ const command: Command<BuildArgs> = {
 
 		options('p', {
 			alias: 'port',
-			describe: 'port to serve on when using --watch. Can be a single port (9999), a range (9999:9990) or a list (9999,9997)',
+			describe:
+				'port to serve on when using --watch. Can be a single port (9999), a range (9999:9990) or a list (9999,9997)',
 			type: 'string'
 		});
 
@@ -281,7 +296,8 @@ const command: Command<BuildArgs> = {
 
 		options('f', {
 			alias: 'features',
-			describe: 'Features sets to optimize the build with\n\nValid values are: android, chrome, edge, firefox, ie11, ios, node, node8, safari',
+			describe:
+				'Features sets to optimize the build with\n\nValid values are: android, chrome, edge, firefox, ie11, ios, node, node8, safari',
 			type: 'array'
 		});
 
@@ -304,8 +320,7 @@ const command: Command<BuildArgs> = {
 
 		if (args.watch) {
 			return watch(config(configArgs), options, args) as Promise<void>;
-		}
-		else {
+		} else {
 			return compile(config(configArgs), options, args) as Promise<void>;
 		}
 	},
@@ -318,12 +333,11 @@ const command: Command<BuildArgs> = {
 			},
 			copy: {
 				path: __dirname,
-				files: [
-					'./webpack.config.js'
-				]
+				files: ['./webpack.config.js']
 			},
 			hints: [
-				'to build run ' + underline('./node_modules/.bin/webpack --config ./config/build-webpack/webpack.config.js')
+				'to build run ' +
+					underline('./node_modules/.bin/webpack --config ./config/build-webpack/webpack.config.js')
 			]
 		};
 

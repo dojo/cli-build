@@ -9,11 +9,14 @@ export interface Thenable<T> {
 }
 
 export function isEventuallyRejected<T>(promise: Thenable<T>): Thenable<boolean> {
-	return promise.then<any>(function () {
-		throw new Error('unexpected code path');
-	}, function () {
-		return true; // expect rejection
-	});
+	return promise.then<any>(
+		function() {
+			throw new Error('unexpected code path');
+		},
+		function() {
+			return true; // expect rejection
+		}
+	);
 }
 
 export function throwImmediately() {
@@ -38,7 +41,7 @@ export function fetchCldrData(locales: string | string[]): CldrData {
 		'cldr-data/supplemental/likelySubtags.json'
 	];
 
-	locales = Array.isArray(locales) ? locales : [ locales ];
+	locales = Array.isArray(locales) ? locales : [locales];
 	locales.forEach((locale: string) => {
 		urls.forEach((url: string) => {
 			deepAssign(data, require(url.replace('{locale}', locale)));

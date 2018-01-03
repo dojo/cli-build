@@ -18,7 +18,7 @@ class MockCompilation extends Pluginable {
 		super();
 		this.options = options || {
 			resolve: {
-				modules: [ '/root/path' ]
+				modules: ['/root/path']
 			}
 		};
 	}

@@ -41,7 +41,7 @@ describe('IgnoreUnmodifiedPlugin', () => {
 		assert.strictEqual(onChange.callCount, 1);
 
 		for (let i = 1; i <= 10; i++) {
-			watcher._onChange(FILE_PATH, MTIME + (FS_ACCURACY * i));
+			watcher._onChange(FILE_PATH, MTIME + FS_ACCURACY * i);
 			assert.strictEqual(onChange.callCount, i + 1);
 		}
 	});
@@ -58,7 +58,7 @@ describe('IgnoreUnmodifiedPlugin', () => {
 		assert.strictEqual(onChange.callCount, 1);
 
 		for (let i = 1; i <= 10; i++) {
-			watcher._onChange(FILE_PATH, MTIME + (FS_ACCURACY * i));
+			watcher._onChange(FILE_PATH, MTIME + FS_ACCURACY * i);
 			assert.strictEqual(onChange.callCount, i + 1);
 		}
 	});

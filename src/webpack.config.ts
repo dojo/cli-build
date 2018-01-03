@@ -28,14 +28,19 @@ let tslintExists = false;
 try {
 	require(path.join(basePath, 'tslint'));
 	tslintExists = true;
-} catch (ignore) { }
+} catch (ignore) {}
 
 type IncludeCallback = (args: BuildArgs) => any;
 
 function getJsonpFunction(name?: string) {
 	let jsonpFunction = 'dojoWebpackJsonp';
 	if (name) {
-		jsonpFunction += '_' + name.replace(/[^a-z0-9_]/g, ' ').trim().replace(/\s+/g, '_');
+		jsonpFunction +=
+			'_' +
+			name
+				.replace(/[^a-z0-9_]/g, ' ')
+				.trim()
+				.replace(/\s+/g, '_');
 	}
 	return jsonpFunction;
 }
@@ -55,7 +60,7 @@ function getUMDCompatLoader(options: UMDCompatOptions) {
 				const filePath = path.relative(basePath, path.join(context, module));
 				let chunkName = filePath;
 				Object.keys(bundles).some((name) => {
-					const bundlePaths = bundles[name].map(bundlePath => path.normalize(bundlePath));
+					const bundlePaths = bundles[name].map((bundlePath) => path.normalize(bundlePath));
 					if (bundlePaths.indexOf(filePath) > -1) {
 						chunkName = name;
 						return true;
@@ -72,7 +77,7 @@ function webpackConfig(args: Partial<BuildArgs>) {
 	args = args || {};
 
 	const cssLoader = ExtractTextPlugin.extract({ use: 'css-loader?sourceMap' });
-	const localIdentName = (args.watch || args.withTests) ? '[name]__[local]__[hash:base64:5]' : '[hash:base64:8]';
+	const localIdentName = args.watch || args.withTests ? '[name]__[local]__[hash:base64:5]' : '[hash:base64:8]';
 	const externalDependencies = (args.externals && args.externals.dependencies) || [];
 	const includesExternals = Boolean(externalDependencies.length);
 	const cssModuleLoader = ExtractTextPlugin.extract({
@@ -91,14 +96,14 @@ function webpackConfig(args: Partial<BuildArgs>) {
 	});
 
 	function includeWhen(predicate: any, callback: IncludeCallback, elseCallback: IncludeCallback | null = null) {
-		return predicate ? callback(args as any) : (elseCallback ? elseCallback(args as any) : []);
+		return predicate ? callback(args as any) : elseCallback ? elseCallback(args as any) : [];
 	}
 
 	const ignoredModules: string[] = [];
 
 	if (args.bundles && Object.keys(args.bundles)) {
-		Object.keys(args.bundles).forEach(bundleName => {
-			(args.bundles || {})[bundleName].forEach(moduleName => {
+		Object.keys(args.bundles).forEach((bundleName) => {
+			(args.bundles || {})[bundleName].forEach((moduleName) => {
 				ignoredModules.push(moduleName);
 			});
 		});
@@ -116,9 +121,9 @@ function webpackConfig(args: Partial<BuildArgs>) {
 
 	const config: webpack.Config = {
 		externals: [
-			function (context, request, callback) {
+			function(context, request, callback) {
 				const externals = externalDependencies || [];
-				function findExternalType(externals: (string | { name?: string; type?: string; })[]): string | void {
+				function findExternalType(externals: (string | { name?: string; type?: string })[]): string | void {
 					for (let external of externals) {
 						const name = external && (typeof external === 'string' ? external : external.name);
 						if (name && new RegExp(`^${name}[!\/]`).test(request)) {
@@ -135,34 +140,42 @@ function webpackConfig(args: Partial<BuildArgs>) {
 				callback();
 			}
 		],
-		entry: includeWhen(args.element, args => {
-			return {
-				[args.elementPrefix]: `${__dirname}/templates/custom-element.js`,
-				'widget-core': '@dojo/widget-core'
-			};
-		}, args => {
-			return {
-				...includeWhen(args.withTests, () => {
-					return {
-						[`../_build/tests/unit/all`]: [ path.join(basePath, 'tests/unit/all.ts') ],
-						[`../_build/tests/functional/all`]: [ path.join(basePath, 'tests/functional/all.ts') ],
-						[`../_build/src/main`]: [
-							path.join(basePath, 'src/main.css'),
-							path.join(basePath, 'src/main.ts')
-						]
-					};
-				}, () => {
-					return {
-						'src/main': [
-							'@dojo/shim/main',
-							'@dojo/shim/browser',
-							path.join(basePath, 'src/main.css'),
-							path.join(basePath, 'src/main.ts')
-						]
-					};
-				})
-			};
-		}),
+		entry: includeWhen(
+			args.element,
+			(args) => {
+				return {
+					[args.elementPrefix]: `${__dirname}/templates/custom-element.js`,
+					'widget-core': '@dojo/widget-core'
+				};
+			},
+			(args) => {
+				return {
+					...includeWhen(
+						args.withTests,
+						() => {
+							return {
+								[`../_build/tests/unit/all`]: [path.join(basePath, 'tests/unit/all.ts')],
+								[`../_build/tests/functional/all`]: [path.join(basePath, 'tests/functional/all.ts')],
+								[`../_build/src/main`]: [
+									path.join(basePath, 'src/main.css'),
+									path.join(basePath, 'src/main.ts')
+								]
+							};
+						},
+						() => {
+							return {
+								'src/main': [
+									'@dojo/shim/main',
+									'@dojo/shim/browser',
+									path.join(basePath, 'src/main.css'),
+									path.join(basePath, 'src/main.ts')
+								]
+							};
+						}
+					)
+				};
+			}
+		),
 		node: {
 			dgram: 'empty',
 			net: 'empty',
@@ -170,7 +183,7 @@ function webpackConfig(args: Partial<BuildArgs>) {
 			fs: 'empty'
 		},
 		plugins: [
-			new CleanWebpackPlugin([ '_build', 'dist' ], { root: basePath }),
+			new CleanWebpackPlugin(['_build', 'dist'], { root: basePath }),
 			new AutoRequireWebpackPlugin(/src\/main/),
 			new webpack.BannerPlugin(readFileSync(require.resolve(`${packagePath}/banner.md`), 'utf8')),
 			/**
@@ -178,7 +191,7 @@ function webpackConfig(args: Partial<BuildArgs>) {
 			 * in the test bundle, the variable is not scoped at all, so it has, in our case, a function scope in node.
 			 * This little hack makes sure the function is defined by grabbing it from the window scope (jsdom).
 			 */
-			new webpack.BannerPlugin(<any> {
+			new webpack.BannerPlugin(<any>{
 				banner: `var ${jsonpFunctionName} = ${jsonpFunctionName} || window["${jsonpFunctionName}"];`,
 				raw: true,
 				test: /tests\/unit\/all\.*/
@@ -187,65 +200,83 @@ function webpackConfig(args: Partial<BuildArgs>) {
 			new IgnorePlugin(/request\/providers\/node/),
 			new webpack.ContextReplacementPlugin(/dojo-app[\\\/]lib/, { test: () => false }),
 			...includeWhen(args.watch, () => {
-				return [ new IgnoreUnmodifiedPlugin() ];
+				return [new IgnoreUnmodifiedPlugin()];
 			}),
-			...includeWhen(args.element, () => [ new DefinePlugin({
-				__dojoCustomElements__: true
-			}) ]),
-			includeWhen(args.element, args => {
-				return new ExtractTextPlugin({ filename: `${args.elementPrefix}.css` });
-			}, () => {
-				return new ExtractTextPlugin({ filename: 'main.css', allChunks: true });
-			}),
+			...includeWhen(args.element, () => [
+				new DefinePlugin({
+					__dojoCustomElements__: true
+				})
+			]),
+			includeWhen(
+				args.element,
+				(args) => {
+					return new ExtractTextPlugin({ filename: `${args.elementPrefix}.css` });
+				},
+				() => {
+					return new ExtractTextPlugin({ filename: 'main.css', allChunks: true });
+				}
+			),
 			...includeWhen(!args.watch && !args.withTests, () => {
-				return [ new OptimizeCssAssetsPlugin({
-					cssProcessorOptions: {
-						map: { inline: false }
-					}
-				}) ];
+				return [
+					new OptimizeCssAssetsPlugin({
+						cssProcessorOptions: {
+							map: { inline: false }
+						}
+					})
+				];
 			}),
-			includeWhen(args.element, () => {
-				return new CopyWebpackPlugin([
-					{ context: 'src', from: '**/*', ignore: [ '*.ts', '*.css', '*.html' ] }
-				]);
-			}, () => {
-				return new CopyWebpackPlugin([
-					{ context: 'src', from: '**/*', ignore: '*.ts' }
-				]);
-			}),
+			includeWhen(
+				args.element,
+				() => {
+					return new CopyWebpackPlugin([
+						{ context: 'src', from: '**/*', ignore: ['*.ts', '*.css', '*.html'] }
+					]);
+				},
+				() => {
+					return new CopyWebpackPlugin([{ context: 'src', from: '**/*', ignore: '*.ts' }]);
+				}
+			),
 			...includeWhen(args.element, () => {
-				return [ new webpack.optimize.CommonsChunkPlugin({
-					name: 'widget-core',
-					filename: 'widget-core.js'
-				})];
+				return [
+					new webpack.optimize.CommonsChunkPlugin({
+						name: 'widget-core',
+						filename: 'widget-core.js'
+					})
+				];
 			}),
 			...includeWhen(!args.watch && !args.withTests, () => {
-				return [ new webpack.optimize.UglifyJsPlugin({
-					sourceMap: true,
-					compress: { warnings: false },
-					exclude: /tests[/]/
-				}) ];
+				return [
+					new webpack.optimize.UglifyJsPlugin({
+						sourceMap: true,
+						compress: { warnings: false },
+						exclude: /tests[/]/
+					})
+				];
 			}),
-			includeWhen(args.element, args => {
-				return new HtmlWebpackPlugin({
-					inject: false,
-					template: path.join(__dirname, 'templates/custom-element.html'),
-					filename: `${args.elementPrefix}.html`
-				});
-			}, () => {
-				return new HtmlWebpackPlugin({
-					inject: true,
-					chunks: [ 'src/main' ],
-					template: 'src/index.html'
-				});
-			}),
-			...includeWhen(args.locale, args => {
+			includeWhen(
+				args.element,
+				(args) => {
+					return new HtmlWebpackPlugin({
+						inject: false,
+						template: path.join(__dirname, 'templates/custom-element.html'),
+						filename: `${args.elementPrefix}.html`
+					});
+				},
+				() => {
+					return new HtmlWebpackPlugin({
+						inject: true,
+						chunks: ['src/main'],
+						template: 'src/index.html'
+					});
+				}
+			),
+			...includeWhen(args.locale, (args) => {
 				const { cldrPaths, element, locale, supportedLocales = [] } = args;
 				return [
 					new I18nPlugin({
 						cldrPaths,
 						defaultLocale: locale,
-						supportedLocales: Array.isArray(supportedLocales) ? supportedLocales : [ supportedLocales ],
+						supportedLocales: Array.isArray(supportedLocales) ? supportedLocales : [supportedLocales],
 						target: element || path.join(basePath, 'src/main.ts')
 					})
 				];
@@ -261,12 +292,10 @@ function webpackConfig(args: Partial<BuildArgs>) {
 			}),
 			...includeWhen(args.withTests, () => {
 				return [
-					new CopyWebpackPlugin([
-						{context: 'tests', from: '**/*', ignore: '*.ts', to: '../_build/tests' }
-					]),
-					new HtmlWebpackPlugin ({
+					new CopyWebpackPlugin([{ context: 'tests', from: '**/*', ignore: '*.ts', to: '../_build/tests' }]),
+					new HtmlWebpackPlugin({
 						inject: true,
-						chunks: [ 'src', '../_build/src/main' ],
+						chunks: ['src', '../_build/src/main'],
 						template: 'src/index.html',
 						filename: '../_build/src/index.html'
 					}),
@@ -275,13 +304,14 @@ function webpackConfig(args: Partial<BuildArgs>) {
 						filename: '../_build/src/src.js',
 						chunks: ['../_build/src/main', '../_build/tests/unit/all'],
 						minChunks: (module: any) => {
-							if (module.resource && !(/^.*\.(ts)$/).test(module.resource)) {
+							if (module.resource && !/^.*\.(ts)$/.test(module.resource)) {
 								return false;
 							}
 
 							return module.context && module.context.indexOf('src/') !== -1;
 						}
-					})];
+					})
+				];
 			}),
 			...includeWhen(includesExternals, () => [
 				new ExternalLoaderPlugin({
@@ -291,100 +321,126 @@ function webpackConfig(args: Partial<BuildArgs>) {
 				})
 			])
 		],
-		output: includeWhen(args.element, args => {
-			return Object.assign(outputConfig, {
-				libraryTarget: 'jsonp',
-				path: path.resolve(`./dist/${args.elementPrefix}`)
-			});
-		}, () => {
-			return Object.assign(outputConfig, {
-				library: '[name]',
-				umdNamedDefine: true
-			});
-		}),
+		output: includeWhen(
+			args.element,
+			(args) => {
+				return Object.assign(outputConfig, {
+					libraryTarget: 'jsonp',
+					path: path.resolve(`./dist/${args.elementPrefix}`)
+				});
+			},
+			() => {
+				return Object.assign(outputConfig, {
+					library: '[name]',
+					umdNamedDefine: true
+				});
+			}
+		),
 		devtool: 'source-map',
 		resolve: {
-			modules: [
-				basePath,
-				path.join(basePath, 'node_modules')
-			],
+			modules: [basePath, path.join(basePath, 'node_modules')],
 			extensions: ['.ts', '.tsx', '.js']
 		},
-			resolveLoader: {
-				modules: [
-					path.join(isCLI ? __dirname : 'node_modules/@dojo/cli-build-webpack', 'loaders'),
-					path.join(__dirname, 'node_modules'),
-					'node_modules' ]
-			},
-			module: {
-				rules: [
-					...includeWhen(tslintExists, () => {
-						return [
-							{
-								test: /\.ts$/,
-								enforce: 'pre',
-								loader: 'tslint-loader',
-								options: {
-									tsConfigFile: path.join(basePath, 'tslint.json'),
+		resolveLoader: {
+			modules: [
+				path.join(isCLI ? __dirname : 'node_modules/@dojo/cli-build-webpack', 'loaders'),
+				path.join(__dirname, 'node_modules'),
+				'node_modules'
+			]
+		},
+		module: {
+			rules: [
+				...includeWhen(tslintExists, () => {
+					return [
+						{
+							test: /\.ts$/,
+							enforce: 'pre',
+							loader: 'tslint-loader',
+							options: {
+								tsConfigFile: path.join(basePath, 'tslint.json'),
 								...includeWhen(!args.watch && !args.withTests, () => {
 									return {
 										emitErrors: true,
 										failOnHint: true
 									};
-								})}
+								})
+							}
 						}
 					];
 				}),
-				{ test: /@dojo\/.*\.js$/, enforce: 'pre', loader: 'source-map-loader-cli', options: { includeModulePaths: true } },
-				{ test: /src[\\\/].*\.ts?$/, enforce: 'pre', loader: '@dojo/webpack-contrib/css-module-dts-loader?type=ts&instanceName=0_dojo' },
-				{ test: /src[\\\/].*\.m\.css?$/, enforce: 'pre', loader: '@dojo/webpack-contrib/css-module-dts-loader?type=css' },
-				{ test: /src[\\\/].*\.ts(x)?$/, use: [
-					{
-						loader: '@dojo/webpack-contrib/static-build-loader',
-						options: {
-							features: args.features
+				{
+					test: /@dojo\/.*\.js$/,
+					enforce: 'pre',
+					loader: 'source-map-loader-cli',
+					options: { includeModulePaths: true }
+				},
+				{
+					test: /src[\\\/].*\.ts?$/,
+					enforce: 'pre',
+					loader: '@dojo/webpack-contrib/css-module-dts-loader?type=ts&instanceName=0_dojo'
+				},
+				{
+					test: /src[\\\/].*\.m\.css?$/,
+					enforce: 'pre',
+					loader: '@dojo/webpack-contrib/css-module-dts-loader?type=css'
+				},
+				{
+					test: /src[\\\/].*\.ts(x)?$/,
+					use: [
+						{
+							loader: '@dojo/webpack-contrib/static-build-loader',
+							options: {
+								features: args.features
+							}
+						},
+						getUMDCompatLoader({ bundles: args.bundles }),
+						{
+							loader: 'ts-loader',
+							options: {
+								instance: 'dojo',
+								onlyCompileBundledFiles: true
+							}
 						}
-					},
-					getUMDCompatLoader({ bundles: args.bundles }),
-					{
-						loader: 'ts-loader',
-						options: {
-							instance: 'dojo',
-							onlyCompileBundledFiles: true
-						}
-					}
-				]},
-				{ test: /\.js?$/, use: [
-					{
-						loader: '@dojo/webpack-contrib/static-build-loader',
-						options: {
-							features: args.features
-						}
-					},
-					'umd-compat-loader'
-				]},
+					]
+				},
+				{
+					test: /\.js?$/,
+					use: [
+						{
+							loader: '@dojo/webpack-contrib/static-build-loader',
+							options: {
+								features: args.features
+							}
+						},
+						'umd-compat-loader'
+					]
+				},
 				{ test: new RegExp(`globalize(\\${path.sep}|$)`), loader: 'imports-loader?define=>false' },
 				...includeWhen(!args.element, () => {
-					return [
-						{ test: /\.html$/, loader: 'html-loader' }
-					];
+					return [{ test: /\.html$/, loader: 'html-loader' }];
 				}),
-				{ test: /.*\.(gif|png|jpe?g|svg|eot|ttf|woff|woff2)$/i, loader: 'file-loader?hash=sha512&digest=hex&name=[hash:base64:8].[ext]' },
+				{
+					test: /.*\.(gif|png|jpe?g|svg|eot|ttf|woff|woff2)$/i,
+					loader: 'file-loader?hash=sha512&digest=hex&name=[hash:base64:8].[ext]'
+				},
 				{ test: /\.css$/, exclude: /src[\\\/].*/, loader: cssLoader },
 				{ test: /src[\\\/].*\.css?$/, loader: cssModuleLoader },
 				{ test: /\.m\.css\.js$/, exclude: /src[\\\/].*/, use: ['json-css-module-loader'] },
 				...includeWhen(args.withTests, () => {
 					return [
-						{ test: /tests[\\\/].*\.ts?$/, use: [
-							'umd-compat-loader',
-							{
-								loader: 'ts-loader',
-								options: {
-									instance: 'dojo',
-									onlyCompileBundledFiles: true
+						{
+							test: /tests[\\\/].*\.ts?$/,
+							use: [
+								'umd-compat-loader',
+								{
+									loader: 'ts-loader',
+									options: {
+										instance: 'dojo',
+										onlyCompileBundledFiles: true
+									}
 								}
-							}
-						] },
+							]
+						},
 						{
 							test: /src\/.*\.ts$/,
 							use: {
@@ -394,22 +450,20 @@ function webpackConfig(args: Partial<BuildArgs>) {
 						}
 					];
 				}),
-				...includeWhen(args.element, args => {
-					return [
-						{ test: /custom-element\.js/, loader: `imports-loader?widgetFactory=${args.element}` }
-					];
+				...includeWhen(args.element, (args) => {
+					return [{ test: /custom-element\.js/, loader: `imports-loader?widgetFactory=${args.element}` }];
 				}),
 				...includeWhen(args.bundles && Object.keys(args.bundles).length, () => {
 					const loaders: any[] = [];
 
-					Object.keys(args.bundles || {}).forEach(bundleName => {
-						(args.bundles || {})[ bundleName ].forEach(fileName => {
+					Object.keys(args.bundles || {}).forEach((bundleName) => {
+						(args.bundles || {})[bundleName].forEach((fileName) => {
 							loaders.push({
 								test: /main\.ts/,
 								loader: {
 									loader: 'imports-loader',
 									options: {
-										'__manual_bundle__': `bundle-loader?lazy&name=${bundleName}!${fileName}`
+										__manual_bundle__: `bundle-loader?lazy&name=${bundleName}!${fileName}`
 									}
 								}
 							});

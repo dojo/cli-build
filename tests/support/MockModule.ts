@@ -33,7 +33,7 @@ export default class MockModule {
 
 				for (let prop in module) {
 					if (typeof module[prop] === 'function') {
-						mock[prop] = function () {};
+						mock[prop] = function() {};
 						this.sandbox.stub(mock, prop);
 					} else {
 						mock[prop] = module[prop];
@@ -45,13 +45,11 @@ export default class MockModule {
 					Object.assign(ctor, mock);
 					mockery.registerMock(dependency, ctor);
 					mock.ctor = ctor;
-				}
-				else {
+				} else {
 					mockery.registerMock(dependency, mock);
 				}
 				this.mocks[dependency] = mock;
-			}
-			else {
+			} else {
 				const { name, mock } = dependency;
 				mockery.registerMock(name, mock);
 				this.mocks[name] = mock;

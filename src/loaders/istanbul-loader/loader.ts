@@ -8,7 +8,7 @@ const { createInstrumenter } = require('istanbul-lib-instrument');
  * @param {string} content the source code
  * @param {object} sourceMap The source map object
  */
-export default function (this: webpack.LoaderContext, content: string, sourceMap?: any) {
+export default function(this: webpack.LoaderContext, content: string, sourceMap?: any) {
 	const callback = this.async();
 
 	const instrumenter = createInstrumenter({
@@ -32,7 +32,12 @@ export default function (this: webpack.LoaderContext, content: string, sourceMap
 		});
 	}
 
-	instrumenter.instrument(content, this.resourcePath, (error: Error, instrumentedSource: string) => {
-		callback(null, instrumentedSource, instrumenter.lastSourceMap());
-	}, sourceMap);
+	instrumenter.instrument(
+		content,
+		this.resourcePath,
+		(error: Error, instrumentedSource: string) => {
+			callback(null, instrumentedSource, instrumenter.lastSourceMap());
+		},
+		sourceMap
+	);
 }
