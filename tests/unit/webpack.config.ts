@@ -50,7 +50,7 @@ function start(cli = true, args: Partial<BuildArgs> = {}) {
 		exports,
 		process: {
 			cwd: () => process.cwd(),
-			env: { DOJO_CLI: cli }
+			env: { DOJO_CLI: cli ? 'true' : undefined }
 		},
 		require,
 		__dirname: dirname
