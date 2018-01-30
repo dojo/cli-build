@@ -15,7 +15,7 @@ const AutoRequireWebpackPlugin = require('auto-require-webpack-plugin');
 const OptimizeCssAssetsPlugin = require('optimize-css-assets-webpack-plugin');
 const BundleAnalyzerPlugin = require('webpack-bundle-analyzer-sunburst').BundleAnalyzerPlugin;
 
-const isCLI = process.env.DOJO_CLI;
+const isCLI = process.env.DOJO_ENV === 'cli';
 const packagePath = isCLI ? '.' : '@dojo/cli-build-webpack';
 const IgnoreUnmodifiedPlugin = require(`${packagePath}/plugins/IgnoreUnmodifiedPlugin`).default;
 const basePath = process.cwd();
