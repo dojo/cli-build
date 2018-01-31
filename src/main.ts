@@ -1,4 +1,4 @@
-import { Command, EjectOutput, Helper, OptionsHelper } from '@dojo/interfaces/cli';
+import { Command, EjectOutput, Helper, OptionsHelper } from '@dojo/cli/interfaces';
 import { ExternalDep } from '@dojo/webpack-contrib/external-loader-plugin/ExternalLoaderPlugin';
 import { underline } from 'chalk';
 import * as fs from 'fs';
